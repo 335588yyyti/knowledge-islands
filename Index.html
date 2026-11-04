@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<title>知識群島</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* 航海圖：深淺海色當底，沙灘色島嶼，珊瑚色當行動色 */
+:root{
+  --sea:#1d6f86; --sea-deep:#124a5c; --foam:#e7f4f5; --sand:#f5e6c4; --sand-dark:#d9c08c;
+  --ink:#1b2a33; --muted:#5d6f78; --coral:#f2704e; --leaf:#4f9d69; --gold:#e8b23a;
+  --ok:#2f8f5b; --bad:#c8463b; --card:#fffdf7;
+  --f-display:"LXGW WenKai TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",serif;
+  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{font-family:var(--f-body);color:var(--ink);background:var(--sea);font-size:16px;line-height:1.6;
+  background-image:radial-gradient(circle at 20% 10%,rgba(255,255,255,.10) 0 2px,transparent 3px),radial-gradient(circle at 70% 60%,rgba(255,255,255,.08) 0 2px,transparent 3px);
+  background-size:90px 90px,130px 130px}
+.wrap{max-width:860px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;margin:0;text-wrap:balance}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+input{font:inherit;padding:12px 14px;border:2px solid var(--sand-dark);border-radius:12px;background:#fff;width:100%;color:var(--ink)}
+label{display:block;font-weight:700;margin-bottom:6px}
+.btn{background:var(--coral);color:#fff;padding:12px 20px;font-weight:700;font-size:17px;box-shadow:0 3px 0 #b84f33}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #b84f33}
+.btn.ghost{background:transparent;color:var(--foam);box-shadow:none;border:2px solid rgba(255,255,255,.4)}
+.btn:disabled{opacity:.5;cursor:default}
+.hidden{display:none!important}
+.card{background:var(--card);border-radius:18px;padding:22px;box-shadow:0 6px 0 rgba(0,0,0,.12)}
+
+/* 登入 */
+.login{max-width:420px;margin:6vh auto 0}
+.login .title{color:var(--foam);text-align:center;margin-bottom:18px}
+.login .title h1{font-size:44px;letter-spacing:.08em}
+.login .title p{margin:4px 0 0;opacity:.85}
+.form{display:grid;gap:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.hint{font-size:14px;color:var(--muted);margin:0}
+.err{color:var(--bad);font-weight:700;margin:0;min-height:1.4em}
+.check{display:flex;gap:8px;align-items:center;font-weight:400}
+.check input{width:20px;height:20px}
+
+/* 頂部航海日誌 */
+.log{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;color:var(--foam);margin-bottom:14px}
+.log .who{font-family:var(--f-display);font-size:24px;flex:1 1 200px;min-width:0}
+.log .who small{display:block;font-family:var(--f-body);font-size:13px;opacity:.8}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:rgba(0,0,0,.22);border-radius:999px;padding:6px 12px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip b{color:var(--gold)}
+.today{background:var(--card);border-radius:14px;padding:12px 16px;display:flex;gap:12px;align-items:center;margin-bottom:16px}
+.seal{width:52px;height:52px;flex:none;border-radius:50%;border:3px dashed var(--sand-dark);display:grid;place-items:center;font-family:var(--f-display);font-size:18px;color:var(--sand-dark);transform:rotate(-8deg)}
+.seal.on{border:3px solid var(--bad);color:var(--bad);background:#fff1ee}
+.today p{margin:0}
+
+/* 群島地圖 */
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.island{background:transparent;padding:0;text-align:center;color:var(--foam);position:relative}
+.island svg{width:100%;max-width:160px;height:auto;display:block;margin:0 auto;transition:transform .2s}
+.island:hover svg{transform:translateY(-4px) rotate(-2deg)}
+.island .name{font-family:var(--f-display);font-size:22px;font-weight:700;line-height:1.2}
+.island .meta{font-size:13px;opacity:.9}
+.bar{height:8px;background:rgba(0,0,0,.25);border-radius:9px;margin:6px auto 0;max-width:120px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gold);border-radius:9px}
+.island.locked{opacity:.45;cursor:not-allowed}
+.island.locked:hover svg{transform:none}
+.foot{display:flex;justify-content:center;margin-top:24px}
+
+/* 挑戰 */
+.quiz{max-width:640px;margin:0 auto}
+.qtop{display:flex;align-items:center;gap:12px;color:var(--foam);margin-bottom:12px}
+.dots{display:flex;gap:6px;flex:1;flex-wrap:wrap}
+.dots i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.25)}
+.dots i.ok{background:var(--leaf)} .dots i.no{background:var(--coral)} .dots i.now{background:var(--foam)}
+.qtag{font-size:13px;color:var(--muted);margin-bottom:6px}
+.qtext{font-size:21px;font-weight:500;margin:0 0 18px;white-space:pre-wrap}
+.opts{display:grid;gap:10px}
+.opt{background:var(--foam);color:var(--ink);text-align:left;padding:14px 16px;font-size:18px;display:flex;gap:12px;align-items:flex-start;border:2px solid transparent}
+.opt .k{font-family:var(--f-display);font-weight:700;color:var(--sea-deep);flex:none;width:1.4em}
+.opt:hover:not(:disabled){border-color:var(--sea)}
+.opt.right{background:#e3f4e8;border-color:var(--ok)}
+.opt.wrong{background:#fbe6e3;border-color:var(--bad)}
+.tf{grid-template-columns:1fr 1fr}
+.tf .opt{justify-content:center;font-size:30px;font-family:var(--f-display)}
+.fb{margin-top:16px;padding:14px 16px;border-radius:12px}
+.fb.ok{background:#e3f4e8;color:#1f5d3b} .fb.no{background:#fbe6e3;color:#7f2a22}
+.fb h3{font-size:22px}
+.fb p{margin:4px 0 0}
+.actions{display:flex;justify-content:flex-end;margin-top:16px;gap:10px}
+
+/* 結算 */
+.result{text-align:center}
+.result h2{font-size:34px;margin-bottom:6px}
+.big{font-family:var(--f-display);font-size:64px;line-height:1;color:var(--sea-deep);font-variant-numeric:tabular-nums}
+.gains{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:18px 0}
+.gain{background:var(--foam);border-radius:14px;padding:10px 16px;min-width:96px}
+.gain b{display:block;font-size:26px;font-family:var(--f-display)}
+.stampin{animation:stamp .6s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes stamp{from{transform:scale(2.4) rotate(-30deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
+.loading{color:var(--foam);text-align:center;padding:60px 0;font-family:var(--f-display);font-size:22px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:420px){.login .title h1{font-size:36px}.qtext{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <section id="vLogin" class="login">
+    <div class="title"><h1>知識群島</h1><p>每天上島挑戰一回，收集金幣、星星和印章</p></div>
+    <form id="fLogin" class="card form" autocomplete="off">
+      <div><label for="iCode">班級代碼</label><input id="iCode" required placeholder="老師給的代碼" autocapitalize="characters"></div>
+      <div class="row2">
+        <div><label for="iSeat">座號</label><input id="iSeat" type="number" inputmode="numeric" min="1" max="60" required></div>
+        <div><label for="iPin">4 位數密碼</label><input id="iPin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required></div>
+      </div>
+      <div><label for="iNick">暱稱（第一次登入才需要，可不填）</label><input id="iNick" maxlength="10"></div>
+      <p class="hint">第一次登入時，你輸入的密碼就會變成你的密碼，要記住喔。</p>
+      <label class="check"><input type="checkbox" id="iRemember">在這台裝置記住我（家裡的平板才勾）</label>
+      <p class="err" id="loginErr"></p>
+      <button class="btn" id="bLogin">出航</button>
+    </form>
+  </section>
+
+  <section id="vMap" class="hidden">
+    <div class="log">
+      <div class="who"><span id="whoName"></span><small id="whoClass"></small></div>
+      <div class="chips">
+        <span class="chip">金幣 <b id="cCoins">0</b></span>
+        <span class="chip">星星 <b id="cStars">0</b></span>
+        <span class="chip">連續 <b id="cStreak">0</b> 天</span>
+      </div>
+    </div>
+    <div class="today">
+      <div class="seal" id="todaySeal">今日</div>
+      <p id="todayText"></p>
+    </div>
+    <div class="map" id="map"></div>
+    <div class="foot"><button class="btn ghost" id="bLogout">登出</button></div>
+  </section>
+
+  <section id="vQuiz" class="quiz hidden">
+    <div class="qtop"><div class="dots" id="dots"></div><button class="btn ghost" id="bQuit" style="padding:6px 12px;font-size:14px">回地圖</button></div>
+    <div class="card">
+      <div class="qtag" id="qTag"></div>
+      <p class="qtext" id="qText"></p>
+      <div id="qBody"></div>
+      <div id="qFb"></div>
+      <div class="actions"><button class="btn hidden" id="bNext">下一題</button></div>
+    </div>
+  </section>
+
+  <section id="vResult" class="quiz hidden">
+    <div class="card result" id="resultBox"></div>
+  </section>
+
+  <div id="vLoading" class="loading hidden">划船中…</div>
+</div>
+
+<script>
+const SUBJ = [
+  {k:'國語', ch:'國', c:'#e07a5f'}, {k:'數學', ch:'數', c:'#3d8bbd'}, {k:'自然', ch:'自', c:'#4f9d69'},
+  {k:'社會', ch:'社', c:'#c99a2e'}, {k:'英文', ch:'英', c:'#8a6bbf'}
+];
+let cred = null, state = null, round = null;
+
+function api(fn, ...args){
+  return new Promise((res, rej) => {
+    google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e && e.message ? e : new Error(String(e))))[fn](...args);
+  });
+}
+const $ = id => document.getElementById(id);
+function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function store(k, v){ try{ v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
+
+/* 島嶼圖：沙灘、草地與科目字 */
+function islandSvg(color, ch, seed){
+  const r = [0, 6, -5, 4, -3][seed % 5];
+  return `<svg viewBox="0 0 160 120" aria-hidden="true">
+    <ellipse cx="80" cy="92" rx="70" ry="16" fill="rgba(255,255,255,.18)"/>
+    <path d="M18 88 C 22 ${58+r}, 55 ${40-r}, 82 42 C 112 ${44+r}, 140 60, 142 88 Z" fill="#f5e6c4"/>
+    <path d="M30 84 C 36 ${62+r}, 60 ${50-r}, 82 52 C 106 ${54+r}, 126 66, 130 84 Z" fill="${color}"/>
+    <circle cx="80" cy="70" r="20" fill="#fffdf7"/>
+    <text x="80" y="78" text-anchor="middle" font-size="22" font-weight="700" fill="${color}" font-family="LXGW WenKai TC, Noto Sans TC, sans-serif">${ch}</text>
+  </svg>`;
+}
+function reefSvg(){ return `<svg viewBox="0 0 160 120" aria-hidden="true"><ellipse cx="80" cy="92" rx="66" ry="14" fill="rgba(255,255,255,.18)"/>
+  <path d="M30 90 L46 58 L58 74 L72 44 L88 70 L100 52 L116 76 L128 64 L136 90 Z" fill="#6b4f3f"/>
+  <circle cx="80" cy="74" r="16" fill="#fffdf7"/><text x="80" y="81" text-anchor="middle" font-size="18" font-weight="700" fill="#c8463b" font-family="LXGW WenKai TC, sans-serif">錯</text></svg>`; }
+function lighthouseSvg(){ return `<svg viewBox="0 0 160 120" aria-hidden="true"><ellipse cx="80" cy="96" rx="60" ry="12" fill="rgba(255,255,255,.18)"/>
+  <path d="M40 96 C 50 80, 110 80, 120 96 Z" fill="#f5e6c4"/>
+  <path d="M70 88 L74 36 L86 36 L90 88 Z" fill="#fffdf7"/><path d="M72 62 L88 62 L89 72 L71 72 Z M73 46 L87 46 L87.6 54 L72.4 54 Z" fill="#f2704e"/>
+  <rect x="70" y="26" width="20" height="10" rx="2" fill="#e8b23a"/><path d="M90 30 L132 18 L132 42 Z" fill="rgba(232,178,58,.35)"/></svg>`; }
+
+function renderMap(){
+  const s = state;
+  $('whoName').textContent = (s.nick || (s.seat + ' 號')) + ' 的航海日誌';
+  $('whoClass').textContent = s.className + '・' + s.seat + ' 號';
+  $('cCoins').textContent = s.coins; $('cStars').textContent = s.stars; $('cStreak').textContent = s.streak;
+  $('todaySeal').className = 'seal' + (s.todayDone ? ' on' : '');
+  $('todaySeal').textContent = s.todayDone ? '已蓋' : '今日';
+  $('todayText').textContent = s.todayDone
+    ? '今天的印章拿到了！還想挑戰的話，可以繼續賺金幣。'
+    : '任選一座島，答對 ' + Math.ceil(s.perRound * 0.7) + ' 題以上就能蓋今天的印章。';
+  const cards = SUBJ.map((sj, i) => {
+    const it = s.islands[sj.k] || {total:0, mastered:0};
+    const locked = !it.total;
+    const pct = it.total ? Math.round(it.mastered / it.total * 100) : 0;
+    return `<button class="island${locked?' locked':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
+      ${islandSvg(sj.c, sj.ch, i)}<div class="name">${sj.k}島</div>
+      <div class="meta">${locked ? '老師還沒開放' : '已掌握 ' + it.mastered + ' / ' + it.total}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div></button>`;
+  });
+  cards.push(`<button class="island${s.wrong?'':' locked'}" data-island="錯題">${reefSvg()}<div class="name">錯題礁</div><div class="meta">${s.wrong ? '還有 ' + s.wrong + ' 題待複習' : '目前沒有錯題'}</div></button>`);
+  const any = SUBJ.some(sj => (s.islands[sj.k]||{}).total);
+  cards.push(`<button class="island${any?'':' locked'}" data-island="綜合">${lighthouseSvg()}<div class="name">燈塔挑戰</div><div class="meta">各科混合出題</div></button>`);
+  $('map').innerHTML = cards.join('');
+}
+
+$('map').addEventListener('click', e => {
+  const b = e.target.closest('.island');
+  if (!b || b.classList.contains('locked')) return;
+  startRound(b.dataset.island);
+});
+
+async function startRound(island){
+  show('vLoading');
+  try{
+    const qs = await api('getRound', cred, island);
+    round = {island, qs, i:0, res:[]};
+    show('vQuiz'); renderQ();
+  }catch(e){ show('vMap'); flash(e.message); }
+}
+
+function flash(msg){ $('todayText').textContent = msg; }
+
+function renderQ(){
+  const q = round.qs[round.i];
+  $('dots').innerHTML = round.qs.map((_, i) => {
+    const r = round.res[i];
+    return `<i class="${r ? (r.ok ? 'ok' : 'no') : (i === round.i ? 'now' : '')}"></i>`;
+  }).join('');
+  $('qTag').textContent = q.subject + '・' + q.unit + '　第 ' + (round.i + 1) + ' / ' + round.qs.length + ' 題';
+  $('qText').textContent = q.text;
+  $('qFb').innerHTML = ''; $('bNext').classList.add('hidden');
+  if (q.type === '選擇'){
+    $('qBody').innerHTML = '<div class="opts">' + q.options.map((o, i) =>
+      `<button class="opt" data-a="${'ABCD'[i]}"><span class="k">${'ABCD'[i]}</span><span>${esc(o)}</span></button>`).join('') + '</div>';
+  } else if (q.type === '是非'){
+    $('qBody').innerHTML = '<div class="opts tf"><button class="opt" data-a="O">○</button><button class="opt" data-a="X">✕</button></div>';
+  } else {
+    $('qBody').innerHTML = '<form id="fFill" class="form"><input id="iFill" autocomplete="off" placeholder="在這裡輸入答案"><div class="actions" style="margin:0"><button class="btn">送出</button></div></form>';
+    $('fFill').addEventListener('submit', ev => { ev.preventDefault(); const v = $('iFill').value.trim(); if (v) answer(v); });
+    setTimeout(() => $('iFill').focus(), 50);
+  }
+}
+
+$('qBody').addEventListener('click', e => {
+  const b = e.target.closest('.opt');
+  if (b && !b.disabled) answer(b.dataset.a, b);
+});
+
+function norm(v){ return String(v||'').replace(/[！-～]/g, c => String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/\s+/g,'').toLowerCase(); }
+function tf(v){ const s = norm(v); if (['o','○','對','是','t','true','y'].includes(s)) return 'O'; if (['x','╳','×','錯','否','f','false','n'].includes(s)) return 'X'; return null; }
+function check(q, a){
+  if (q.type === '選擇') return norm(a).toUpperCase() === norm(q.answer).toUpperCase();
+  if (q.type === '是非') return tf(a) !== null && tf(a) === tf(q.answer);
+  return q.answer.split('|').some(r => norm(r) && norm(r) === norm(a));
+}
+function answerLabel(q){
+  if (q.type === '選擇'){ const i = 'ABCD'.indexOf(q.answer.trim().toUpperCase()); return q.answer.toUpperCase() + (q.options[i] ? '　' + q.options[i] : ''); }
+  if (q.type === '是非') return tf(q.answer) === 'O' ? '○（對）' : '✕（錯）';
+  return q.answer.split('|')[0];
+}
+
+function answer(a, btn){
+  const q = round.qs[round.i];
+  const ok = check(q, a);
+  round.res[round.i] = {id:q.id, answer:a, ok};
+  document.querySelectorAll('#qBody .opt, #qBody input, #qBody button').forEach(el => el.disabled = true);
+  if (btn) btn.classList.add(ok ? 'right' : 'wrong');
+  if (!ok && q.type !== '填空'){
+    const want = q.type === '是非' ? tf(q.answer) : q.answer.trim().toUpperCase();
+    const rb = document.querySelector(`#qBody .opt[data-a="${want}"]`); if (rb) rb.classList.add('right');
+  }
+  $('qFb').innerHTML = `<div class="fb ${ok?'ok':'no'}"><h3>${ok ? '答對了！金幣 +1' : '差一點！'}</h3>
+    ${ok ? '' : '<p>正確答案：' + esc(answerLabel(q)) + '</p>'}${q.explain ? '<p>' + esc(q.explain) + '</p>' : ''}</div>`;
+  const last = round.i === round.qs.length - 1;
+  $('bNext').textContent = last ? '看結果' : '下一題';
+  $('bNext').classList.remove('hidden'); $('bNext').focus();
+  renderDots();
+}
+function renderDots(){ document.querySelectorAll('#dots i').forEach((d, i) => { const r = round.res[i]; d.className = r ? (r.ok ? 'ok' : 'no') : (i === round.i ? 'now' : ''); }); }
+
+$('bNext').addEventListener('click', async () => {
+  if (round.i < round.qs.length - 1){ round.i++; renderQ(); return; }
+  show('vLoading');
+  try{
+    const r = await api('submitRound', cred, round.island, round.res.map(x => ({id:x.id, answer:x.answer})));
+    state = r.state; renderResult(r);
+  }catch(e){
+    show('vResult');
+    $('resultBox').innerHTML = `<h2>上傳失敗</h2><p>${esc(e.message)}</p><p class="hint">請確認網路後再按一次。</p><div class="actions" style="justify-content:center"><button class="btn" id="bRetry">再上傳一次</button></div>`;
+    $('bRetry').onclick = () => $('bNext').click();
+  }
+});
+
+function renderResult(r){
+  show('vResult');
+  const msg = r.passed ? (r.correct === r.total ? '全部答對，太強了！' : '過關！') : '這回沒過關，再試一次吧';
+  $('resultBox').innerHTML = `<h2>${msg}</h2><div class="big">${r.correct}<span style="font-size:28px"> / ${r.total}</span></div>
+    <div class="gains">
+      <div class="gain">金幣<b>+${r.coins}</b></div>
+      <div class="gain">星星<b>${r.star ? '+1' : '+0'}</b></div>
+      ${r.stamp ? `<div class="gain"><div class="seal on stampin" style="margin:0 auto">已蓋</div>今日印章</div>` : ''}
+    </div>
+    ${r.stamp ? '<p>連續完成 <b>' + r.state.streak + '</b> 天！印章可以跟老師換加點。</p>' : ''}
+    ${r.correct < r.total ? '<p class="hint">答錯的題目已經放進錯題礁，答對就會移除。</p>' : ''}
+    <div class="actions" style="justify-content:center"><button class="btn" id="bBack">回群島地圖</button></div>`;
+  $('bBack').onclick = () => { renderMap(); show('vMap'); };
+}
+
+$('bQuit').addEventListener('click', () => { renderMap(); show('vMap'); });
+
+$('fLogin').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const c = {code:$('iCode').value.trim().toUpperCase(), seat:Number($('iSeat').value), pin:$('iPin').value.trim(), nick:$('iNick').value.trim()};
+  $('loginErr').textContent = ''; $('bLogin').disabled = true;
+  try{
+    state = await api('studentLogin', c);
+    cred = {code:c.code, seat:c.seat, pin:c.pin};
+    store('kq_code', c.code);
+    if ($('iRemember').checked) store('kq_cred', cred); else store('kq_cred');
+    renderMap(); show('vMap');
+  }catch(e){ $('loginErr').textContent = e.message; }
+  $('bLogin').disabled = false;
+});
+
+$('bLogout').addEventListener('click', () => { store('kq_cred'); cred = null; state = null; $('iPin').value = ''; $('iSeat').value = ''; show('vLogin'); });
+
+(async function init(){
+  const saved = load('kq_cred');
+  $('iCode').value = load('kq_code') || '';
+  try{ google.script.url.getLocation(loc => { if (loc.parameter && loc.parameter.c) $('iCode').value = loc.parameter.c.toUpperCase(); }); }catch(e){}
+  if (saved){
+    show('vLoading');
+    try{ state = await api('studentLogin', saved); cred = saved; renderMap(); show('vMap'); return; }
+    catch(e){ store('kq_cred'); }
+  }
+  show('vLogin');
+})();
+</script>
+</body>
+</html>
