@@ -83,6 +83,14 @@ const fail = msg => { throw new UserError(msg); };
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    // 題目圖片：/img/<id>（內容不會變，可以讓瀏覽器長期快取）
+    if (url.pathname.startsWith('/img/')) {
+      const id = url.pathname.slice(5).replace(/[^A-Za-z0-9_-]/g, '');
+      const r = id && await env.DB.prepare('SELECT mime, data FROM images WHERE id = ?').bind(id).first();
+      if (!r) return new Response('Not found', { status: 404 });
+      const bin = Uint8Array.from(atob(r.data), ch => ch.charCodeAt(0));
+      return new Response(bin, { headers: { 'content-type': r.mime, 'cache-control': 'public, max-age=31536000, immutable' } });
+    }
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     const name = url.pathname.slice(5);
     const fn = API[name];
@@ -299,6 +307,7 @@ async function state(ctx, cls, s) {
   const badges = (await ctx.all('SELECT badge FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.badge);
   return {
     units, badges, badgeList: BADGES,
+    notice: cls.notice || '', mission: cls.mission || '', showLeaderboard: set.show_leaderboard !== '0',
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(),
@@ -312,7 +321,7 @@ const FIXED_ORDER = /以上|皆是|皆非|都對|都不對|都是|都不是|all 
 
 /** 給學生的題目：選擇題每次打亂選項順序，答案字母跟著換 */
 function publicQ(q) {
-  const out = { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, passage: q.passage || '', answer: q.answer, explain: q.explain };
+  const out = { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, passage: q.passage || '', image: q.image ? '/img/' + q.image : '', answer: q.answer, explain: q.explain };
   if (q.type !== '選擇') return Object.assign(out, { options: [] });
   let opts = ['A', 'B', 'C', 'D'].map(k => ({ k, t: q[k.toLowerCase()] })).filter(o => o.t);
   if (!opts.some(o => FIXED_ORDER.test(o.t))) opts = shuffle(opts);
@@ -520,7 +529,7 @@ API.setOutfit = async (ctx, cred, want) => {
 /* ---------- 老師 ---------- */
 
 function classOut(c) {
-  return { code: c.code, name: c.name, grade: c.grade, sem: c.sem, version: c.version || COMMON, status: c.status, units: jsonp(c.units, []), exam: { name: c.exam_name, date: c.exam_date, units: jsonp(c.exam_units, []) } };
+  return { code: c.code, name: c.name, grade: c.grade, sem: c.sem, version: c.version || COMMON, status: c.status, units: jsonp(c.units, []), exam: { name: c.exam_name, date: c.exam_date, units: jsonp(c.exam_units, []) }, notice: c.notice || '', mission: c.mission || '' };
 }
 
 async function versions(ctx) {
@@ -579,6 +588,7 @@ API.tDashboard = async (ctx, pw, code) => {
   }));
   return {
     cls: classOut(cls), rate: rt, badgeTotal: BADGES.length,
+    openReports: (await ctx.first("SELECT COUNT(DISTINCT qid) AS n FROM reports WHERE status = 'open'")).n,
     students: students.map(s => {
       const stamps = s.stamps - s.stamps_redeemed, coinsPending = s.earned - s.coins_redeemed;
       const coinPts = rt.coinsPerPoint > 0 ? Math.floor(coinsPending / rt.coinsPerPoint) : 0;
@@ -620,8 +630,10 @@ API.tSaveClass = async (ctx, pw, code, data) => {
     c.exam_date = d;
     c.exam_units = JSON.stringify((data.exam.units || []).map(x => str(x, 200)).slice(0, 500));
   }
-  await ctx.run('UPDATE classes SET name=?, grade=?, sem=?, version=?, units=?, status=?, exam_name=?, exam_date=?, exam_units=? WHERE code=?',
-    c.name, c.grade, c.sem, c.version, c.units, c.status, c.exam_name, c.exam_date, c.exam_units, c.code);
+  if (data.notice !== undefined) c.notice = str(data.notice, 120);
+  if (data.mission !== undefined) c.mission = SUBJECTS.concat(['錯題', '綜合', '段考']).includes(data.mission) ? data.mission : '';
+  await ctx.run('UPDATE classes SET name=?, grade=?, sem=?, version=?, units=?, status=?, exam_name=?, exam_date=?, exam_units=?, notice=?, mission=? WHERE code=?',
+    c.name, c.grade, c.sem, c.version, c.units, c.status, c.exam_name, c.exam_date, c.exam_units, c.notice || '', c.mission || '', c.code);
   return classOut(c);
 };
 
@@ -748,12 +760,12 @@ function qFromRow(v, id, source) {
     concept: str(v['觀念'], 60), type: v['題型'], text: str(v['題目'], 1000),
     a: str(v['選項A'], 300), b: str(v['選項B'], 300), c: str(v['選項C'], 300), d: str(v['選項D'], 300),
     answer: v['題型'] === '選擇' ? v['答案'].toUpperCase() : v['題型'] === '是非' ? tf(v['答案']) : str(v['答案'], 300),
-    explain: str(v['解析'], 500), passage: str(v['情境'], 3000), source: str(source, 10) || '老師'
+    explain: str(v['解析'], 500), passage: str(v['情境'], 3000), image: '', source: str(source, 10) || '老師'
   };
   q.unit_key = unitKey(q);
   return q;
 }
-const Q_COLS = ['id', 'version', 'grade', 'sem', 'subject', 'unit', 'unit_key', 'concept', 'type', 'text', 'a', 'b', 'c', 'd', 'answer', 'explain', 'passage', 'source', 'enabled', 'created'];
+const Q_COLS = ['id', 'version', 'grade', 'sem', 'subject', 'unit', 'unit_key', 'concept', 'type', 'text', 'a', 'b', 'c', 'd', 'answer', 'explain', 'passage', 'image', 'source', 'enabled', 'created'];
 
 function parseTable(text) {
   const sep = text.indexOf('\t') >= 0 ? '\t' : ',';
@@ -822,9 +834,11 @@ API.tSaveQuestion = async (ctx, pw, data) => {
   if (msg) fail(msg);
   const id = str(data.id, 40);
   const q = qFromRow(v, id || ('Q' + Date.now().toString(36).toUpperCase()), data.source || '老師');
+  q.image = String(data.image || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+  if (q.image && !(await ctx.first('SELECT id FROM images WHERE id = ?', q.image))) fail('找不到這張圖片，請重新上傳。');
   if (id) {
-    const r = await ctx.run(`UPDATE questions SET version=?, grade=?, sem=?, subject=?, unit=?, unit_key=?, concept=?, type=?, text=?, a=?, b=?, c=?, d=?, answer=?, explain=?, passage=? WHERE id=?`,
-      q.version, q.grade, q.sem, q.subject, q.unit, q.unit_key, q.concept, q.type, q.text, q.a, q.b, q.c, q.d, q.answer, q.explain, q.passage, id);
+    const r = await ctx.run(`UPDATE questions SET version=?, grade=?, sem=?, subject=?, unit=?, unit_key=?, concept=?, type=?, text=?, a=?, b=?, c=?, d=?, answer=?, explain=?, passage=?, image=? WHERE id=?`,
+      q.version, q.grade, q.sem, q.subject, q.unit, q.unit_key, q.concept, q.type, q.text, q.a, q.b, q.c, q.d, q.answer, q.explain, q.passage, q.image, id);
     if (!r.meta.changes) fail('找不到這一題。');
   } else {
     q.enabled = 1; q.created = today();
@@ -853,12 +867,71 @@ API.tDeleteQuestions = async (ctx, pw, ids) => {
   return { deleted: JSON.parse(list).length - used.length, disabled: used.length };
 };
 
+/* ---------- 圖片 ---------- */
+
+/** 上傳題目圖片：前端先縮小成 JPEG/PNG，再以 data URL 傳上來 */
+API.tUploadImage = async (ctx, pw, dataUrl) => {
+  await checkPw(ctx, pw);
+  const m = /^data:(image\/(?:jpeg|png|webp|gif));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m) fail('圖片格式不對，請用 JPG 或 PNG。');
+  if (m[2].length > 1.4e6) fail('圖片太大了，請換小一點的圖。');
+  const id = 'I' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
+  await ctx.run('INSERT INTO images (id, mime, data, created) VALUES (?,?,?,?)', id, m[1], m[2], today());
+  return { id, url: '/img/' + id };
+};
+
+/* ---------- 學生回報題目 ---------- */
+
+const REPORT_REASONS = ['答案好像錯了', '題目看不懂', '選項有問題', '圖片看不清楚', '其他'];
+
+API.reportQuestion = async (ctx, cred, qid, reason, note) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  qid = str(qid, 40);
+  if (!REPORT_REASONS.includes(reason)) fail('請選一個原因。');
+  if (!(await ctx.first('SELECT id FROM questions WHERE id = ?', qid))) fail('找不到這一題。');
+  const dup = await ctx.first("SELECT id FROM reports WHERE class_code = ? AND seat = ? AND qid = ? AND status = 'open'", cls.code, s.seat, qid);
+  if (dup) return { already: true };
+  await ctx.run('INSERT INTO reports (ts, class_code, seat, qid, reason, note) VALUES (?,?,?,?,?,?)', stampNow(), cls.code, s.seat, qid, reason, str(note, 100));
+  return { ok: true };
+};
+
+API.tReports = async (ctx, pw) => {
+  await checkPw(ctx, pw);
+  const rows = await ctx.all(`SELECT r.qid, r.reason, r.note, r.ts, r.class_code, r.seat, q.* FROM reports r JOIN questions q ON q.id = r.qid
+    WHERE r.status = 'open' ORDER BY r.id`);
+  const by = {};
+  rows.forEach(r => {
+    const g = by[r.qid] = by[r.qid] || { q: Object.assign({}, r, { reason: undefined, note: undefined, ts: undefined, class_code: undefined, seat: undefined }), reports: [] };
+    g.reports.push({ reason: r.reason, note: r.note, ts: r.ts, who: r.class_code + ' ' + r.seat + ' 號' });
+  });
+  return Object.values(by).sort((a, b) => b.reports.length - a.reports.length);
+};
+
+API.tResolveReports = async (ctx, pw, qid) => {
+  await checkPw(ctx, pw);
+  await ctx.run("UPDATE reports SET status = 'done' WHERE qid = ? AND status = 'open'", str(qid, 40));
+  return true;
+};
+
+/* ---------- 徽章排行榜 ---------- */
+
+API.leaderboard = async (ctx, cred) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const set = await ctx.settings();
+  if (set.show_leaderboard === '0') fail('老師目前沒有開放排行榜。');
+  const rows = await ctx.all(`SELECT st.seat, st.nick, COUNT(b.badge) AS n, MAX(b.day) AS last FROM students st
+    LEFT JOIN badges b ON b.class_code = st.class_code AND b.seat = st.seat
+    WHERE st.class_code = ? AND st.pin <> '' GROUP BY st.seat ORDER BY n DESC, last ASC, st.seat`, cls.code);
+  let rank = 0, prev = -1;
+  return { total: BADGES.length, rows: rows.map((r, i) => { if (r.n !== prev) { rank = i + 1; prev = r.n; } return { rank, name: r.nick || (r.seat + ' 號'), n: r.n, me: r.seat === s.seat }; }) };
+};
+
 /* ---------- 設定與匯出 ---------- */
 
 API.tGetSettings = async (ctx, pw) => {
   await checkPw(ctx, pw);
   const s = await ctx.settings();
-  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), perMastery: num(s.per_mastery), customPw: !!s.teacher_pw_hash };
+  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), perMastery: num(s.per_mastery), showLeaderboard: s.show_leaderboard !== '0', customPw: !!s.teacher_pw_hash };
 };
 
 API.tSaveSettings = async (ctx, pw, data) => {
@@ -870,6 +943,7 @@ API.tSaveSettings = async (ctx, pw, data) => {
   if (data.passRatio !== undefined) stmts.push(put('pass_ratio', Math.min(1, Math.max(0.1, num(data.passRatio) || 0.7))));
   if (data.perStamp !== undefined) stmts.push(put('per_stamp', Math.min(100, Math.max(0, Math.floor(num(data.perStamp))))));
   if (data.coinsPerPoint !== undefined) stmts.push(put('coins_per_point', Math.min(10000, Math.max(0, Math.floor(num(data.coinsPerPoint))))));
+  if (data.showLeaderboard !== undefined) stmts.push(put('show_leaderboard', data.showLeaderboard ? '1' : '0'));
   if (data.perMastery !== undefined) stmts.push(put('per_mastery', Math.min(100, Math.max(0, Math.floor(num(data.perMastery))))));
   if (data.newPw !== undefined) {
     const np = String(data.newPw);

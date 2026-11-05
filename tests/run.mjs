@@ -332,6 +332,61 @@ try {
     assert.ok(await p.locator('.bcard.got').count() >= 2);
     assert.equal(await p.locator('.bcard').count(), 25);
   });
+  await step('老師公告與指定任務：學生地圖最上方出現公告，任務島排第一', async () => {
+    await t.click('[data-tab="tUnits"]');
+    await t.fill('#nText', '本週先練數學，記得去錯題礁！'); await t.selectOption('#nMission', '數學');
+    await t.click('#bSaveNotice'); await toastHas(t, '公告與任務已儲存');
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    assert.match(await p.textContent('#notice'), /本週先練數學/);
+    assert.equal(await p.getAttribute('#map .island:first-child', 'data-island'), '數學');
+    assert.match(await p.textContent('#map .island:first-child'), /老師的任務/);
+  });
+  await step('學生回報題目，老師在待檢查題目處理', async () => {
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.click('[data-island="社會"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
+    const q = await p.evaluate(() => round.qs[round.i]);
+    if (q.type === '填空') { await p.fill('#iFill', 'x'); await p.click('#fFill button'); } else await p.click('#qBody .opt >> nth=0');
+    await p.click('#bReport'); await p.click('.rchip[data-r="答案好像錯了"]');
+    await p.waitForFunction(() => document.querySelector('#rBox').textContent.includes('謝謝'));
+    const reps = (await call('tReports', PW)).ok;
+    const g = reps.find(x => x.q.id === q.id);
+    assert.ok(g && g.reports[0].reason === '答案好像錯了');
+    assert.ok((await call('tDashboard', PW, 'DEMO')).ok.openReports >= 1);
+    await t.reload(); await t.waitForSelector('#vApp:not(.hidden)');
+    await t.click('[data-tab="tBank"]'); await t.waitForSelector(`[data-rep-ok="${q.id}"]`);
+    await t.click(`[data-rep-ok="${q.id}"]`); await toastHas(t, '已標記沒問題');
+    assert.ok(!(await call('tReports', PW)).ok.some(x => x.q.id === q.id));
+  });
+  await step('圖片題：上傳、顯示在題目上方', async () => {
+    // 產生一張 300x200 的 PNG 檔，從編輯器上傳
+    const png = Buffer.from((await t.evaluate(() => { const c = document.createElement('canvas'); c.width = 300; c.height = 200; const g = c.getContext('2d'); g.fillStyle = '#7cc2ff'; g.fillRect(0, 0, 300, 200); return c.toDataURL('image/png'); })).split(',')[1], 'base64');
+    await t.fill('#fQ', '最高的山'); await t.click('#bFind'); await t.waitForFunction(() => document.querySelectorAll('#bankTbl tbody tr').length === 1);
+    await t.click('[data-edit]');
+    await t.setInputFiles('#qImgFile', { name: 'm.png', mimeType: 'image/png', buffer: png });
+    await t.waitForFunction(() => document.querySelector('#qImgMsg').textContent.includes('已附圖片'));
+    await t.click('#bSaveQ'); await toastHas(t, '題目已更新');
+    const q = (await call('tQuestions', PW, { q: '最高的山' })).ok.rows[0];
+    assert.ok(q.image);
+    const img = await fetch(BASE + '/img/' + q.image);
+    assert.equal(img.status, 200); assert.match(img.headers.get('content-type'), /image\/jpeg/);
+    const round = (await call('getRound', { code: 'DEMO', seat: 3, pin: '3333' }, '社會')).ok;
+    assert.equal(round.find(x => x.id === q.id).image, '/img/' + q.image);
+    assert.match((await call('tUploadImage', PW, 'data:text/html;base64,PGI+')).err, /格式/);
+  });
+  await step('徽章排行榜：只比徽章數，老師可以關掉', async () => {
+    const r = (await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
+    assert.equal(r.total, 25);
+    assert.ok(r.rows.some(x => x.me));
+    assert.ok(r.rows.every((x, i) => i === 0 || r.rows[i - 1].n >= x.n));
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.click('#bBadges'); await p.click('[data-bt="rank"]'); await p.waitForSelector('.rank li.me');
+    await call('tSaveSettings', PW, { showLeaderboard: false });
+    assert.match((await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).err, /沒有開放/);
+    await call('tSaveSettings', PW, { showLeaderboard: true });
+  });
   await step('題庫管理：查詢、編輯、停用、刪除', async () => {
     await t.click('[data-tab="tBank"]'); await t.waitForSelector('#bankTbl tbody tr');
     await t.fill('#fQ', '長度'); await t.click('#bFind'); await t.waitForFunction(() => document.querySelectorAll('#bankTbl tbody tr').length === 1);

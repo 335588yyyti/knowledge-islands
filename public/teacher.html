@@ -67,6 +67,8 @@ td.num,th.num{text-align:right}
 .copybox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .copybox code{background:var(--foam);padding:6px 10px;border-radius:6px;word-break:break-all;min-width:0}
 .login{max-width:380px;margin:12vh auto}
+.rep{border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+nav .pill{margin-left:4px}
 .guide h3{font-size:17px;margin:22px 0 8px;color:var(--sea-deep)}
 .guide ol,.guide ul{padding-left:22px;display:grid;gap:6px;margin:0;max-width:820px}
 .guide table{margin:4px 0}
@@ -109,7 +111,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <button role="tab" data-tab="tUnits">教學進度</button>
     <button role="tab" data-tab="tImport">題庫匯入</button>
     <button role="tab" data-tab="tMastery">精熟總覽</button>
-    <button role="tab" data-tab="tBank">題庫管理</button>
+    <button role="tab" data-tab="tBank">題庫管理 <span class="pill p-bad hidden" id="repTab"></span></button>
     <button role="tab" data-tab="tClass">班級管理</button>
     <button role="tab" data-tab="tGuide">📘 領航員手冊</button>
   </nav>
@@ -134,6 +136,13 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     </section>
 
     <section id="tUnits" class="hidden">
+      <div class="panel">
+        <h2>給學生的公告與任務</h2>
+        <p class="muted small">公告會顯示在學生地圖的最上方。指定任務的島會排到第一個，並標上「老師的任務」。不需要時清空、選「沒有任務」就好。</p>
+        <textarea id="nText" maxlength="120" placeholder="例如：本週重點是分數除法，先去錯題礁把錯題救回來！（最多 120 字）" style="min-height:70px;font-family:var(--f-body)"></textarea>
+        <div class="row" style="margin-top:8px"><label class="small">指定任務島 <select id="nMission"><option value="">沒有任務</option><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option><option value="錯題">錯題礁</option><option value="綜合">燈塔挑戰</option><option value="段考">段考衝刺島</option></select></label>
+          <button class="btn" id="bSaveNotice">儲存公告與任務</button></div>
+      </div>
       <div class="panel">
         <h2>已經教過的單元</h2>
         <p class="muted small">勾選的單元才會出現在學生的島上。每上完一課就來勾一下。這裡只列出這個班的課本版本（<b id="verLabel"></b>）和「通用」題目，版本可以在「班級管理」修改。</p>
@@ -201,6 +210,11 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     </section>
 
     <section id="tBank" class="hidden">
+      <div class="panel" id="repPanel">
+        <h2>待檢查題目 <span class="pill p-bad" id="repCount">0</span></h2>
+        <p class="muted small">學生答題後覺得「這題怪怪的」會回報到這裡（所有班級一起列）。檢查後可以修改、停用，或按「沒問題」關掉回報。</p>
+        <div id="repList"></div>
+      </div>
       <div class="panel">
         <div class="row" style="justify-content:space-between"><h2 style="margin:0">題庫管理</h2>
           <div class="row"><button class="btn2" id="bNewQ">新增一題</button><button class="btn2" id="bExpQ">匯出全部題目（Excel）</button></div></div>
@@ -224,6 +238,9 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <label class="small">題型 <select id="qType"><option>選擇</option><option>是非</option><option>填空</option></select></label>
         </div>
         <div class="row" style="margin-top:8px"><input id="qUnit" placeholder="單元" style="flex:1;min-width:160px"><input id="qConcept" placeholder="觀念（例如：通分）" style="flex:1;min-width:160px"></div>
+        <div class="row" style="margin:8px 0"><label class="btn2 sm" for="qImgFile" style="cursor:pointer">上傳圖片</label><input type="file" id="qImgFile" accept="image/*" class="hidden">
+          <span class="small muted" id="qImgMsg">題目可以附一張圖（數學圖形、實驗圖、地圖…），會顯示在題目上方。</span><button class="btn2 sm hidden" id="qImgDel" type="button">移除圖片</button></div>
+        <img id="qImgPrev" class="hidden" alt="題目圖片預覽" style="max-width:100%;max-height:240px;border-radius:10px;border:2px solid var(--line);margin-bottom:8px">
         <p><textarea id="qPass" placeholder="情境（素養題才需要：生活情境或閱讀材料，一般題留空）" style="min-height:70px;font-family:var(--f-body)"></textarea></p>
         <p><textarea id="qText" placeholder="題目" style="min-height:70px;font-family:var(--f-body)"></textarea></p>
         <div class="grid2" id="qOpts" style="gap:8px"><input id="qA" placeholder="選項A"><input id="qB" placeholder="選項B"><input id="qC" placeholder="選項C"><input id="qD" placeholder="選項D"></div>
@@ -270,6 +287,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row" style="margin-top:8px"><label class="small">1 個印章換 <input id="sStamp" type="number" min="0" style="width:60px"> 點</label>
             <label class="small">累積金幣每 <input id="sCoin" type="number" min="0" style="width:70px"> 枚換 1 點</label>
             <label class="small">每精熟 1 個單元換 <input id="sMastery" type="number" min="0" style="width:60px"> 點</label></div>
+          <div class="row" style="margin-top:8px"><label class="small"><input type="checkbox" id="sRank"> 學生可以看「全班徽章排行榜」（只比徽章數，顯示暱稱或座號）</label></div>
           <p class="muted small">換點比例填 0，代表那一項不換點。</p>
           <div class="row"><button class="btn2" id="bSaveSet">儲存設定</button></div>
           <h3>修改老師密碼</h3>
@@ -296,6 +314,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <table>
           <tr><th>什麼時候</th><th>做什麼</th><th>在哪裡</th></tr>
           <tr><td>上完一課</td><td>勾選新單元</td><td>教學進度</td></tr>
+          <tr><td>想引導學生</td><td>寫一句公告、指定任務島（例如這週先練數學）</td><td>教學進度 → 給學生的公告與任務</td></tr>
+          <tr><td>看到紅色數字</td><td>檢查學生回報的題目</td><td>題庫管理 → 待檢查題目</td></tr>
           <tr><td>每天／每週</td><td>看誰完成了、換點數、複製清單貼到集點系統</td><td>學生與加點</td></tr>
           <tr><td>每週</td><td>看全班卡在哪個單元、哪個觀念，找時間全班講解或個別指導</td><td>精熟總覽、學生與加點下方</td></tr>
           <tr><td>段考前兩週</td><td>設定考試名稱、日期、範圍，學生會出現段考衝刺島</td><td>教學進度 → 段考衝刺</td></tr>
@@ -307,6 +327,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <li><b>自己出、從 Excel 貼</b>：「題庫匯入」右邊直接貼上，有標題列的話欄位順序可以不同。格式有錯的那一行會告訴你錯在哪。</li>
           <li><b>用 AI 出一般題</b>：左邊選版本、年級、科目、單元，可以貼上課本重點，按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼回右邊，來源選「AI」。</li>
           <li><b>用 AI 出素養題</b>：在科目旁邊的選單選「素養題」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。</li>
+          <li><b>圖片題</b>：在「題庫管理」編輯題目時按「上傳圖片」，手機拍照或截圖都可以，系統會自動縮小。圖片會顯示在題目上方。</li>
+          <li><b>學生回報</b>：學生答題後可以按「這題怪怪的？」回報。「題庫管理」上方的「待檢查題目」會列出來，分頁名稱旁的紅色數字是待檢查的題數。</li>
           <li><b>AI 出的題目一定要先看過</b>，特別是答案和數字。錯的題目可以在「題庫管理」修改或停用。</li>
           <li><b>觀念</b>欄很重要：同一個觀念用一樣的寫法（例如都寫「通分」），後台才能統計出學生的弱點觀念。</li>
           <li>題庫依「版本＋年級＋學期＋科目＋單元」分類，所有班級共用，下一屆同版本直接勾選就能用。</li>
@@ -340,6 +362,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <ul>
           <li>共 25 個徽章，分成四類：<b>好習慣</b>（連續或累積幾天拿到今日印章）、<b>精熟</b>（精熟幾個單元、某科島全部精熟、五科都精熟）、<b>成長</b>（把錯題重新答對、沒過關後再挑戰成功、回去複習該複習的單元）、<b>挑戰</b>（素養題答對、一回合全對、段考衝刺島過關）。</li>
           <li>刻意不做「答很多題」「賺很多金幣」這種只靠刷題就能拿的徽章。</li>
+          <li>學生的徽章牆裡有「全班徽章排行榜」，只比收集到的徽章數。不想開放的話，可以在「系統設定」關掉。</li>
           <li>每個徽章只拿一次。學生在「徽章牆」看得到還沒拿到的徽章要怎麼達成；「學生與加點」的表格有每位學生的徽章數，滑鼠移上去可以看是哪些。</li>
         </ul>
 
@@ -437,7 +460,7 @@ async function loadClass(code){
   catch(e){ toast(e.message); }
 }
 
-function renderAll(){ setVersions(DASH.versions); renderOverview(); renderUnits(); renderExam(); renderClass();
+function renderAll(){ setVersions(DASH.versions); renderOverview(); renderUnits(); renderExam(); renderClass(); renderNotice(); renderReportCount();
   setVer('aVer', CUR.version); setVer('iVer', CUR.version); }
 
 function renderOverview(){
@@ -543,6 +566,11 @@ function unitListHtml(cls, chosen, all){
       `<label><input type="checkbox" class="cU" data-sem="${esc(k)}" value="${esc(u.key)}" ${chosen.has(u.key) ? 'checked' : ''}>${esc(u.unit)} <span class="muted small">${u.count} 題</span></label>`).join('') + '</div>').join('') + '</div>').join('');
 }
 function checked(box){ return [...$(box).querySelectorAll('.cU:checked')].map(c => c.value); }
+function renderNotice(){ $('nText').value = CUR.notice || ''; $('nMission').value = CUR.mission || ''; }
+$('bSaveNotice').addEventListener('click', async () => {
+  try{ CUR = await api('tSaveClass', PW, CUR.code, {notice:$('nText').value.trim(), mission:$('nMission').value}); toast('公告與任務已儲存，學生重新整理就會看到'); }catch(e){ toast(e.message); }
+});
+
 function renderUnits(){
   $('verLabel').textContent = CUR.version;
   $('unitBox').innerHTML = unitListHtml(CUR, new Set(CUR.units), $('showAllVer').checked);
@@ -702,6 +730,39 @@ async function loadMastery(){
   }catch(e){ toast(e.message); }
 }
 
+/* ---------- 待檢查題目（學生回報） ---------- */
+let REPORTS = [], fromReport = null;
+function renderReportCount(){
+  const n = DASH.openReports || 0;
+  $('repTab').textContent = n; $('repTab').classList.toggle('hidden', !n);
+}
+async function loadReports(){
+  try{
+    REPORTS = await api('tReports', PW);
+    $('repCount').textContent = REPORTS.length;
+    $('repTab').textContent = REPORTS.length; $('repTab').classList.toggle('hidden', !REPORTS.length);
+    $('repList').innerHTML = REPORTS.length ? REPORTS.map(g => {
+      const q = g.q, why = {};
+      g.reports.forEach(r => why[r.reason] = (why[r.reason] || 0) + 1);
+      return `<div class="rep"><div class="small muted">${esc(q.version)}・${q.grade}${esc(q.sem)}・${esc(q.subject)}・${esc(q.unit)}　${q.enabled ? '' : '<span class="pill p-mute">已停用</span>'}</div>
+        ${q.passage ? '<div class="small muted">情境：' + esc(q.passage).slice(0, 80) + (q.passage.length > 80 ? '…' : '') + '</div>' : ''}
+        <div><b>${esc(q.text)}</b>${q.image ? ' <span class="pill p-warn">有圖</span>' : ''}</div>
+        <div class="small">${q.type === '選擇' ? ['A','B','C','D'].map(k => q[k.toLowerCase()] ? k + '. ' + esc(q[k.toLowerCase()]) : '').filter(Boolean).join('　') + '<br>' : ''}答案：<b>${esc(q.answer)}</b>${q.explain ? '　解析：' + esc(q.explain) : ''}</div>
+        <div class="small" style="margin-top:4px">${Object.keys(why).map(k => `<span class="pill p-warn">${esc(k)} × ${why[k]}</span>`).join(' ')} <span class="muted">${esc(g.reports.map(r => r.who).join('、'))}</span></div>
+        <div class="row" style="margin-top:6px"><button class="btn2 sm" data-rep-edit="${esc(q.id)}">修改</button><button class="btn2 sm" data-rep-off="${esc(q.id)}">停用這題</button><button class="btn2 sm" data-rep-ok="${esc(q.id)}">沒問題</button></div></div>`;
+    }).join('') : '<p class="muted">目前沒有待檢查的題目。</p>';
+  }catch(e){ toast(e.message); }
+}
+$('repList').addEventListener('click', async e => {
+  const ed = e.target.closest('[data-rep-edit]'), off = e.target.closest('[data-rep-off]'), ok = e.target.closest('[data-rep-ok]');
+  try{
+    if (ed){ fromReport = ed.dataset.repEdit; openEditor(REPORTS.find(g => g.q.id === fromReport).q); return; }
+    if (off){ await api('tSetEnabled', PW, [off.dataset.repOff], false); await api('tResolveReports', PW, off.dataset.repOff); toast('已停用，回報已處理'); }
+    if (ok){ await api('tResolveReports', PW, ok.dataset.repOk); toast('已標記沒問題'); }
+    if (off || ok){ loadReports(); refreshUnits(); }
+  }catch(err){ toast(err.message); }
+});
+
 /* ---------- 題庫管理 ---------- */
 let BANK = [], editing = null;
 function fillBankFilters(){
@@ -726,7 +787,7 @@ async function loadBank(){
       BANK.map(q => `<tr><td><input type="checkbox" class="cQ" value="${esc(q.id)}"></td>
         <td>${q.enabled ? '<span class="pill p-ok">啟用</span>' : '<span class="pill p-mute">停用</span>'}</td>
         <td class="small">${esc(q.version)}・${q.grade}${esc(q.sem)}・${esc(q.subject)}<br>${esc(q.unit)}</td><td>${esc(q.type)}</td>
-        <td style="white-space:normal;min-width:240px">${q.passage ? '<span class="pill p-warn" title="' + esc(q.passage) + '">素養</span> ' : ''}${esc(q.text)}</td><td>${esc(q.answer)}</td><td class="small">${esc(q.concept)}</td>
+        <td style="white-space:normal;min-width:240px">${q.passage ? '<span class="pill p-warn" title="' + esc(q.passage) + '">素養</span> ' : ''}${q.image ? '<span class="pill p-ok">圖</span> ' : ''}${esc(q.text)}</td><td>${esc(q.answer)}</td><td class="small">${esc(q.concept)}</td>
         <td><button class="btn2 sm" data-edit="${esc(q.id)}">編輯</button></td></tr>`).join('') + '</tbody>';
     $('qAll').onchange = e => document.querySelectorAll('.cQ').forEach(c => c.checked = e.target.checked);
   }catch(e){ toast(e.message); }
@@ -756,9 +817,40 @@ function openEditor(q){
   const d = q || {version: $('fVer').value || CUR.version, grade: CUR.grade, sem: CUR.sem, subject: $('fSubj').value || '數學', type:'選擇'};
   Object.keys(QF).forEach(k => { if (k !== '版本') $(QF[k]).value = d[QK[k]] == null ? '' : String(d[QK[k]]); });
   setVer('qVer', d.version || '通用');
+  setImage(d.image || '');
   $('qErr').textContent = ''; typeHint();
   $('qEditor').classList.remove('hidden'); $('qEditor').scrollIntoView({behavior:'smooth'});
 }
+/* 題目圖片：在瀏覽器先縮小到最長邊 1200 像素再上傳 */
+let qImage = '';
+function setImage(id){
+  qImage = id || '';
+  $('qImgPrev').classList.toggle('hidden', !qImage); $('qImgDel').classList.toggle('hidden', !qImage);
+  if (qImage) $('qImgPrev').src = '/img/' + qImage; else $('qImgPrev').removeAttribute('src');
+  $('qImgMsg').textContent = qImage ? '已附圖片。' : '題目可以附一張圖（數學圖形、實驗圖、地圖…），會顯示在題目上方。';
+}
+function shrink(file){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1200 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      res(c.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = () => rej(new Error('讀不到這張圖片，請換一張。'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+$('qImgFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  $('qImgMsg').textContent = '上傳中…';
+  try{ const r = await api('tUploadImage', PW, await shrink(f)); setImage(r.id); }
+  catch(err){ $('qImgMsg').textContent = err.message; }
+});
+$('qImgDel').addEventListener('click', () => setImage(''));
+
 function typeHint(){
   const t = $('qType').value;
   $('qOpts').classList.toggle('hidden', t !== '選擇');
@@ -771,7 +863,12 @@ $('bSaveQ').addEventListener('click', async () => {
   const data = {id: editing};
   Object.keys(QF).forEach(k => data[k] = $(QF[k]).value.trim());
   if (data['題型'] !== '選擇') ['選項A','選項B','選項C','選項D'].forEach(k => data[k] = '');
-  try{ await api('tSaveQuestion', PW, data); toast(editing ? '題目已更新' : '已新增一題，記得到「教學進度」確認單元有勾選'); $('qEditor').classList.add('hidden'); await refreshUnits(); loadBank(); }
+  data.image = qImage;
+  try{
+    await api('tSaveQuestion', PW, data);
+    if (fromReport && fromReport === editing){ await api('tResolveReports', PW, fromReport); fromReport = null; loadReports(); }
+    toast(editing ? '題目已更新' : '已新增一題，記得到「教學進度」確認單元有勾選'); $('qEditor').classList.add('hidden'); await refreshUnits(); loadBank();
+  }
   catch(e){ $('qErr').textContent = e.message; }
 });
 
@@ -801,11 +898,11 @@ $('bExpQ').addEventListener('click', () => exportData('questions'));
 
 /* ---------- 系統設定 ---------- */
 async function loadSettings(){
-  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; $('sMastery').value = s.perMastery; }catch(e){}
+  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; $('sMastery').value = s.perMastery; $('sRank').checked = s.showLeaderboard; }catch(e){}
 }
 $('bSaveSet').addEventListener('click', async () => {
   $('setErr').textContent = '';
-  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value, perMastery:$('sMastery').value}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
+  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value, perMastery:$('sMastery').value, showLeaderboard:$('sRank').checked}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
   catch(e){ $('setErr').textContent = e.message; }
 });
 $('bSavePw').addEventListener('click', async () => {
@@ -822,6 +919,7 @@ $('bLogout').addEventListener('click', () => {
 
 function switchTab(id){
   if (id === 'tMastery' && CUR) loadMastery();
+  if (id === 'tBank') loadReports();
   if (id === 'tBank' && DASH){ fillBankFilters(); if (!BANK.length) loadBank(); }
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
   ['tOverview','tUnits','tImport','tMastery','tBank','tClass','tGuide'].forEach(t => $(t).classList.toggle('hidden', t !== id));

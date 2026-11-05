@@ -204,6 +204,26 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .bcard.got .bi{filter:none;opacity:1}
 .badge.newb{background:#fff8e6;border-color:var(--butter);animation:newb .5s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes newb{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.notice{background:#fff;border:3px solid var(--butter);border-radius:22px;padding:10px 16px;margin-bottom:14px;font-weight:600;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.notice b{color:#c98d12;white-space:nowrap}
+.island{position:relative}
+.island.mission{background:rgba(255,255,255,.75);box-shadow:0 0 0 4px var(--butter)}
+.ribbon{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--peach);color:#fff;font-size:13px;font-weight:800;border-radius:999px;padding:2px 12px;white-space:nowrap;z-index:1}
+.qimg.big{max-height:none;cursor:zoom-out}
+.qimg{cursor:zoom-in;display:block;max-width:100%;max-height:50vh;margin:0 auto 14px;border-radius:16px;border:3px solid #f1e3c8;background:#fff}
+.report{margin-top:10px;text-align:right}
+.rlink{background:none;color:var(--muted);font-size:14px;font-weight:600;text-decoration:underline;padding:4px}
+.rbox{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end;align-items:center;margin-top:6px;font-size:14px;font-weight:600}
+.rchip{background:#fff;border:2px solid #f1e3c8;border-radius:999px;padding:4px 12px;font-size:14px;font-weight:700}
+.rchip:hover{border-color:var(--peach)}
+.btabs{display:flex;gap:8px;margin:14px 0 4px;flex-wrap:wrap}
+.btabs .on{background:var(--peach);color:#fff;box-shadow:0 4px 0 var(--peach-d)}
+.rank{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:6px}
+.rank li{display:flex;align-items:center;gap:12px;background:#fff;border-radius:16px;padding:8px 14px;font-weight:700}
+.rank li.me{background:#fff8e6;box-shadow:0 0 0 3px var(--butter)}
+.rank .rk{width:34px;text-align:center;font-size:20px}
+.rank .rn{flex:1;min-width:0}
+.rank .rc{font-variant-numeric:tabular-nums}
 .teacher-link{text-align:center;margin:4px 0 0;font-size:14px}
 .teacher-link a{color:var(--ink);opacity:.6;font-weight:600}
 .teacher-link a:hover{opacity:1}
@@ -258,6 +278,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
     </div>
     <div class="talk today"><span class="bob" id="mapMascot"></span>
       <div class="say"><div class="seal" id="todaySeal">今日</div><span id="todayText"></span></div></div>
+    <div class="notice hidden" id="notice"></div>
     <div class="exam hidden" id="exam"></div>
     <div class="map" id="map"></div>
     <div class="foot"><button class="btn soft small" id="bLogout">登出</button></div>
@@ -268,6 +289,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
     <div class="card">
       <div class="qtag" id="qTag"></div>
       <div class="passage hidden" id="qPassage"></div>
+      <img class="qimg hidden" id="qImg" alt="題目圖片">
       <p class="qtext" id="qText"></p>
       <div id="qBody"></div>
       <div id="qFb"></div>
@@ -303,6 +325,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li><b>素養題</b>會先給你一段「閱讀情境」，同一段情境會連續出好幾題。先把情境讀完，答案就藏在裡面！</li>
         <li>選擇題的選項每次順序都不一樣，所以要真的看懂，不能只背「答案是 B」喔。</li>
         <li>答錯沒關係，波波會告訴你正確答案和原因。</li>
+        <li>覺得題目怪怪的（答案好像錯了、看不懂）？答完後按「<b>這題怪怪的？</b>」告訴老師。</li>
+        <li>島上標著「<b>老師的任務</b>」的，是老師希望你先去的島喔！</li>
       </ul>
 
       <h3>🪙 第 4 站：寶物怎麼來</h3>
@@ -328,6 +352,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>徽章要做到一件<b>有意義的事</b>才拿得到，例如連續 7 天都練習、精熟 5 個單元、把 10 題錯題重新答對、沒過關之後再挑戰成功。</li>
         <li>按地圖上的「<b>徽章牆</b>」看全部徽章。灰色的還沒拿到，卡片上寫著要怎麼達成。</li>
         <li>每個徽章只拿一次，拿到後會一直留著。</li>
+        <li>徽章牆裡有「全班徽章排行榜」，比的是誰收集的徽章多。</li>
       </ul>
 
       <h3>👕 第 7 站：波波的衣櫃</h3>
@@ -351,7 +376,9 @@ label{display:block;font-weight:800;margin-bottom:6px}
     <div class="qtop"><h2 style="flex:1">徽章牆</h2><button class="btn soft small" id="bBadgesBack">回地圖</button></div>
     <div class="card">
       <div class="talk"><span class="bob" id="bMascot"></span><div class="say" id="badgeSay"></div></div>
+      <div class="btabs" id="bTabs"><button class="btn soft small on" data-bt="wall" type="button">我的徽章</button><button class="btn soft small" data-bt="rank" type="button">🏆 全班徽章排行榜</button></div>
       <div id="badgeWall"></div>
+      <div id="badgeRank" class="hidden"></div>
     </div>
   </section>
 
@@ -559,6 +586,15 @@ function renderMap(){
   const any = SUBJ.some(sj => (s.islands[sj.k]||{}).total);
   cards.push(`<button class="island${any?'':' locked'}" data-island="綜合">${lighthouseSvg()}<div class="name">燈塔挑戰</div><div class="meta">各科混合出題</div></button>`);
   $('map').innerHTML = cards.join('');
+  // 老師公告與指定任務
+  $('notice').classList.toggle('hidden', !s.notice);
+  if (s.notice) $('notice').innerHTML = '<b>📣 老師說</b>' + esc(s.notice);
+  const mi = s.mission && document.querySelector(`#map [data-island="${s.mission}"]`);
+  if (mi && !mi.classList.contains('locked')){
+    mi.classList.add('mission');
+    mi.insertAdjacentHTML('afterbegin', '<span class="ribbon">老師的任務</span>');
+    $('map').prepend(mi);
+  }
 }
 
 $('map').addEventListener('click', e => {
@@ -593,6 +629,9 @@ function renderQ(){
     $('qPassage').scrollTop = 0;
   }
   if (q.passage) $('qTag').textContent += '・素養題';
+  $('qImg').classList.remove('big');
+  $('qImg').classList.toggle('hidden', !q.image);
+  if (q.image) $('qImg').src = q.image; else $('qImg').removeAttribute('src');
   $('qText').textContent = q.text;
   $('qFb').innerHTML = ''; $('bNext').classList.add('hidden');
   if (q.type === '選擇'){
@@ -613,6 +652,7 @@ function renderDots(){
   }).join('');
 }
 
+$('qImg').addEventListener('click', () => $('qImg').classList.toggle('big'));  // 點圖片放大／縮小
 $('qBody').addEventListener('click', e => {
   const b = e.target.closest('.opt');
   if (b && !b.disabled) answer(b.dataset.a, b);
@@ -648,6 +688,16 @@ function answer(a, el){
   $('qFb').innerHTML = `<div class="fb ${ok?'ok':'no'}"><div class="talk"><span class="bob">${mascot(ok ? 'cheer' : 'oops')}</span><div class="say">
     <h3>${ok ? pick(YAY) : pick(OOPS)}</h3>
     ${ok ? '' : '<p>正確答案：<b>' + esc(answerLabel(q)) + '</b></p>'}${q.explain ? '<p>' + esc(q.explain) + '</p>' : ''}</div></div></div>`;
+  $('qFb').insertAdjacentHTML('beforeend', `<div class="report"><button class="rlink" id="bReport" type="button">這題怪怪的？</button><div class="rbox hidden" id="rBox">
+    <span>哪裡怪怪的？</span>${['答案好像錯了','題目看不懂','選項有問題','圖片看不清楚','其他'].map(r => `<button type="button" class="rchip" data-r="${r}">${r}</button>`).join('')}</div></div>`);
+  $('bReport').onclick = () => { $('rBox').classList.toggle('hidden'); };
+  $('rBox').onclick = async e => {
+    const c = e.target.closest('.rchip'); if (!c) return;
+    $('rBox').innerHTML = '<span>送出中…</span>';
+    try{ const r = await api('reportQuestion', cred, q.id, c.dataset.r, ''); $('rBox').innerHTML = '<span>' + (r.already ? '你已經回報過這題了，老師會檢查。' : '謝謝你！老師會檢查這一題。') + '</span>'; }
+    catch(err){ $('rBox').innerHTML = '<span>' + esc(err.message) + '</span>'; }
+    $('bReport').disabled = true;
+  };
   const last = round.i === round.qs.length - 1;
   $('bNext').textContent = last ? '看結果' : '下一題';
   $('bNext').classList.remove('hidden'); $('bNext').focus();
@@ -757,7 +807,21 @@ function renderBadges(){
   $('badgeWall').innerHTML = BADGE_GROUPS.map(([g, sub]) => `<h3>${g} <small class="gsub">${sub}</small></h3><div class="bwall">` +
     list.filter(b => b.group === g).map(b => `<div class="bcard${have.has(b.id) ? ' got' : ''}"><span class="bi" aria-hidden="true">${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small>${have.has(b.id) ? '' : '<em>還沒拿到</em>'}</div>`).join('') + '</div>').join('');
 }
-$('bBadges').addEventListener('click', () => { renderBadges(); show('vBadges'); });
+$('bBadges').addEventListener('click', () => { renderBadges(); badgeTab('wall'); $('bTabs').classList.toggle('hidden', !state.showLeaderboard); show('vBadges'); });
+function badgeTab(t){
+  document.querySelectorAll('#bTabs [data-bt]').forEach(b => b.classList.toggle('on', b.dataset.bt === t));
+  $('badgeWall').classList.toggle('hidden', t !== 'wall'); $('badgeRank').classList.toggle('hidden', t !== 'rank');
+  if (t === 'rank') loadRank();
+}
+$('bTabs').addEventListener('click', e => { const b = e.target.closest('[data-bt]'); if (b) badgeTab(b.dataset.bt); });
+async function loadRank(){
+  $('badgeRank').innerHTML = '<p>載入中…</p>';
+  try{
+    const r = await api('leaderboard', cred);
+    $('badgeRank').innerHTML = '<p class="hint">比的是收集到幾個徽章。每個徽章都要做到有意義的事，慢慢累積就會往上爬！</p><ol class="rank">' + r.rows.map(x =>
+      `<li class="${x.me ? 'me' : ''}"><span class="rk">${!x.n ? '－' : x.rank <= 3 ? ['🥇','🥈','🥉'][x.rank - 1] : x.rank}</span><span class="rn">${esc(x.name)}${x.me ? '（你）' : ''}</span><span class="rc">🏅 ${x.n}</span></li>`).join('') + '</ol>';
+  }catch(e){ $('badgeRank').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
 $('bBadgesBack').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 航海手冊 ---------- */
