@@ -279,6 +279,7 @@ $('fLogin').addEventListener('submit', async e => {
 function setVersions(v){ $('verList').innerHTML = (v || []).map(x => `<option value="${esc(x)}">`).join(''); }
 function afterLogin(r){
   CLASSES = r.classes; URL0 = r.url; setVersions(r.versions);
+  if (!$('sRound').value) loadSettings();
   $('vLogin').classList.add('hidden'); $('vApp').classList.remove('hidden');
   const active = CLASSES.filter(c => c.status === '進行中');
   $('selClass').innerHTML = CLASSES.map(c => `<option value="${esc(c.code)}">${esc(c.name)}（${esc(c.code)}・${esc(c.version)}）${c.status === '進行中' ? '' : '・已封存'}</option>`).join('');
@@ -628,7 +629,6 @@ $('bSavePw').addEventListener('click', async () => {
 
 function switchTab(id){
   if (id === 'tBank' && DASH){ fillBankFilters(); if (!BANK.length) loadBank(); }
-  if (id === 'tClass') loadSettings();
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
   ['tOverview','tUnits','tImport','tBank','tClass'].forEach(t => $(t).classList.toggle('hidden', t !== id));
 }

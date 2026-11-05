@@ -29,6 +29,8 @@ async function waitUp() {
 const call = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', body: JSON.stringify({ args }), signal: AbortSignal.timeout(15000) })).json());
 
 let passed = 0;
+// 等畫面出現某段提示文字（取代固定等待時間，網路慢也不會誤判）
+const toastHas = (p, text) => p.waitForFunction(t => document.querySelector('#toast').textContent.includes(t), text);
 const pages = [];
 async function step(name, fn) {
   current = name;
@@ -148,16 +150,16 @@ try {
     assert.match(m, /成功匯入 3 題/); assert.match(m, /第 5 行/);
   });
   await step('班級改成南一版，只看得到南一和通用單元', async () => {
-    await t.click('[data-tab="tClass"]'); await t.fill('#eVer', '南一'); await t.click('#bSaveCls'); await t.waitForTimeout(400);
+    await t.click('[data-tab="tClass"]'); await t.fill('#eVer', '南一'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
     await t.click('[data-tab="tUnits"]');
     const groups = await t.$$eval('#unitBox .semhead h3', e => e.map(x => x.textContent));
     assert.deepEqual(groups, ['南一版・6年級上學期', '通用・6年級上學期']);
-    await t.click('#unitBox [data-all="南一版・6年級上學期"]'); await t.click('#bSaveUnits'); await t.waitForTimeout(400);
+    await t.click('#unitBox [data-all="南一版・6年級上學期"]'); await t.click('#bSaveUnits'); await toastHas(t, '進度已儲存');
   });
   await step('設定段考，學生地圖出現倒數和衝刺島', async () => {
     const d = new Date(Date.now() + 8 * 3600e3 + 8 * 864e5).toISOString().slice(0, 10);
     await t.fill('#exName', '第一次段考'); await t.fill('#exDate', d);
-    await t.click('#examBox [data-all="南一版・6年級上學期"]'); await t.click('#bSaveExam'); await t.waitForTimeout(400);
+    await t.click('#examBox [data-all="南一版・6年級上學期"]'); await t.click('#bSaveExam'); await toastHas(t, '考試設定已儲存');
     await s.reload(); await s.fill('#iSeat', '1'); await s.fill('#iPin', '1234'); await s.click('#bLogin'); await s.waitForSelector('#vMap:not(.hidden)');
     assert.match(await s.textContent('#exam'), /倒數8天/);
     const r = await play(s, '段考', [0, 1]);
@@ -178,9 +180,9 @@ try {
   });
   await step('系統設定與修改密碼', async () => {
     await t.click('[data-tab="tClass"]'); await t.waitForFunction(() => document.querySelector('#sRound').value !== '');
-    await t.fill('#sCoin', '10'); await t.click('#bSaveSet'); await t.waitForTimeout(400);
+    await t.fill('#sCoin', '10'); await t.click('#bSaveSet'); await toastHas(t, '設定已儲存');
     assert.equal((await call('tGetSettings', PW)).ok.coinsPerPoint, 10);
-    await t.fill('#sPw1', 'new-pass-1'); await t.fill('#sPw2', 'new-pass-1'); await t.click('#bSavePw'); await t.waitForTimeout(400);
+    await t.fill('#sPw1', 'new-pass-1'); await t.fill('#sPw2', 'new-pass-1'); await t.click('#bSavePw'); await toastHas(t, '老師密碼已修改');
     assert.ok((await call('tGetSettings', PW)).err);
     assert.ok((await call('tGetSettings', 'new-pass-1')).ok);
   });
@@ -190,7 +192,7 @@ try {
   });
   await step('建立新的一屆', async () => {
     await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.fill('#nVer', '康軒'); await t.fill('#nCount', '25');
-    await t.click('#bNewCls'); await t.waitForTimeout(800);
+    await t.click('#bNewCls'); await toastHas(t, '建立好了');
     assert.equal(await t.inputValue('#selClass'), '115A601');
     assert.equal((await call('tDashboard', 'new-pass-1', '115A601')).ok.students.length, 25);
   });
