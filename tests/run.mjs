@@ -254,7 +254,19 @@ try {
     let seen = false;
     for (let i = 0; i < 10 && !seen; i++) {
       const q = await p.evaluate(() => round.qs[round.i]);
-      if (q.passage) { seen = true; assert.match(await p.textContent('#qPassage'), /同樂會/); assert.match(await p.textContent('#qTag'), /素養題/); break; }
+      if (q.passage) {
+        seen = true;
+        assert.match(await p.textContent('#qPassage'), /同樂會/); assert.match(await p.textContent('#qTag'), /素養題/);
+        assert.match(await p.textContent('#qPassage'), /題組 1 \/ \d/);
+        // 答完按下一題：同一組的下一題還是看得到情境，而且畫面回到上面
+        const a1 = q.answer.split('|')[0];
+        if (q.type === '填空') { await p.fill('#iFill', a1); await p.click('#fFill button'); } else await p.click(`#qBody .opt[data-a="${a1}"]`);
+        await p.click('#bNext');
+        assert.match(await p.textContent('#qPassage'), /題組 2 \/ \d/);
+        assert.ok(await p.isVisible('#qPassage'));
+        assert.equal(await p.evaluate(() => scrollY), 0);
+        break;
+      }
       const a = q.answer.split('|')[0];
       if (q.type === '填空') { await p.fill('#iFill', a); await p.click('#fFill button'); } else await p.click(`#qBody .opt[data-a="${a}"]`);
       await p.click('#bNext');

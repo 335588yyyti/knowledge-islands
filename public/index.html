@@ -175,7 +175,10 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .rv{font-size:12px;font-weight:800;color:#c98d12;background:#fff4d6;border-radius:999px;padding:1px 8px;white-space:nowrap}
 .badge{display:inline-flex;gap:12px;align-items:center;text-align:left;background:#f1fbf6;border:3px solid var(--mint);border-radius:20px;padding:10px 18px;margin:4px 0 10px;font-size:15px}
 .badge > :first-child{font-size:40px}
-.passage{background:#fff;border:3px dashed #f1e3c8;border-radius:20px;padding:12px 16px;margin:0 0 14px;font-size:17px;line-height:1.75;white-space:normal}
+.passage{background:#fff;border:3px dashed #f1e3c8;border-radius:20px;padding:12px 16px;margin:0 0 14px;font-size:17px;line-height:1.75;white-space:normal;
+  position:sticky;top:calc(8px + env(safe-area-inset-top, 0px));z-index:2;max-height:45vh;overflow:auto;box-shadow:0 6px 12px -8px rgba(74,69,102,.25)}
+.passage .ph{display:flex;justify-content:space-between;gap:8px}
+.passage .ph span{background:var(--cream2);border-radius:999px;padding:0 10px;color:var(--ink)}
 .passage .ph{font-weight:800;font-size:14px;color:var(--muted);margin-bottom:4px}
 .passage .ph span{font-weight:600}
 .guide-btn{width:100%;margin-top:2px}
@@ -576,13 +579,19 @@ async function startRound(island){
 /* ---------- 答題 ---------- */
 function renderQ(){
   const q = round.qs[round.i];
+  window.scrollTo(0, 0);  // 換題時回到最上面，題組的情境一定看得到
   renderDots();
   const c = SC[q.subject] || SUBJ[0];
   $('qTag').style.background = c.d;
   $('qTag').textContent = q.subject + '・' + q.unit + '　' + (round.i + 1) + ' / ' + round.qs.length;
-  const prev = round.qs[round.i - 1];
+  // 題組：同一段情境每一題都顯示，標出這是第幾題
   $('qPassage').classList.toggle('hidden', !q.passage);
-  if (q.passage) $('qPassage').innerHTML = `<div class="ph">📖 閱讀情境${prev && prev.passage === q.passage ? '<span>（跟上一題同一篇）</span>' : ''}</div>` + esc(q.passage).replace(/\n/g, '<br>');
+  if (q.passage){
+    const group = round.qs.filter(x => x.passage === q.passage);
+    const pos = group.indexOf(q) + 1;
+    $('qPassage').innerHTML = `<div class="ph">📖 閱讀情境${group.length > 1 ? `<span>題組 ${pos} / ${group.length}</span>` : ''}</div><div class="pt">` + esc(q.passage).replace(/\n/g, '<br>') + '</div>';
+    $('qPassage').scrollTop = 0;
+  }
   if (q.passage) $('qTag').textContent += '・素養題';
   $('qText').textContent = q.text;
   $('qFb').innerHTML = ''; $('bNext').classList.add('hidden');
