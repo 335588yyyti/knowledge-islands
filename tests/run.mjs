@@ -44,7 +44,7 @@ async function step(name, fn) {
 
 try {
   await waitUp();
-  const browser = await chromium.launch({ env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' } });  // 中文檔名需要 UTF-8 語系
+  const browser = await chromium.launch({ channel: process.env.CI ? 'chrome' : undefined, env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' } });  // 中文檔名需要 UTF-8 語系
   const errors = [];
   const page = async (path, w = 900) => {
     const p = await browser.newPage({ viewport: { width: w, height: 1000 } });
@@ -260,6 +260,16 @@ try {
       await p.click('#bNext');
     }
     assert.ok(seen);
+  });
+  await step('AI 出題：選單可以選素養題，複製出素養題提示詞', async () => {
+    await t.click('[data-tab="tImport"]');
+    await t.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: BASE });
+    await t.selectOption('#aMode', 'literacy');
+    assert.match(await t.textContent('#aModeHint'), /生活情境/);
+    await t.fill('#aUnit', '分數除法'); await t.click('#bPrompt');
+    const clip = await t.evaluate(() => navigator.clipboard.readText());
+    assert.match(clip, /素養導向/); assert.match(clip, /情境/);
+    await t.selectOption('#aMode', 'normal');
   });
   await step('匯入素養題（第 15 欄是情境）', async () => {
     const pass = '小明家的花園長 6 公尺、寬 4 公尺。';

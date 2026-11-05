@@ -158,9 +158,9 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row"><select id="aVer" class="verSel" aria-label="版本"></select><select id="aGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
             <select id="aSem"><option>上</option><option>下</option></select>
             <select id="aSubj"><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select>
-            <input id="aCount" type="number" value="10" min="1" max="30" style="width:70px" aria-label="題數"></div>
-          <div class="row" style="margin-top:8px"><label class="small"><input type="radio" name="aMode" value="normal" checked> 一般題</label>
-            <label class="small"><input type="radio" name="aMode" value="literacy"> 素養題（生活情境＋題組）</label></div>
+            <select id="aMode" aria-label="題目類型"><option value="normal">一般題</option><option value="literacy">素養題</option></select>
+            <label class="small"><input id="aCount" type="number" value="10" min="1" max="30" style="width:64px" aria-label="題數"> 題</label></div>
+          <p class="small muted" id="aModeHint" style="margin:6px 0 0">一般題：一題一題獨立出題。</p>
           <p><input id="aUnit" placeholder="單元名稱，例如：第三課 分數除法" style="width:100%"></p>
           <textarea id="aNotes" placeholder="（選填）貼上課本重點、生字詞、老師筆記，AI 會依這些內容出題" style="min-height:120px;font-family:var(--f-body)"></textarea>
           <div class="row" style="margin-top:10px"><button class="btn2" id="bPrompt">複製提示詞</button><span class="small muted" id="promptMsg"></span></div>
@@ -306,7 +306,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <ul>
           <li><b>自己出、從 Excel 貼</b>：「題庫匯入」右邊直接貼上，有標題列的話欄位順序可以不同。格式有錯的那一行會告訴你錯在哪。</li>
           <li><b>用 AI 出一般題</b>：左邊選版本、年級、科目、單元，可以貼上課本重點，按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼回右邊，來源選「AI」。</li>
-          <li><b>用 AI 出素養題</b>：選「素養題（生活情境＋題組）」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。</li>
+          <li><b>用 AI 出素養題</b>：在科目旁邊的選單選「素養題」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。</li>
           <li><b>AI 出的題目一定要先看過</b>，特別是答案和數字。錯的題目可以在「題庫管理」修改或停用。</li>
           <li><b>觀念</b>欄很重要：同一個觀念用一樣的寫法（例如都寫「通分」），後台才能統計出學生的弱點觀念。</li>
           <li>題庫依「版本＋年級＋學期＋科目＋單元」分類，所有班級共用，下一屆同版本直接勾選就能用。</li>
@@ -580,10 +580,15 @@ $('bSaveUnits').addEventListener('click', async () => {
   try{ CUR = await api('tSaveClass', PW, CUR.code, {units}); toast('進度已儲存，學生重新整理就會看到'); }catch(e){ toast(e.message); }
 });
 
+$('aMode').addEventListener('change', () => {
+  $('aModeHint').textContent = $('aMode').value === 'literacy'
+    ? '素養題：AI 會先寫一段生活情境，再出 2～4 題題組（題數約 3 題一組）。'
+    : '一般題：一題一題獨立出題。';
+});
 $('bPrompt').addEventListener('click', () => {
   const v = $('aVer').value.trim() || CUR.version || '通用';
   const g = $('aGrade').value, s = $('aSem').value, sj = $('aSubj').value, u = $('aUnit').value.trim() || '（單元名稱）', n = $('aCount').value || 10, notes = $('aNotes').value.trim();
-  const literacy = document.querySelector('input[name="aMode"]:checked').value === 'literacy';
+  const literacy = $('aMode').value === 'literacy';
   if (literacy){
     const groups = Math.max(1, Math.round(n / 3));
     const lp = `請幫我出 ${groups} 組「素養導向」題組，給臺灣國小${g}年級${s}學期「${sj}」科、單元「${u}」${v !== '通用' ? '（' + v + '版課本）' : ''}，難度符合 108 課綱，用詞適合${g}年級學生。

@@ -23,7 +23,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      # GitHub 的機器已經裝好 Google Chrome，測試直接用它，不用每次下載瀏覽器
       - run: npm test
       - uses: actions/upload-artifact@v4
         if: failure()
