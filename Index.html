@@ -229,7 +229,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <div><p id="shopMsg" style="margin:0 0 12px;font-weight:600">點選下面的東西，先幫波波試穿看看！</p><button class="btn" id="bShopAct" disabled>選一樣東西</button></div>
       </div>
       <div id="shopList"></div>
-      <p class="tips">金幣是答對題目賺來的，每答對 1 題得 1 枚。花掉的金幣不會影響老師的加點。</p>
+      <p class="tips">金幣是答對題目賺來的，每答對 1 題得 1 枚。老師加點看的是你「累積賺到」的金幣，在這裡花掉也不會少算喔！<br>你已經累積賺到 <b id="shopEarned">0</b> 枚金幣。</p>
     </div>
   </section>
 
@@ -536,6 +536,7 @@ function renderShop(){
   const shop = state.shop, owned = new Set(state.owned);
   const has = id => shop[id].price === 0 || owned.has(id);
   $('shopCoins').textContent = state.coins;
+  $('shopEarned').textContent = state.earned;
   $('shopStage').innerHTML = mascot('cheer', trying);
   $('shopList').innerHTML = SLOTS.map(([slot, label]) => `<h3>${label}</h3><div class="items">` +
     Object.keys(shop).filter(id => shop[id].slot === slot).map(id => {

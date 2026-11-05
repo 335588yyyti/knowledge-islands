@@ -4,10 +4,11 @@
  * 試算表就是資料庫：
  *   設定      老師密碼、每回合題數、過關門檻
  *   班級      每一屆／每一班一列：課本版本、已教單元、段考設定
- *   學生      每位學生一列：金幣、星星、印章、連續天數、波波的裝扮
+ *   學生      每位學生一列：金幣餘額、累積金幣、星星、印章、連續天數、波波的裝扮
+ *             （金幣餘額可以在商店花掉；加點看「累積金幣」，花掉不影響）
  *   題庫      所有題目，依 版本＋年級＋學期＋科目＋單元 分類，每一屆共用；「觀念」欄用來診斷弱點
  *   作答紀錄  每一題作答都記一列，用來算錯題本、弱點單元與弱點觀念
- *   加點紀錄  老師兌換印章（日常加點）的紀錄
+ *   加點紀錄  老師兌換印章／累積金幣成點數（日常加點）的紀錄
  *
  * 第一次使用：在 Apps Script 編輯器選擇函式 setup 並執行。
  * 更新程式後也請再執行一次 setup，它會補上新版需要的欄位，不會動到原本的資料。
@@ -16,10 +17,10 @@
 const SH = { SET: '設定', CLS: '班級', STU: '學生', Q: '題庫', LOG: '作答紀錄', PTS: '加點紀錄' };
 const HEAD = {
   '班級': ['班級代碼', '班級名稱', '年級', '學期', '版本', '已教單元', '狀態', '建立日期', '考試名稱', '考試日期', '考試範圍'],
-  '學生': ['班級代碼', '座號', '暱稱', '密碼', '金幣', '星星', '印章', '已兌換印章', '連續天數', '最後完成日', '總答題', '答對題', '已購買', '裝扮'],
+  '學生': ['班級代碼', '座號', '暱稱', '密碼', '金幣', '星星', '印章', '已兌換印章', '連續天數', '最後完成日', '總答題', '答對題', '已購買', '裝扮', '累積金幣', '已兌換金幣'],
   '題庫': ['題號', '版本', '年級', '學期', '科目', '單元', '觀念', '題型', '題目', '選項A', '選項B', '選項C', '選項D', '答案', '解析', '來源', '啟用'],
   '作答紀錄': ['時間', '日期', '班級代碼', '座號', '題號', '科目', '單元', '作答', '對錯'],
-  '加點紀錄': ['時間', '班級代碼', '座號', '兌換印章數', '備註']
+  '加點紀錄': ['時間', '班級代碼', '座號', '暱稱', '兌換印章數', '兌換金幣數', '換算點數', '備註']
 };
 // 這些欄位一律存成純文字，避免 0123、3/4 被試算表自動轉成數字或日期
 const TEXT_COLS = {
@@ -98,10 +99,23 @@ function setup() {
     ]);
     set.getRange('B2').setNumberFormat('@');
   }
+  // 新版設定項目：缺少的補在最後
+  const setRows = set.getDataRange().getValues().map(r => String(r[0]).trim());
+  [['每個印章換幾點', 1, '日常加點：1 個印章換幾點（填 0 表示印章不換點）'],
+   ['每幾金幣換1點', 20, '日常加點：累積金幣每滿多少枚換 1 點（填 0 表示金幣不換點）。學生在商店花掉金幣不影響']]
+    .forEach(row => { if (setRows.indexOf(row[0]) < 0) set.getRange(set.getLastRow() + 1, 1, 1, 3).setValues([row]); });
   // 舊資料補值：沒有版本的題目與班級視為「通用」
   ['題庫', '班級'].forEach(name => {
     const t = table_(name);
     t.rows.forEach(r => { if (!String(r['版本'] || '').trim()) { r['版本'] = COMMON; writeRow_(t, r); } });
+  });
+  // 舊版沒有「累積金幣」：用目前餘額加上已買東西的價格推算
+  const stt = table_(SH.STU);
+  stt.rows.forEach(r => {
+    if (String(r['累積金幣']).trim() !== '') return;
+    r['累積金幣'] = num_(r['金幣']) + owned_(r).reduce((a, id) => a + SHOP[id].price, 0);
+    r['已兌換金幣'] = num_(r['已兌換金幣']);
+    writeRow_(stt, r);
   });
   // 舊版的單元代號沒有版本（6上｜科目｜單元），補上「通用｜」
   const ct = table_(SH.CLS);
@@ -198,6 +212,7 @@ function submitRound(cred, island, responses) {
       s['印章'] = num_(s['印章']) + 1;
     }
     s['金幣'] = num_(s['金幣']) + correct;
+    s['累積金幣'] = num_(s['累積金幣']) + correct;
     if (passed) s['星星'] = num_(s['星星']) + 1;
     s['總答題'] = num_(s['總答題']) + total;
     s['答對題'] = num_(s['答對題']) + correct;
@@ -260,6 +275,7 @@ function tDashboard(pw, code) {
   const week = Utilities.formatDate(new Date(Date.now() - 6 * 864e5), TZ, 'yyyy-MM-dd');
   const qmap = {};
   table_(SH.Q).rows.forEach(q => qmap[q['題號']] = q);
+  const rate = rate_();
   const concepts = q => String((q && q['觀念']) || '').split(/[、,，|]/).map(x => x.trim()).filter(Boolean);
 
   const per = {}, unitStat = {}, qStat = {}, cStat = {};
@@ -285,6 +301,7 @@ function tDashboard(pw, code) {
 
   return {
     cls: classOut_(cls),
+    rate,
     url: ScriptApp.getService().getUrl() + '?c=' + encodeURIComponent(cls['班級代碼']),
     students: students.map(s => {
       const p = per[Number(s['座號'])] || { days: {}, latest: {} };
@@ -292,8 +309,10 @@ function tDashboard(pw, code) {
       Object.keys(p.latest).forEach(id => { if (!p.latest[id]) concepts(qmap[id]).forEach(c => weak[c] = (weak[c] || 0) + 1); });
       return {
         seat: Number(s['座號']), nick: s['暱稱'] || '', hasPin: !!String(s['密碼']).trim(),
-        coins: num_(s['金幣']), stars: num_(s['星星']),
+        coins: num_(s['金幣']), stars: num_(s['星星']), earned: num_(s['累積金幣']),
         stamps: num_(s['印章']) - num_(s['已兌換印章']), stampsTotal: num_(s['印章']),
+        coinsPending: num_(s['累積金幣']) - num_(s['已兌換金幣']),
+        points: pointsFor_(s, rate).points,
         streak: liveStreak_(s), last: normDate_(s['最後完成日']),
         weekDays: Object.keys(p.days).length,
         total: num_(s['總答題']), right: num_(s['答對題']),
@@ -377,24 +396,45 @@ function tResetPin(pw, code, seat) {
   });
 }
 
-/** 兌換印章：把學生目前累積、還沒加過點的印章歸零，並記到「加點紀錄」 */
+/** 加點換算比例（在「設定」分頁調整） */
+function rate_() {
+  const set = settings_();
+  const v = (k, d) => (set[k] === undefined || String(set[k]).trim() === '') ? d : Math.max(0, Number(set[k]) || 0);
+  return { perStamp: v('每個印章換幾點', 1), coinsPerPoint: v('每幾金幣換1點', 20) };
+}
+
+/** 這位學生現在可以換多少點：還沒兌換的印章 + 還沒兌換的累積金幣（每滿 N 枚換 1 點，餘數留到下次） */
+function pointsFor_(s, rate) {
+  const stamps = num_(s['印章']) - num_(s['已兌換印章']);
+  const coins = num_(s['累積金幣']) - num_(s['已兌換金幣']);
+  const coinPts = rate.coinsPerPoint > 0 ? Math.floor(coins / rate.coinsPerPoint) : 0;
+  const stampPts = stamps * rate.perStamp;
+  return { stamps, coinsUsed: coinPts * rate.coinsPerPoint, coinPts, stampPts, points: stampPts + coinPts };
+}
+
+/**
+ * 日常加點：把學生還沒兌換的印章與累積金幣換成點數，記到「加點紀錄」。
+ * 學生的金幣餘額不會被扣，他們照樣可以在商店使用。
+ */
 function tRedeem(pw, code, seats, note) {
   checkPw_(pw);
   return withLock_(() => {
     const t = table_(SH.STU);
+    const rate = rate_();
     const want = (seats || []).map(Number);
     const stamp = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm:ss');
     const out = [];
     t.rows.forEach(s => {
       if (!sameCode_(s['班級代碼'], code) || want.indexOf(Number(s['座號'])) < 0) return;
-      const n = num_(s['印章']) - num_(s['已兌換印章']);
-      if (n <= 0) return;
-      s['已兌換印章'] = num_(s['印章']);
+      const p = pointsFor_(s, rate);
+      if (p.points <= 0) return;
+      if (p.stampPts > 0) s['已兌換印章'] = num_(s['印章']);
+      s['已兌換金幣'] = num_(s['已兌換金幣']) + p.coinsUsed;
       writeRow_(t, s);
-      out.push({ '時間': stamp, '班級代碼': s['班級代碼'], '座號': s['座號'], '兌換印章數': n, '備註': note || '' });
+      out.push({ '時間': stamp, '班級代碼': s['班級代碼'], '座號': s['座號'], '暱稱': s['暱稱'] || '', '兌換印章數': p.stampPts > 0 ? p.stamps : 0, '兌換金幣數': p.coinsUsed, '換算點數': p.points, '備註': note || '' });
     });
     append_(SH.PTS, out);
-    return out.map(o => ({ seat: Number(o['座號']), n: o['兌換印章數'] }));
+    return out.map(o => ({ seat: Number(o['座號']), nick: o['暱稱'], stamps: o['兌換印章數'], coins: o['兌換金幣數'], points: o['換算點數'] }));
   });
 }
 
@@ -503,7 +543,7 @@ function classOut_(c) {
 }
 
 function newStudent_(code, seat) {
-  return { '班級代碼': code, '座號': seat, '暱稱': '', '密碼': '', '金幣': 0, '星星': 0, '印章': 0, '已兌換印章': 0, '連續天數': 0, '最後完成日': '', '總答題': 0, '答對題': 0, '已購買': '[]', '裝扮': JSON.stringify(DEFAULT_OUTFIT) };
+  return { '班級代碼': code, '座號': seat, '暱稱': '', '密碼': '', '金幣': 0, '星星': 0, '印章': 0, '已兌換印章': 0, '連續天數': 0, '最後完成日': '', '總答題': 0, '答對題': 0, '已購買': '[]', '裝扮': JSON.stringify(DEFAULT_OUTFIT), '累積金幣': 0, '已兌換金幣': 0 };
 }
 
 function owned_(s) { return json_(s['已購買'], []).filter(id => SHOP[id]); }
@@ -607,7 +647,7 @@ function state_(cls, s) {
   }
   return {
     className: cls['班級名稱'], seat: Number(s['座號']), nick: s['暱稱'] || '',
-    coins: num_(s['金幣']), stars: num_(s['星星']), stamps: num_(s['印章']),
+    coins: num_(s['金幣']), earned: num_(s['累積金幣']), stars: num_(s['星星']), stamps: num_(s['印章']),
     streak: liveStreak_(s), todayDone: normDate_(s['最後完成日']) === today_(),
     islands, wrong, exam, perRound: Number(settings_()['每回合題數']) || 10,
     owned: owned_(s), outfit: outfit_(s), shop: SHOP

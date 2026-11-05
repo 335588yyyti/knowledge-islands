@@ -94,9 +94,10 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
       <div class="panel">
         <div class="row" style="justify-content:space-between;margin-bottom:8px">
           <h2 style="margin:0">學生</h2>
-          <div class="row"><input id="iNote" placeholder="加點備註（例如：11/4 加 1 點）" style="min-width:200px"><button class="btn" id="bRedeem">兌換勾選學生的印章</button></div>
+          <div class="row"><input id="iNote" placeholder="加點備註（例如：11/4 加 1 點）" style="min-width:200px"><button class="btn" id="bRedeem">勾選的學生換成點數</button></div>
         </div>
-        <p class="muted small">學生每天第一次「過關」得 1 個印章。按「兌換」會記到試算表的「加點紀錄」，並把未兌換印章歸零，方便你登記日常加點。</p>
+        <p class="muted small" id="rateText"></p>
+        <div class="panel hidden" id="lastRedeem" style="background:var(--foam);border-color:var(--sea)"></div>
         <div class="tbl"><table id="stuTbl"></table></div>
       </div>
       <div class="grid2">
@@ -236,28 +237,31 @@ function renderAll(){ setVersions(DASH.versions); renderOverview(); renderUnits(
 function renderOverview(){
   const S = DASH.students;
   const today = S.filter(s => s.last === todayStr()).length;
-  const pending = S.reduce((a, s) => a + s.stamps, 0);
+  const pending = S.reduce((a, s) => a + s.points, 0);
+  const rt = DASH.rate;
+  $('rateText').innerHTML = `換算方式：每個印章 <b>${rt.perStamp}</b> 點${rt.coinsPerPoint ? '，累積金幣每 <b>' + rt.coinsPerPoint + '</b> 枚 1 點（不足的留到下次）' : '，金幣不換點'}。比例可以在試算表的「設定」分頁修改。<br>「累積金幣」是學生答對賺到的金幣總數，在商店花掉也不會減少，所以加點不受影響。按「換點」會記到「加點紀錄」分頁，再把清單複製到你的集點系統就好。`;
   const acc = S.reduce((a, s) => a + s.right, 0) / Math.max(1, S.reduce((a, s) => a + s.total, 0));
   $('kpis').innerHTML = [
     ['今天完成', today + ' / ' + S.length + ' 人'],
     ['本週平均練習', (S.reduce((a, s) => a + s.weekDays, 0) / Math.max(1, S.length)).toFixed(1) + ' 天'],
     ['全班正確率', Math.round(acc * 100) + '%'],
-    ['待兌換印章', pending + ' 個']
+    ['全班可加點數', pending + ' 點']
   ].map(k => `<div class="kpi"><span class="small muted">${k[0]}</span><b>${k[1]}</b></div>`).join('');
 
-  $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">待兌換印章</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th>弱點觀念</th><th class="num">金幣</th><th></th></tr></thead><tbody>` +
+  $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">可加點數</th><th class="num">未換印章</th><th class="num">未換金幣</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th>弱點觀念</th><th class="num" title="學生目前可以在商店花的金幣">金幣餘額</th><th></th></tr></thead><tbody>` +
     S.map(s => {
       const pct = s.total ? Math.round(s.right / s.total * 100) : null;
       const pill = !s.hasPin ? '<span class="pill p-mute">未登入</span>'
         : s.last === todayStr() ? '<span class="pill p-ok">今天完成</span>'
         : s.last ? '<span class="pill p-warn">' + esc(s.last.slice(5).replace('-', '/')) + '</span>'
         : s.weekDays ? '<span class="pill p-warn">練習中，還沒過關</span>' : '<span class="pill p-bad">本週沒練習</span>';
-      return `<tr><td><input type="checkbox" class="cStu" value="${s.seat}" ${s.stamps ? '' : 'disabled'} aria-label="${s.seat} 號"></td>
+      return `<tr><td><input type="checkbox" class="cStu" value="${s.seat}" ${s.points ? '' : 'disabled'} aria-label="${s.seat} 號"></td>
         <td>${s.seat}</td><td>${esc(s.nick) || '<span class="muted">—</span>'}</td>
-        <td class="num">${s.stamps ? '<span class="stamp">' + s.stamps + '</span>' : '<span class="muted">0</span>'}</td>
+        <td class="num">${s.points ? '<span class="stamp">' + s.points + '</span>' : '<span class="muted">0</span>'}</td>
+        <td class="num">${s.stamps}</td><td class="num" title="累積 ${s.earned} 枚，已換 ${s.earned - s.coinsPending} 枚">${s.coinsPending}</td>
         <td class="num">${s.streak}</td><td class="num">${s.weekDays}</td><td>${pill}</td>
         <td class="num">${pct === null ? '<span class="muted">—</span>' : pct + '%'}</td><td class="num">${s.wrongNow}</td><td>${s.weak.length ? s.weak.map(w => '<span class="pill p-warn">' + esc(w) + '</span>').join(' ') : '<span class="muted">—</span>'}</td><td class="num">${s.coins}</td>
-        <td><button class="btn2 sm" data-redeem="${s.seat}" ${s.stamps ? '' : 'disabled'}>兌換</button> <button class="btn2 sm" data-reset="${s.seat}">重設密碼</button></td></tr>`;
+        <td><button class="btn2 sm" data-redeem="${s.seat}" ${s.points ? '' : 'disabled'}>換點</button> <button class="btn2 sm" data-reset="${s.seat}">重設密碼</button></td></tr>`;
     }).join('') + '</tbody>';
   $('cAll').onchange = e => document.querySelectorAll('.cStu:not(:disabled)').forEach(c => c.checked = e.target.checked);
 
@@ -293,9 +297,25 @@ $('bRedeem').addEventListener('click', () => {
 async function redeem(seats){
   try{
     const out = await api('tRedeem', PW, CUR.code, seats, $('iNote').value.trim());
-    toast(out.length ? '已兌換：' + out.map(o => o.seat + ' 號 ' + o.n + ' 個').join('、') : '沒有可兌換的印章');
+    if (!out.length){ toast('勾選的學生目前沒有可換的點數'); return; }
+    showRedeem(out);
+    toast('已換點：' + out.reduce((a, o) => a + o.points, 0) + ' 點，記錄在「加點紀錄」');
     loadClass(CUR.code);
   }catch(e){ toast(e.message); }
+}
+
+/* 換點結果：可以複製成表格，貼到老師自己的集點系統 */
+function showRedeem(out){
+  const note = $('iNote').value.trim();
+  const tsv = '座號\t暱稱\t點數\t印章\t金幣\n' + out.map(o => [o.seat, o.nick || '', o.points, o.stamps, o.coins].join('\t')).join('\n');
+  const box = $('lastRedeem'); box.classList.remove('hidden');
+  box.innerHTML = `<div class="row" style="justify-content:space-between"><b>剛剛換點${note ? '（' + esc(note) + '）' : ''}：共 ${out.length} 人、${out.reduce((a, o) => a + o.points, 0)} 點</b>
+    <div class="row"><button class="btn2 sm" id="bCopyPts">複製清單</button><button class="btn2 sm" id="bCloseRedeem">關閉</button></div></div>
+    <div class="tbl" style="margin-top:8px"><table><thead><tr><th>座號</th><th>暱稱</th><th class="num">點數</th><th class="num">用掉印章</th><th class="num">用掉累積金幣</th></tr></thead><tbody>` +
+    out.map(o => `<tr><td>${o.seat}</td><td>${esc(o.nick) || '—'}</td><td class="num"><b>${o.points}</b></td><td class="num">${o.stamps}</td><td class="num">${o.coins}</td></tr>`).join('') +
+    `</tbody></table></div><p class="small muted" style="margin:6px 0 0">「複製清單」會複製成表格（Tab 分隔），可以直接貼到 Excel、Google 試算表或你的集點系統。</p>`;
+  $('bCopyPts').onclick = () => copy(tsv, '加點清單已複製');
+  $('bCloseRedeem').onclick = () => box.classList.add('hidden');
 }
 
 /* 單元清單：依 版本 → 年級學期 → 科目 分組；預設只列這班的版本和「通用」 */
