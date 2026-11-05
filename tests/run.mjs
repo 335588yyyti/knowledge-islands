@@ -105,6 +105,16 @@ try {
     const r = (await call('submitRound', { code: 'DEMO', seat: 1, pin: '1234' }, '國語', qs.map(q => ({ id: q.id, answer: 'nope' })).concat(qs.map(q => ({ id: q.id, answer: 'nope' }))))).ok;
     assert.equal(r.correct, 0); assert.equal(r.total, qs.length);  // 重複送同一題只算一次
   });
+  await step('選擇題每次換選項順序，答案也跟著換', async () => {
+    const cred = { code: 'DEMO', seat: 1, pin: '1234' };
+    const orders = new Set();
+    for (let i = 0; i < 8; i++) {
+      const q = (await call('getRound', cred, '社會')).ok.find(x => x.id === 'S015');  // 臺灣最高的山
+      orders.add(q.options.join('/'));
+      assert.equal(q.options['ABCD'.indexOf(q.answer)], '玉山');
+    }
+    assert.ok(orders.size > 1, '選項順序都一樣');
+  });
   for (const isl of ['自然', '社會', '英文', '綜合']) await play(s, isl);
   await step('商店：金幣不夠買不了，夠了可以買和穿', async () => {
     await s.click('#bShop'); await s.waitForSelector('#vShop:not(.hidden)');

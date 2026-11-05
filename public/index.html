@@ -506,7 +506,7 @@ $('bNext').addEventListener('click', async () => {
   if (round.i < round.qs.length - 1){ round.i++; renderQ(); return; }
   show('vLoading');
   try{
-    const r = await api('submitRound', cred, round.island, round.res.map(x => ({id:x.id, answer:x.answer})));
+    const r = await api('submitRound', cred, round.island, round.res.map((x, i) => ({id:x.id, answer: round.qs[i].type === '選擇' ? (round.qs[i].options['ABCD'.indexOf(x.answer)] || '') : x.answer})));
     state = r.state; renderResult(r);
   }catch(e){
     show('vResult');

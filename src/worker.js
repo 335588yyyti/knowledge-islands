@@ -222,8 +222,18 @@ async function state(ctx, cls, s) {
   };
 }
 
+// 選項有「以上皆是」這類依位置的寫法時，不打亂順序
+const FIXED_ORDER = /以上|皆是|皆非|都對|都不對|都是|都不是|all of the above|none of the above/i;
+
+/** 給學生的題目：選擇題每次打亂選項順序，答案字母跟著換 */
 function publicQ(q) {
-  return { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, options: [q.a, q.b, q.c, q.d].filter(Boolean), answer: q.answer, explain: q.explain };
+  const out = { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, answer: q.answer, explain: q.explain };
+  if (q.type !== '選擇') return Object.assign(out, { options: [] });
+  let opts = ['A', 'B', 'C', 'D'].map(k => ({ k, t: q[k.toLowerCase()] })).filter(o => o.t);
+  if (!opts.some(o => FIXED_ORDER.test(o.t))) opts = shuffle(opts);
+  out.options = opts.map(o => o.t);
+  out.answer = 'ABCD'[Math.max(0, opts.findIndex(o => o.k === String(q.answer).toUpperCase()))];
+  return out;
 }
 
 function normAns(v) {
@@ -236,7 +246,14 @@ function tf(v) {
   return null;
 }
 function grade(q, ans) {
-  if (q.type === '選擇') return normAns(ans).toUpperCase() === normAns(q.answer).toUpperCase();
+  // 選擇題：學生送回選項的文字（因為每個人看到的順序不同），比對正確選項的內容
+  if (q.type === '選擇') {
+    const right = q[String(q.answer).toLowerCase()];
+    if (right == null || right === '') return false;
+    // 舊版頁面（還沒重新整理）送的是原始順序的字母
+    if (/^[A-Da-d]$/.test(String(ans).trim()) && ![q.a, q.b, q.c, q.d].some(t => normAns(t) === normAns(ans))) return normAns(ans).toUpperCase() === normAns(q.answer).toUpperCase();
+    return normAns(ans) === normAns(right);
+  }
   if (q.type === '是非') return tf(ans) !== null && tf(ans) === tf(q.answer);
   return String(q.answer).split('|').some(r => normAns(r) !== '' && normAns(r) === normAns(ans));
 }
