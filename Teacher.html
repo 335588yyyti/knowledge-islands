@@ -4,26 +4,26 @@
 <meta charset="utf-8">
 <base target="_top">
 <title>知識群島 教師後台</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@400;600;800&display=swap">
 <style>
-/* 教師後台：跟學生端同一套海色，但以清楚的表格為主 */
+/* 教師後台：跟學生端同一套粉彩配色與圓體，但以清楚的表格為主 */
 :root{
-  --sea:#1d6f86; --sea-deep:#124a5c; --foam:#e7f4f5; --paper:#f7f8f6; --line:#d7dfe0;
-  --ink:#1b2a33; --muted:#5d6f78; --coral:#f2704e; --gold:#e8b23a; --ok:#2f8f5b; --bad:#c8463b;
-  --f-display:"LXGW WenKai TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",serif;
-  --f-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --sea:#7ccbe2; --sea-deep:#4a4566; --foam:#e9f7fb; --paper:#fdf8ef; --line:#efe3cc;
+  --ink:#4a4566; --muted:#8a85a3; --coral:#ff8fa3; --gold:#ffd66b; --ok:#2e9e72; --bad:#e2566a;
+  --f-display:"Chiron GoRound TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-body:"Chiron GoRound TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:var(--f-body);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.55}
-header{background:var(--sea-deep);color:var(--foam)}
+header{background:linear-gradient(90deg,#c9f0f7,#9fdcec);color:var(--ink)}
 .in{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
 header .in{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding-block:14px}
-header h1{font-family:var(--f-display);font-size:24px;margin:0;flex:1 1 auto}
-select,input,textarea{font:inherit;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff}
+header h1{font-family:var(--f-display);font-weight:800;font-size:24px;margin:0;flex:1 1 auto}
+select,input,textarea{font:inherit;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}
 textarea{width:100%;min-height:180px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
-button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid transparent;padding:8px 14px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid transparent;padding:8px 14px}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
-.btn{background:var(--coral);color:#fff;font-weight:700}
+.btn{background:var(--coral);color:#fff;font-weight:800;box-shadow:0 3px 0 #e66d84}
 .btn2{background:#fff;border-color:var(--line);color:var(--ink)}
 .btn2.sm{padding:4px 10px;font-size:13px}
 button:disabled{opacity:.5;cursor:default}
@@ -31,9 +31,9 @@ nav{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);back
 nav button{background:none;border-radius:0;padding:12px 16px;color:var(--muted);border-bottom:3px solid transparent;font-weight:500}
 nav button[aria-selected="true"]{color:var(--sea-deep);border-bottom-color:var(--coral);font-weight:700}
 main{padding-block:20px 60px}
-h2{font-family:var(--f-display);font-size:22px;margin:0 0 10px}
+h2{font-family:var(--f-display);font-weight:800;font-size:22px;margin:0 0 10px}
 h3{font-size:16px;margin:18px 0 8px}
-.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.panel{background:#fff;border:2px solid var(--line);border-radius:20px;padding:18px;margin-bottom:16px}
 .muted{color:var(--muted)} .small{font-size:13px}
 .hidden{display:none!important}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
@@ -47,8 +47,8 @@ td.num,th.num{text-align:right}
 .p-ok{background:#e1f2e7;color:var(--ok)} .p-warn{background:#fdf1d8;color:#8a6312} .p-bad{background:#fbe6e3;color:var(--bad)} .p-mute{background:#eef1f1;color:var(--muted)}
 .stamp{font-weight:700;color:var(--bad)}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
-.kpi b{display:block;font-size:26px;font-family:var(--f-display);color:var(--sea-deep)}
+.kpi{background:#fff;border:2px solid var(--line);border-radius:18px;padding:12px 14px}
+.kpi b{display:block;font-size:26px;font-family:var(--f-display);font-weight:800;color:var(--coral)}
 .units{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 .ugroup{border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .ugroup h4{margin:0 0 6px;font-size:15px}
