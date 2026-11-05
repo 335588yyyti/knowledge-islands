@@ -20,7 +20,9 @@ body{margin:0;font-family:var(--f-body);background:var(--paper);color:var(--ink)
 header{background:linear-gradient(90deg,#c9f0f7,#9fdcec);color:var(--ink)}
 .in{max-width:1080px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
 header .in{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding-block:14px}
-header h1{font-family:var(--f-display);font-weight:800;font-size:24px;margin:0;flex:1 1 auto}
+header .logout{order:2;background:rgba(255,255,255,.75);font-weight:700}
+header .cls{order:3}
+header h1{order:1;font-family:var(--f-display);font-weight:800;font-size:24px;margin:0;flex:1 1 auto}
 select,input,textarea{font:inherit;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}
 select,input,textarea{max-width:100%;min-width:0}
 #eName,#sPw1,#sPw2{flex:1 1 160px}
@@ -41,6 +43,7 @@ h3{font-size:16px;margin:18px 0 8px}
 .muted{color:var(--muted)} .small{font-size:13px}
 .hidden{display:none!important}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row > .row{min-width:0}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
 .tbl{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
@@ -98,7 +101,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
 <div id="vApp" class="hidden">
   <header><div class="in">
     <h1>知識群島 教師後台</h1>
-    <label class="row small">班級 <select id="selClass"></select></label>
+    <button class="btn2 logout" id="bLogout" type="button">退出後台</button>
+    <label class="row small cls">班級 <select id="selClass"></select></label>
   </div></header>
   <nav class="in" role="tablist">
     <button role="tab" data-tab="tOverview" aria-selected="true">學生與加點</button>
@@ -116,7 +120,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
       <div class="panel">
         <div class="row" style="justify-content:space-between;margin-bottom:8px">
           <h2 style="margin:0">學生</h2>
-          <div class="row"><input id="iNote" placeholder="加點備註（例如：11/4 加 1 點）" style="min-width:200px"><button class="btn" id="bRedeem">勾選的學生換成點數</button></div>
+          <div class="row"><input id="iNote" placeholder="加點備註（例如：11/4 加 1 點）" style="flex:1 1 180px"><button class="btn" id="bRedeem">勾選的學生換成點數</button></div>
         </div>
         <p class="muted small" id="rateText"></p>
         <div class="panel hidden" id="lastRedeem" style="background:var(--foam);border-color:var(--sea)"></div>
@@ -797,6 +801,11 @@ $('bSavePw').addEventListener('click', async () => {
   if ($('sPw1').value !== $('sPw2').value){ $('setErr').textContent = '兩次輸入的密碼不一樣。'; return; }
   try{ await api('tSaveSettings', PW, {newPw:$('sPw1').value}); PW = $('sPw1').value; try{ sessionStorage.setItem('kq_t', PW); }catch(_){} $('sPw1').value = $('sPw2').value = ''; toast('老師密碼已修改，下次請用新密碼登入'); }
   catch(e){ $('setErr').textContent = e.message; }
+});
+
+$('bLogout').addEventListener('click', () => {
+  PW = ''; try{ sessionStorage.removeItem('kq_t'); }catch(_){}
+  location.href = '/';
 });
 
 function switchTab(id){

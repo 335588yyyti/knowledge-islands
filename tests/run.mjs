@@ -298,16 +298,30 @@ try {
     const [dl] = await Promise.all([t.waitForEvent('download'), t.click('[data-exp="students"]')]);
     assert.match(dl.suggestedFilename(), /學生成績/);
   });
+  await step('退出後台會回到學生登入頁，要重新輸入密碼', async () => {
+    const p = await page('/teacher');
+    await p.fill('#iPw', 'new-pass-1'); await p.click('#fLogin button'); await p.waitForSelector('#vApp:not(.hidden)');
+    await p.click('#bLogout'); await p.waitForSelector('#vLogin:not(.hidden)');
+    assert.ok(!p.url().includes('/teacher'));
+    await p.goto(BASE + '/teacher'); await p.waitForTimeout(500);
+    assert.ok(await p.isVisible('#fLogin'));
+  });
   await step('建立新的一屆', async () => {
     await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.selectOption('#nVer', '康軒'); await t.fill('#nCount', '25');
     await t.click('#bNewCls'); await toastHas(t, '建立好了');
     assert.equal(await t.inputValue('#selClass'), '115A601');
     assert.equal((await call('tDashboard', 'new-pass-1', '115A601')).ok.students.length, 25);
   });
-  await step('手機寬度不會左右捲動', async () => {
+  await step('手機寬度不會左右捲動（學生端與後台每個分頁）', async () => {
     const m = await page('/?c=DEMO', 390);
     await m.fill('#iSeat', '1'); await m.fill('#iPin', '1234'); await m.click('#bLogin'); await m.waitForSelector('#vMap:not(.hidden)');
     assert.equal(await m.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    const mt = await page('/teacher', 390);
+    await mt.fill('#iPw', 'new-pass-1'); await mt.click('#fLogin button'); await mt.waitForSelector('#vApp:not(.hidden)');
+    for (const tab of ['tOverview', 'tUnits', 'tImport', 'tMastery', 'tBank', 'tClass', 'tGuide']) {
+      await mt.click(`[data-tab="${tab}"]`); await mt.waitForTimeout(300);
+      assert.equal(await mt.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, tab + ' 太寬');
+    }
   });
   assert.deepEqual(errors, []);
   await browser.close();
