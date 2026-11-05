@@ -136,6 +136,18 @@ try {
     await t.fill('#iPw', 'wrong'); await t.click('#fLogin button');
     await t.waitForFunction(() => document.querySelector('#loginErr').textContent.length > 0);
   });
+  await step('學生登入頁有老師登入連結', async () => {
+    const p = await page('/');
+    await p.click('#teacherLink'); await p.waitForSelector('#fLogin');
+    assert.match(p.url(), /\/teacher$/);
+  });
+  await step('學生亂試老師密碼只會鎖住自己的裝置', async () => {
+    const tryPw = async (pw, ip) => (await (await fetch(BASE + '/api/tLogin', { method: 'POST', headers: { 'cf-connecting-ip': ip }, body: JSON.stringify({ args: [pw] }) })).json());
+    for (let i = 0; i < 9; i++) assert.match((await tryPw('guess' + i, '10.0.0.9')).err, /不正確/);
+    assert.match((await tryPw('guess9', '10.0.0.9')).err, /太多次/);
+    assert.match((await tryPw(PW, '10.0.0.9')).err, /太多次/);   // 被鎖的裝置連正確密碼也進不去
+    assert.ok((await tryPw(PW, '10.0.0.10')).ok);                 // 老師的裝置不受影響
+  });
   await step('登入後看到學生與可加點數', async () => {
     await t.fill('#iPw', PW); await t.click('#fLogin button'); await t.waitForSelector('#vApp:not(.hidden)');
     await t.waitForSelector('.cStu[value="1"]');

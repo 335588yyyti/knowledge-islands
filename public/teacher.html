@@ -77,6 +77,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <p class="muted small">第一次登入請用部署時設定的老師密碼（TEACHER_PASSWORD），登入後可以在「班級管理 → 系統設定」修改。</p>
     <div class="row"><input id="iPw" type="password" placeholder="老師密碼" style="flex:1" required><button class="btn">進入</button></div>
     <p class="err" id="loginErr"></p>
+    <p class="small" style="margin:0"><a href="/" style="color:var(--muted)">← 回學生登入</a></p>
   </form>
 </section>
 
@@ -206,7 +207,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <p class="muted small">把這個連結做成 QR code 或貼在班網，學生打開後輸入座號和自己設的 4 位數密碼。</p>
           <div class="copybox"><code id="stuUrl"></code><button class="btn2 sm" id="bCopyUrl">複製</button></div>
           <div id="qr" style="margin-top:10px;width:160px;height:160px"></div>
-          <p class="muted small">教師後台網址：<code id="tUrl"></code>（不要給學生）</p>
+          <p class="muted small">教師後台：學生登入頁最下面的「老師登入」，或直接打開 <code id="tUrl"></code></p>
           <h3>這個班級</h3>
           <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select><label class="small">版本 <input id="eVer" list="verList" style="width:90px"></label></div>
           <div class="row" style="margin-top:10px"><button class="btn2" id="bSaveCls">儲存</button><button class="btn2" id="bAddStu">加 1 位學生</button><button class="btn2" id="bArchive"></button></div>

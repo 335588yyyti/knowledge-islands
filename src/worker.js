@@ -12,6 +12,7 @@ const SUBJECTS = ['國語', '數學', '自然', '社會', '英文'];
 const COMMON = '通用';
 const MAX_FAILS = 5;          // 密碼連續錯幾次就暫時鎖住
 const LOCK_MS = 10 * 60e3;    // 鎖住 10 分鐘
+const TEACHER_MAX_FAILS = 10; // 老師密碼：同一個網路位址錯 10 次才鎖，而且只鎖那個位址
 
 /** 金幣商店：幫船長波波換裝。價格只在這裡設定 */
 const SHOP = {
@@ -52,6 +53,7 @@ export default {
     try { args = ((await request.json()) || {}).args || []; } catch (e) { return json({ err: '資料格式不對。' }, 400); }
     try {
       const ctx = new Ctx(env);
+      ctx.ip = request.headers.get('cf-connecting-ip') || 'local';
       return json({ ok: (await fn(ctx, ...args)) ?? null });
     } catch (e) {
       if (e instanceof UserError) return json({ err: e.message }, 200);
@@ -115,23 +117,32 @@ async function rate(ctx) {
 
 /* ---------- 老師登入 ---------- */
 
+/**
+ * 老師密碼檢查。輸錯會依「網路位址」分開計算：學生在自己的裝置亂試，
+ * 只會鎖住那台裝置，不會讓老師也進不去。
+ */
 async function checkPw(ctx, pw) {
   const s = await ctx.settings();
   const now = Date.now();
-  if (num(s.teacher_locked_until) > now) fail('密碼錯太多次，請 10 分鐘後再試。');
+  const who = (await sha256('ip:' + ctx.ip)).slice(0, 16);
+  const kFails = 'tfails_' + who, kLock = 'tlock_' + who;
+  if (num(s[kLock]) > now) fail('這台裝置輸錯太多次，請 10 分鐘後再試。');
   pw = String(pw || '');
   let ok;
   if (s.teacher_pw_hash) ok = safeEqual(await sha256(s.teacher_pw_salt + pw), s.teacher_pw_hash);
   else ok = !!ctx.env.TEACHER_PASSWORD && safeEqual(pw, ctx.env.TEACHER_PASSWORD);
+  const put = (k, v) => ctx.stmt('INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', k, String(v));
   if (!ok) {
-    const fails = num(s.teacher_fails) + 1;
-    const stmts = [ctx.stmt("INSERT INTO settings(key,value) VALUES('teacher_fails',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", String(fails >= MAX_FAILS ? 0 : fails))];
-    if (fails >= MAX_FAILS) stmts.push(ctx.stmt("INSERT INTO settings(key,value) VALUES('teacher_locked_until',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value", String(now + LOCK_MS)));
-    await ctx.batch(stmts);
+    const fails = num(s[kFails]) + 1;
+    await ctx.batch(fails >= TEACHER_MAX_FAILS ? [put(kFails, 0), put(kLock, now + LOCK_MS)] : [put(kFails, fails)]);
+    ctx._set = null;
     if (!s.teacher_pw_hash && !ctx.env.TEACHER_PASSWORD) fail('還沒設定老師密碼，請依照使用說明在 GitHub 設定 TEACHER_PASSWORD。');
-    fail('老師密碼不正確。');
+    fail(fails >= TEACHER_MAX_FAILS ? '這台裝置輸錯太多次，請 10 分鐘後再試。' : '老師密碼不正確。');
   }
-  if (num(s.teacher_fails)) await ctx.run("UPDATE settings SET value='0' WHERE key='teacher_fails'");
+  if (s[kFails] !== undefined || s[kLock] !== undefined) {
+    await ctx.run('DELETE FROM settings WHERE key IN (?, ?)', kFails, kLock);
+    ctx._set = null;
+  }
 }
 
 /* ---------- 學生登入 ---------- */
