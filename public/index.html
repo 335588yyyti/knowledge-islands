@@ -162,6 +162,19 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .item.wear small{color:var(--ok)}
 .tips{margin:10px 0 0;padding:10px 14px;background:var(--cream2);border-radius:16px;font-weight:600}
 @media (max-width:520px){.shop-head{grid-template-columns:1fr}.shop-head .stage{width:170px;margin:0 auto}}
+.tree{font-size:20px;line-height:1}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;font-weight:600;margin:14px 0 4px;color:var(--muted)}
+.mlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.mrow{display:flex;gap:10px;align-items:center;background:#fff;border:3px solid #f1e3c8;border-radius:18px;padding:10px 12px}
+.mrow.lv3{border-color:var(--mint);background:#f1fbf6}
+.mrow .mi{font-size:28px;width:34px;text-align:center;flex:none}
+.mrow.lv0 .mi{color:var(--muted)}
+.mrow .mt{flex:1;min-width:0}
+.mrow small{color:var(--muted);font-weight:600}
+.mrow .bar{margin:4px 0 0;max-width:none;border-color:var(--cream2);background:var(--cream2)}
+.rv{font-size:12px;font-weight:800;color:#c98d12;background:#fff4d6;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.badge{display:inline-flex;gap:12px;align-items:center;text-align:left;background:#f1fbf6;border:3px solid var(--mint);border-radius:20px;padding:10px 18px;margin:4px 0 10px;font-size:15px}
+.badge > :first-child{font-size:40px}
 .teacher-link{text-align:center;margin:4px 0 0;font-size:14px}
 .teacher-link a{color:var(--ink);opacity:.6;font-weight:600}
 .teacher-link a:hover{opacity:1}
@@ -207,6 +220,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <span class="chip" title="金幣"><span class="ic-coin"></span><span id="cCoins">0</span></span>
         <span class="chip" title="星星"><span class="ic-star"></span><span id="cStars">0</span></span>
         <span class="chip" title="連續天數"><span class="ic-fire"></span><span><span id="cStreak">0</span> 天</span></span>
+        <button class="wardrobe-btn" id="bMastery"><span class="tree">🌳</span>精熟圖鑑</button>
         <button class="wardrobe-btn" id="bShop"><span id="shopIcon"></span>波波的衣櫃</button>
       </div>
     </div>
@@ -225,6 +239,15 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <div id="qBody"></div>
       <div id="qFb"></div>
       <div class="actions"><button class="btn hidden" id="bNext">下一題</button></div>
+    </div>
+  </section>
+
+  <section id="vMastery" class="shop hidden">
+    <div class="qtop"><h2 style="flex:1">精熟圖鑑</h2><button class="btn soft small" id="bMasteryBack">回地圖</button></div>
+    <div class="card">
+      <div class="talk"><span class="bob" id="mMascot"></span><div class="say">同一題，<b>換一天再答對一次</b>，就算記住了！<br>一個單元 9 成的題目都記住，就能拿到 🌳 精熟。</div></div>
+      <div class="legend"><span>🌱 初學：開始練習</span><span>🌿 熟練：7 成答對</span><span>🌳 精熟：9 成記住了</span><span>⏰ 很久沒練，該複習了</span></div>
+      <div id="masteryList"></div>
     </div>
   </section>
 
@@ -265,7 +288,7 @@ async function api(fn, ...args){
   return j.ok;
 }
 const $ = id => document.getElementById(id);
-function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
+function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function store(k, v){ try{ v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
@@ -414,7 +437,8 @@ function renderMap(){
     const pct = it.total ? Math.round(it.mastered / it.total * 100) : 0;
     cards.push(`<button class="island${locked?' locked':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
       ${islandSvg(sj, i, locked)}<div class="name">${sj.k}島</div>
-      <div class="meta">${locked ? '還在睡覺，等老師開放' : '已掌握 ' + it.mastered + ' / ' + it.total}</div>
+      <div class="meta">${locked ? '還在睡覺，等老師開放' : '已掌握 ' + it.mastered + ' / ' + it.total + ' 題'}</div>
+      ${locked ? '' : '<div class="meta">🌳 精熟 ' + (it.masteredUnits || 0) + ' / ' + (it.units || 0) + ' 單元</div>'}
       <div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></button>`);
   });
   cards.push(`<button class="island${s.wrong?'':' locked'}" data-island="錯題">${reefSvg(!s.wrong)}<div class="name">錯題礁</div><div class="meta">${s.wrong ? '有 ' + s.wrong + ' 題等你救援' : '沒有錯題，太厲害了'}</div></button>`);
@@ -530,6 +554,7 @@ function renderResult(r){
       ${r.stamp ? `<div class="gain"><div class="seal on stampin" style="margin:0 auto 4px">已蓋章</div>今日印章</div>` : ''}
     </div>
     ${r.stamp ? '<p>連續完成 <b>' + r.state.streak + '</b> 天！印章可以跟老師換加點喔。</p>' : ''}
+    ${r.mastered && r.mastered.length ? '<div class="badge"><span>🌳</span><div><b>精熟徽章！</b><br>' + r.mastered.map(esc).join('、') + '</div></div>' : ''}
     ${r.missed && r.missed.length ? '<p class="tips">波波建議多練習：<b>' + r.missed.map(esc).join('、') + '</b></p>' : ''}
     ${r.correct < r.total ? '<p class="hint">答錯的題目跑去錯題礁了，答對就能救回來。</p>' : ''}
     <div class="actions" style="justify-content:center"><button class="btn" id="bBack">回群島地圖</button></div>`;
@@ -581,6 +606,25 @@ $('bShopAct').addEventListener('click', async () => {
 });
 $('bShop').addEventListener('click', openShop);
 $('bShopBack').addEventListener('click', () => { renderMap(); show('vMap'); });
+
+/* ---------- 精熟圖鑑 ---------- */
+const LV = ['・', '🌱', '🌿', '🌳'], LVN = ['還沒練習', '初學', '熟練', '精熟'];
+function renderMastery(){
+  $('mMascot').innerHTML = mascot('happy');
+  const units = state.units || [];
+  $('masteryList').innerHTML = SUBJ.map(sj => {
+    const us = units.filter(u => u.subject === sj.k);
+    if (!us.length) return '';
+    return `<h3 style="color:${sj.d}">${sj.k}島</h3><div class="mlist">` + us.map(u => {
+      const pct = u.total ? Math.round(u.remembered / u.total * 100) : 0;
+      return `<div class="mrow lv${u.level}"><span class="mi" aria-hidden="true">${LV[u.level]}</span>
+        <div class="mt"><b>${esc(u.unit)}</b>${u.review ? ' <span class="rv">⏰ 該複習了</span>' : ''}<br>
+        <small>${LVN[u.level]}・記住 ${u.remembered} / ${u.total} 題</small><div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></div></div>`;
+    }).join('') + '</div>';
+  }).join('') || '<p>老師還沒開放單元喔。</p>';
+}
+$('bMastery').addEventListener('click', () => { renderMastery(); show('vMastery'); });
+$('bMasteryBack').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 登入 ---------- */
 $('fLogin').addEventListener('submit', async ev => {

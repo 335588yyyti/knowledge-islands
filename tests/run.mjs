@@ -198,6 +198,48 @@ try {
     const d = (await call('tDashboard', PW, 'DEMO')).ok;
     assert.ok(d.students[0].weak.includes('通分'));
   });
+  await step('精熟：同一題在兩個不同的日子答對才算記住', async () => {
+    const c2 = { code: 'DEMO', seat: 2, pin: '2222' };
+    await call('studentLogin', c2);
+    const answerAll = async () => {
+      const qs = (await call('getRound', c2, '英文')).ok;
+      return (await call('submitRound', c2, '英文', qs.map(q => ({ id: q.id, answer: q.type === '選擇' ? q.options['ABCD'.indexOf(q.answer)] : q.answer.split('|')[0] })))).ok;
+    };
+    let r = await answerAll();
+    let en = r.state.units.filter(u => u.subject === '英文');
+    assert.ok(en.every(u => u.level === 2), '同一天全對只到熟練');
+    r = await answerAll();  // 同一天再答對一次，還是不算
+    assert.ok(r.state.units.filter(u => u.subject === '英文').every(u => u.level === 2));
+    // 模擬「換一天」：把上次答對的日期改成以前的某一天
+    execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE progress SET last_right_day = '2026-01-01' WHERE seat = 2"`, { stdio: 'ignore' });
+    r = await answerAll();
+    en = r.state.units.filter(u => u.subject === '英文');
+    assert.ok(en.every(u => u.level === 3), '換一天再答對 = 精熟');
+    assert.equal(r.mastered.length, en.length);
+    assert.match(r.mastered.join(), /英文・Unit 1 單字/);
+    r = await answerAll();
+    assert.equal(r.mastered.length, 0, '徽章只給一次');
+  });
+  await step('精熟總覽與精熟加點', async () => {
+    await call('tSaveSettings', PW, { perMastery: 2 });
+    const g = (await call('tMastery', PW, 'DEMO')).ok;
+    const s2 = g.students.find(x => x.seat === 2);
+    assert.equal(Object.values(s2.levels).filter(v => v === 3).length, 2);
+    await t.click('[data-tab="tMastery"]'); await t.waitForSelector('#mTbl td.lvc.l3');
+    const before = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 2);
+    assert.equal(before.masteryPending, 2);
+    const out = (await call('tRedeem', PW, 'DEMO', [2], '精熟測試')).ok;
+    assert.equal(out[0].mastery, 2); assert.equal(out[0].points, before.points);
+    assert.equal((await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 2).masteryPending, 0);
+    await call('tSaveSettings', PW, { perMastery: 0 });
+  });
+  await step('學生的精熟圖鑑', async () => {
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    assert.match(await p.textContent('[data-island="英文"]'), /精熟 2 \/ 2 單元/);
+    await p.click('#bMastery'); await p.waitForSelector('#vMastery:not(.hidden)');
+    assert.equal(await p.locator('.mrow.lv3').count(), 2);
+  });
   await step('題庫管理：查詢、編輯、停用、刪除', async () => {
     await t.click('[data-tab="tBank"]'); await t.waitForSelector('#bankTbl tbody tr');
     await t.fill('#fQ', '長度'); await t.click('#bFind'); await t.waitForFunction(() => document.querySelectorAll('#bankTbl tbody tr').length === 1);

@@ -64,6 +64,15 @@ td.num,th.num{text-align:right}
 .copybox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .copybox code{background:var(--foam);padding:6px 10px;border-radius:6px;word-break:break-all;min-width:0}
 .login{max-width:380px;margin:12vh auto}
+.legend{display:flex;flex-wrap:wrap;gap:6px}
+.lvc{text-align:center;border-radius:6px}
+.legend .lvc{padding:2px 10px;font-size:13px}
+.lvc.l0{background:#f3f4f2;color:var(--muted)} .lvc.l1{background:#fdf1d8} .lvc.l2{background:#e3f1fb} .lvc.l3{background:#dff3e8}
+.mgrid td,.mgrid th{padding:6px 8px}
+.mgrid td.lvc{font-size:18px;border:2px solid #fff}
+.mgrid th.uh{white-space:normal;min-width:72px;max-width:110px;font-size:12px;line-height:1.3;vertical-align:bottom}
+.mgrid th.uh span{display:block;color:var(--coral);font-weight:700}
+.mgrid tr.sum td{font-weight:700;color:var(--muted);border-top:2px solid var(--line)}
 .bar{display:inline-block;width:80px;height:8px;background:#eef1f1;border-radius:9px;vertical-align:middle;overflow:hidden;margin-right:6px}
 .bar i{display:block;height:100%;background:var(--coral)}
 ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:normal}
@@ -90,6 +99,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <button role="tab" data-tab="tOverview" aria-selected="true">學生與加點</button>
     <button role="tab" data-tab="tUnits">教學進度</button>
     <button role="tab" data-tab="tImport">題庫匯入</button>
+    <button role="tab" data-tab="tMastery">精熟總覽</button>
     <button role="tab" data-tab="tBank">題庫管理</button>
     <button role="tab" data-tab="tClass">班級管理</button>
   </nav>
@@ -168,6 +178,15 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
       </div>
     </section>
 
+    <section id="tMastery" class="hidden">
+      <div class="panel">
+        <h2>精熟總覽</h2>
+        <p class="muted small">規則只有一條：<b>同一題在兩個不同的日子都答對，就算記住了</b>（不限定隔天）。一個單元 9 成的題目記住 = 🌳 精熟；7 成最近答對 = 🌿 熟練；有練習 = 🌱 初學。已精熟的單元超過 21 天沒練會標 ⏰，提醒複習（等級不會被扣）。只列出「教學進度」已勾選的單元。</p>
+        <div class="legend"><span class="lvc l0">未練習</span><span class="lvc l1">🌱 初學</span><span class="lvc l2">🌿 熟練</span><span class="lvc l3">🌳 精熟</span><span class="lvc l3">⏰ 該複習</span></div>
+        <div class="tbl" style="margin-top:10px"><table id="mTbl" class="mgrid"></table></div>
+      </div>
+    </section>
+
     <section id="tBank" class="hidden">
       <div class="panel">
         <div class="row" style="justify-content:space-between"><h2 style="margin:0">題庫管理</h2>
@@ -235,7 +254,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row"><label class="small">每回合題數 <input id="sRound" type="number" min="3" max="30" style="width:70px"></label>
             <label class="small">過關門檻（答對 %） <input id="sPass" type="number" min="10" max="100" style="width:70px"></label></div>
           <div class="row" style="margin-top:8px"><label class="small">1 個印章換 <input id="sStamp" type="number" min="0" style="width:60px"> 點</label>
-            <label class="small">累積金幣每 <input id="sCoin" type="number" min="0" style="width:70px"> 枚換 1 點</label></div>
+            <label class="small">累積金幣每 <input id="sCoin" type="number" min="0" style="width:70px"> 枚換 1 點</label>
+            <label class="small">每精熟 1 個單元換 <input id="sMastery" type="number" min="0" style="width:60px"> 點</label></div>
           <p class="muted small">換點比例填 0，代表那一項不換點。</p>
           <div class="row"><button class="btn2" id="bSaveSet">儲存設定</button></div>
           <h3>修改老師密碼</h3>
@@ -328,7 +348,7 @@ function renderOverview(){
   const today = S.filter(s => s.last === todayStr()).length;
   const pending = S.reduce((a, s) => a + s.points, 0);
   const rt = DASH.rate;
-  $('rateText').innerHTML = `換算方式：每個印章 <b>${rt.perStamp}</b> 點${rt.coinsPerPoint ? '，累積金幣每 <b>' + rt.coinsPerPoint + '</b> 枚 1 點（不足的留到下次）' : '，金幣不換點'}。比例可以在「班級管理 → 系統設定」修改。<br>「累積金幣」是學生答對賺到的金幣總數，在商店花掉也不會減少，所以加點不受影響。按「換點」會留下加點紀錄（可在「班級管理」匯出），再把清單複製到你的集點系統就好。`;
+  $('rateText').innerHTML = `換算方式：每個印章 <b>${rt.perStamp}</b> 點${rt.coinsPerPoint ? '，累積金幣每 <b>' + rt.coinsPerPoint + '</b> 枚 1 點（不足的留到下次）' : '，金幣不換點'}${rt.perMastery ? '，每精熟 1 個單元 <b>' + rt.perMastery + '</b> 點' : ''}。比例可以在「班級管理 → 系統設定」修改。<br>「累積金幣」是學生答對賺到的金幣總數，在商店花掉也不會減少，所以加點不受影響。按「換點」會留下加點紀錄（可在「班級管理」匯出），再把清單複製到你的集點系統就好。`;
   const acc = S.reduce((a, s) => a + s.right, 0) / Math.max(1, S.reduce((a, s) => a + s.total, 0));
   $('kpis').innerHTML = [
     ['今天完成', today + ' / ' + S.length + ' 人'],
@@ -403,12 +423,12 @@ async function redeem(seats){
 /* 換點結果：可以複製成表格，貼到老師自己的集點系統 */
 function showRedeem(out){
   const note = $('iNote').value.trim();
-  const tsv = '座號\t暱稱\t點數\t印章\t金幣\n' + out.map(o => [o.seat, o.nick || '', o.points, o.stamps, o.coins].join('\t')).join('\n');
+  const tsv = '座號\t暱稱\t點數\t印章\t金幣\t精熟單元\n' + out.map(o => [o.seat, o.nick || '', o.points, o.stamps, o.coins, o.mastery || 0].join('\t')).join('\n');
   const box = $('lastRedeem'); box.classList.remove('hidden');
   box.innerHTML = `<div class="row" style="justify-content:space-between"><b>剛剛換點${note ? '（' + esc(note) + '）' : ''}：共 ${out.length} 人、${out.reduce((a, o) => a + o.points, 0)} 點</b>
     <div class="row"><button class="btn2 sm" id="bCopyPts">複製清單</button><button class="btn2 sm" id="bCloseRedeem">關閉</button></div></div>
-    <div class="tbl" style="margin-top:8px"><table><thead><tr><th>座號</th><th>暱稱</th><th class="num">點數</th><th class="num">用掉印章</th><th class="num">用掉累積金幣</th></tr></thead><tbody>` +
-    out.map(o => `<tr><td>${o.seat}</td><td>${esc(o.nick) || '—'}</td><td class="num"><b>${o.points}</b></td><td class="num">${o.stamps}</td><td class="num">${o.coins}</td></tr>`).join('') +
+    <div class="tbl" style="margin-top:8px"><table><thead><tr><th>座號</th><th>暱稱</th><th class="num">點數</th><th class="num">用掉印章</th><th class="num">用掉累積金幣</th><th class="num">精熟單元</th></tr></thead><tbody>` +
+    out.map(o => `<tr><td>${o.seat}</td><td>${esc(o.nick) || '—'}</td><td class="num"><b>${o.points}</b></td><td class="num">${o.stamps}</td><td class="num">${o.coins}</td><td class="num">${o.mastery || 0}</td></tr>`).join('') +
     `</tbody></table></div><p class="small muted" style="margin:6px 0 0">「複製清單」會複製成表格（Tab 分隔），可以直接貼到 Excel、Google 試算表或你的集點系統。</p>`;
   $('bCopyPts').onclick = () => copy(tsv, '加點清單已複製');
   $('bCloseRedeem').onclick = () => box.classList.add('hidden');
@@ -538,6 +558,21 @@ $('bNewCls').addEventListener('click', async () => {
   }catch(e){ $('newErr').textContent = e.message; }
 });
 
+/* ---------- 精熟總覽 ---------- */
+async function loadMastery(){
+  try{
+    const m = await api('tMastery', PW, CUR.code);
+    if (!m.units.length){ $('mTbl').innerHTML = '<tbody><tr><td class="muted">還沒有勾選任何已教單元。</td></tr></tbody>'; return; }
+    const icon = ['', '🌱', '🌿', '🌳'], name = ['未練習', '初學', '熟練', '精熟'];
+    $('mTbl').innerHTML = '<thead><tr><th>座號</th><th>暱稱</th>' + m.units.map(u => `<th class="uh" title="${esc(u.subject + '・' + u.unit)}"><span>${esc(u.subject)}</span>${esc(u.unit)}</th>`).join('') + '<th class="num">精熟數</th></tr></thead><tbody>' +
+      m.students.map(st => '<tr><td>' + st.seat + '</td><td>' + (esc(st.nick) || '—') + '</td>' + m.units.map(u => {
+        const lv = st.levels[u.key] || 0, rv = st.review.includes(u.key);
+        return `<td class="lvc l${lv}" title="${esc(u.unit)}：${name[lv]}${rv ? '，該複習了' : ''}">${rv ? '⏰' : icon[lv]}</td>`;
+      }).join('') + '<td class="num"><b>' + m.units.filter(u => st.levels[u.key] === 3).length + '</b></td></tr>').join('') +
+      '<tr class="sum"><td colspan="2">全班精熟人數</td>' + m.units.map(u => `<td class="num">${u.mastered}</td>`).join('') + '<td></td></tr></tbody>';
+  }catch(e){ toast(e.message); }
+}
+
 /* ---------- 題庫管理 ---------- */
 let BANK = [], editing = null;
 function fillBankFilters(){
@@ -637,11 +672,11 @@ $('bExpQ').addEventListener('click', () => exportData('questions'));
 
 /* ---------- 系統設定 ---------- */
 async function loadSettings(){
-  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; }catch(e){}
+  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; $('sMastery').value = s.perMastery; }catch(e){}
 }
 $('bSaveSet').addEventListener('click', async () => {
   $('setErr').textContent = '';
-  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
+  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value, perMastery:$('sMastery').value}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
   catch(e){ $('setErr').textContent = e.message; }
 });
 $('bSavePw').addEventListener('click', async () => {
@@ -652,9 +687,10 @@ $('bSavePw').addEventListener('click', async () => {
 });
 
 function switchTab(id){
+  if (id === 'tMastery' && CUR) loadMastery();
   if (id === 'tBank' && DASH){ fillBankFilters(); if (!BANK.length) loadBank(); }
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
-  ['tOverview','tUnits','tImport','tBank','tClass'].forEach(t => $(t).classList.toggle('hidden', t !== id));
+  ['tOverview','tUnits','tImport','tMastery','tBank','tClass'].forEach(t => $(t).classList.toggle('hidden', t !== id));
 }
 document.querySelector('nav').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) switchTab(b.dataset.tab); });
 

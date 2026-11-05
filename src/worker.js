@@ -112,7 +112,7 @@ function safeEqual(a, b) {
 async function rate(ctx) {
   const s = await ctx.settings();
   const v = (k, d) => (s[k] === undefined || s[k] === '') ? d : Math.max(0, num(s[k]));
-  return { perStamp: v('per_stamp', 1), coinsPerPoint: v('coins_per_point', 20) };
+  return { perStamp: v('per_stamp', 1), coinsPerPoint: v('coins_per_point', 20), perMastery: v('per_mastery', 0) };
 }
 
 /* ---------- 老師登入 ---------- */
@@ -194,10 +194,39 @@ function poolFor(ctx, units) {
   return ctx.all('SELECT * FROM questions WHERE enabled = 1 AND unit_key IN (SELECT value FROM json_each(?))', JSON.stringify(units));
 }
 
+/** 每一題的作答狀況：last 最近一次對錯、days 答對過的不同日子數、rday 最後答對日、day 最後作答日 */
 async function history(ctx, code, seat) {
   const h = {};
-  (await ctx.all('SELECT qid, last_ok FROM progress WHERE class_code = ? AND seat = ?', code, seat)).forEach(r => h[r.qid] = { last: r.last_ok === 1 });
+  (await ctx.all('SELECT qid, last_ok, right_days, last_right_day, last_day FROM progress WHERE class_code = ? AND seat = ?', code, seat))
+    .forEach(r => h[r.qid] = { last: r.last_ok === 1, days: r.right_days, rday: r.last_right_day, day: r.last_day });
   return h;
+}
+
+/* ---------- 精熟制度 ----------
+ * 一題「記住了」：在兩個不同的日子都答對過，而且最近一次是答對的。
+ * 單元等級：
+ *   精熟 🌳  9 成以上的題目記住了
+ *   熟練 🌿  7 成以上的題目最近一次答對
+ *   初學 🌱  有練習過
+ * 已精熟的單元超過 21 天沒練習，會提醒複習（等級不會被扣）。
+ */
+const MASTER_RATIO = 0.9, SKILLED_RATIO = 0.7, REVIEW_DAYS = 21;
+const remembered = h => !!h && h.last && h.days >= 2;
+function unitLevels(pool, hist) {
+  const by = {};
+  pool.forEach(q => {
+    const u = by[q.unit_key] = by[q.unit_key] || { key: q.unit_key, subject: q.subject, unit: q.unit, total: 0, tried: 0, right: 0, remembered: 0, lastDay: '' };
+    const h = hist[q.id];
+    u.total++;
+    if (h) { u.tried++; if (h.last) u.right++; if (remembered(h)) u.remembered++; if (h.day > u.lastDay) u.lastDay = h.day; }
+  });
+  const reviewBefore = new Date(Date.now() + 8 * 3600e3 - REVIEW_DAYS * 864e5).toISOString().slice(0, 10);
+  return Object.keys(by).map(k => {
+    const u = by[k];
+    u.level = u.total && u.remembered / u.total >= MASTER_RATIO ? 3 : u.total && u.right / u.total >= SKILLED_RATIO ? 2 : u.tried ? 1 : 0;
+    u.review = u.level === 3 && !!u.lastDay && u.lastDay < reviewBefore;
+    return u;
+  });
 }
 
 function exam(cls) {
@@ -224,7 +253,13 @@ async function state(ctx, cls, s) {
     ex = { name: ex.name, date: ex.date, days: ex.days, total: ep.length, mastered: ep.filter(q => hist[q.id] && hist[q.id].last).length };
   }
   const set = await ctx.settings();
+  const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right }));
+  SUBJECTS.forEach(sj => {
+    const us = units.filter(u => u.subject === sj);
+    islands[sj].units = us.length; islands[sj].masteredUnits = us.filter(u => u.level === 3).length;
+  });
   return {
+    units,
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(),
@@ -286,11 +321,16 @@ API.getRound = async (ctx, cred, island) => {
   const n = Math.min(30, num(set.per_round) || 10);
   const hist = await history(ctx, cls.code, s.seat);
   const isWrong = q => hist[q.id] && !hist[q.id].last;
+  const td = today();
+  // 出題順序：錯題（最多 3 題）→ 之前答對過一天、今天還沒答對的（換一天再答對就記住了）→ 新題目 → 其他錯題 → 已記住的
   const prioritized = list => {
     const wrong = shuffle(list.filter(isWrong));
+    const second = shuffle(list.filter(q => { const h = hist[q.id]; return h && h.last && h.days < 2 && h.rday !== td; }));
     const fresh = shuffle(list.filter(q => !hist[q.id]));
-    const done = shuffle(list.filter(q => hist[q.id] && hist[q.id].last));
-    return wrong.slice(0, 3).concat(fresh, wrong.slice(3), done).slice(0, n);
+    const rest = shuffle(list.filter(q => { const h = hist[q.id]; return h && h.last && !(h.days < 2 && h.rday !== td); }));
+    const out = [], seen = new Set();
+    [wrong.slice(0, 3), second, fresh, wrong.slice(3), rest].forEach(g => g.forEach(q => { if (!seen.has(q.id)) { seen.add(q.id); out.push(q); } }));
+    return out.slice(0, n);
   };
   let picked;
   if (SUBJECTS.includes(island)) {
@@ -329,7 +369,12 @@ API.submitRound = async (ctx, cred, island, responses) => {
     const ok = grade(q, r.answer);
     if (ok) correct++; else concepts(q.concept).forEach(c => missed.add(c));
     stmts.push(ctx.stmt('INSERT INTO logs (ts, day, class_code, seat, qid, subject, unit, answer, ok) VALUES (?,?,?,?,?,?,?,?,?)', ts, day, cls.code, s.seat, q.id, q.subject, q.unit, str(r.answer, 100), ok ? 1 : 0));
-    stmts.push(ctx.stmt('INSERT INTO progress (class_code, seat, qid, last_ok) VALUES (?,?,?,?) ON CONFLICT(class_code, seat, qid) DO UPDATE SET last_ok = excluded.last_ok', cls.code, s.seat, q.id, ok ? 1 : 0));
+    // 答對：如果今天還沒答對過這題，答對的日子數 +1
+    stmts.push(ctx.stmt(`INSERT INTO progress (class_code, seat, qid, last_ok, right_days, last_right_day, last_day) VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(class_code, seat, qid) DO UPDATE SET last_ok = excluded.last_ok, last_day = excluded.last_day,
+        right_days = right_days + CASE WHEN excluded.last_ok = 1 AND last_right_day <> excluded.last_day THEN 1 ELSE 0 END,
+        last_right_day = CASE WHEN excluded.last_ok = 1 THEN excluded.last_day ELSE last_right_day END`,
+      cls.code, s.seat, q.id, ok ? 1 : 0, ok ? 1 : 0, ok ? day : '', day));
   });
   const total = seen.size;
   if (!total) fail('沒有收到作答。');
@@ -348,7 +393,12 @@ API.submitRound = async (ctx, cred, island, responses) => {
       streak = ?, last_day = ?, total = total + ?, right_count = right_count + ? WHERE class_code = ? AND seat = ?`,
     correct, correct, passed ? 1 : 0, gotStamp ? 1 : 0, s.streak, s.last_day, total, correct, cls.code, s.seat));
   await ctx.db.batch(stmts);
-  return { correct, total, passed, coins: correct, star: passed, stamp: gotStamp, missed: [...missed].slice(0, 4), state: await state(ctx, cls, s) };
+  const st = await state(ctx, cls, s);
+  // 新精熟的單元：記錄下來（徽章與加點用），每個單元只記第一次
+  const had = new Set((await ctx.all('SELECT unit_key FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.unit_key));
+  const newly = st.units.filter(u => u.level === 3 && !had.has(u.key));
+  if (newly.length) await ctx.batch(newly.map(u => ctx.stmt('INSERT OR IGNORE INTO mastery (class_code, seat, unit_key, day) VALUES (?,?,?,?)', cls.code, s.seat, u.key, day)));
+  return { correct, total, passed, coins: correct, star: passed, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit), state: st };
 };
 
 API.buyItem = async (ctx, cred, id) => {
@@ -408,7 +458,7 @@ API.tDashboard = async (ctx, pw, code) => {
   const cls = await findClass(ctx, code);
   const rt = await rate(ctx);
   const week = new Date(Date.now() + 8 * 3600e3 - 6 * 864e5).toISOString().slice(0, 10);
-  const [students, days, units, qs, cs, wrongNow] = await Promise.all([
+  const [students, days, units, qs, cs, wrongNow, mPend] = await Promise.all([
     ctx.all('SELECT * FROM students WHERE class_code = ? ORDER BY seat', cls.code),
     ctx.all('SELECT seat, COUNT(DISTINCT day) AS n FROM logs WHERE class_code = ? AND day >= ? GROUP BY seat', cls.code, week),
     ctx.all('SELECT subject, unit, SUM(ok) AS right, COUNT(*) AS total FROM logs WHERE class_code = ? GROUP BY subject, unit', cls.code),
@@ -418,8 +468,10 @@ API.tDashboard = async (ctx, pw, code) => {
     ctx.all(`SELECT q.subject, q.concept, SUM(l.ok) AS right, COUNT(*) AS total FROM logs l JOIN questions q ON q.id = l.qid
       WHERE l.class_code = ? AND q.concept <> '' GROUP BY q.subject, q.concept`, cls.code),
     ctx.all(`SELECT p.seat, q.subject, q.concept FROM progress p JOIN questions q ON q.id = p.qid
-      WHERE p.class_code = ? AND p.last_ok = 0`, cls.code)
+      WHERE p.class_code = ? AND p.last_ok = 0`, cls.code),
+    ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code)
   ]);
+  const mMap = {}; mPend.forEach(r => mMap[r.seat] = r.n);
   const dayMap = {}; days.forEach(r => dayMap[r.seat] = r.n);
   const weakBy = {}, wrongCount = {}, cPeople = {};
   wrongNow.forEach(r => {
@@ -443,7 +495,7 @@ API.tDashboard = async (ctx, pw, code) => {
       const w = weakBy[s.seat] || {};
       return {
         seat: s.seat, nick: s.nick, hasPin: !!s.pin, coins: s.coins, earned: s.earned, stars: s.stars,
-        stamps, coinsPending, points: stamps * rt.perStamp + coinPts,
+        stamps, coinsPending, masteryPending: mMap[s.seat] || 0, points: stamps * rt.perStamp + coinPts + (mMap[s.seat] || 0) * rt.perMastery,
         streak: liveStreak(s), last: s.last_day, weekDays: dayMap[s.seat] || 0,
         total: s.total, right: s.right_count, wrongNow: wrongCount[s.seat] || 0,
         weak: Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2),
@@ -528,16 +580,20 @@ API.tRedeem = async (ctx, pw, code, seats, note) => {
   const want = new Set((seats || []).map(x => Math.floor(num(x))));
   const ts = stampNow();
   const out = [], stmts = [];
+  const mMap = {};
+  (await ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code)).forEach(r => mMap[r.seat] = r.n);
   (await ctx.all('SELECT * FROM students WHERE class_code = ?', cls.code)).forEach(s => {
     if (!want.has(s.seat)) return;
     const stamps = s.stamps - s.stamps_redeemed, coinsPending = s.earned - s.coins_redeemed;
     const coinPts = rt.coinsPerPoint > 0 ? Math.floor(coinsPending / rt.coinsPerPoint) : 0;
-    const coinsUsed = coinPts * rt.coinsPerPoint, stampPts = stamps * rt.perStamp, points = stampPts + coinPts;
+    const masteryN = rt.perMastery > 0 ? (mMap[s.seat] || 0) : 0;
+    const coinsUsed = coinPts * rt.coinsPerPoint, stampPts = stamps * rt.perStamp, points = stampPts + coinPts + masteryN * rt.perMastery;
     if (points <= 0) return;
     const usedStamps = stampPts > 0 ? stamps : 0;
     stmts.push(ctx.stmt('UPDATE students SET stamps_redeemed = stamps_redeemed + ?, coins_redeemed = coins_redeemed + ? WHERE class_code = ? AND seat = ?', usedStamps, coinsUsed, cls.code, s.seat));
-    stmts.push(ctx.stmt('INSERT INTO points_log (ts, class_code, seat, nick, stamps, coins, points, note) VALUES (?,?,?,?,?,?,?,?)', ts, cls.code, s.seat, s.nick, usedStamps, coinsUsed, points, str(note, 60)));
-    out.push({ seat: s.seat, nick: s.nick, stamps: usedStamps, coins: coinsUsed, points });
+    if (masteryN) stmts.push(ctx.stmt('UPDATE mastery SET redeemed = 1 WHERE class_code = ? AND seat = ? AND redeemed = 0', cls.code, s.seat));
+    stmts.push(ctx.stmt('INSERT INTO points_log (ts, class_code, seat, nick, stamps, coins, points, note, mastery) VALUES (?,?,?,?,?,?,?,?,?)', ts, cls.code, s.seat, s.nick, usedStamps, coinsUsed, points, str(note, 60), masteryN));
+    out.push({ seat: s.seat, nick: s.nick, stamps: usedStamps, coins: coinsUsed, mastery: masteryN, points });
   });
   if (stmts.length) await ctx.db.batch(stmts);
   return out;
@@ -545,7 +601,34 @@ API.tRedeem = async (ctx, pw, code, seats, note) => {
 
 API.tPointsLog = async (ctx, pw, code) => {
   await checkPw(ctx, pw);
-  return ctx.all('SELECT ts, seat, nick, stamps, coins, points, note FROM points_log WHERE class_code = ? ORDER BY id DESC LIMIT 2000', up(code));
+  return ctx.all('SELECT ts, seat, nick, stamps, coins, mastery, points, note FROM points_log WHERE class_code = ? ORDER BY id DESC LIMIT 2000', up(code));
+};
+
+/** 精熟總覽：每位學生在每個已教單元的等級 */
+API.tMastery = async (ctx, pw, code) => {
+  await checkPw(ctx, pw);
+  const cls = await findClass(ctx, code);
+  const pool = await poolFor(ctx, jsonp(cls.units, []));
+  const [students, prog] = await Promise.all([
+    ctx.all('SELECT seat, nick FROM students WHERE class_code = ? ORDER BY seat', cls.code),
+    ctx.all('SELECT seat, qid, last_ok, right_days, last_right_day, last_day FROM progress WHERE class_code = ?', cls.code)
+  ]);
+  const hBy = {};
+  prog.forEach(r => (hBy[r.seat] = hBy[r.seat] || {})[r.qid] = { last: r.last_ok === 1, days: r.right_days, rday: r.last_right_day, day: r.last_day });
+  const base = unitLevels(pool, {});
+  const order = base.map(u => u.key).sort((a, b) => {
+    const A = base.find(u => u.key === a), B = base.find(u => u.key === b);
+    return SUBJECTS.indexOf(A.subject) - SUBJECTS.indexOf(B.subject) || a.localeCompare(b);
+  });
+  const rows = students.map(st => {
+    const lv = {}, review = [];
+    unitLevels(pool, hBy[st.seat] || {}).forEach(u => { lv[u.key] = u.level; if (u.review) review.push(u.key); });
+    return { seat: st.seat, nick: st.nick, levels: lv, review };
+  });
+  return {
+    units: order.map(k => { const u = base.find(x => x.key === k); return { key: k, subject: u.subject, unit: u.unit, total: u.total, mastered: rows.filter(r => r.levels[k] === 3).length }; }),
+    students: rows
+  };
 };
 
 /* ---------- 題庫 ---------- */
@@ -683,7 +766,7 @@ API.tDeleteQuestions = async (ctx, pw, ids) => {
 API.tGetSettings = async (ctx, pw) => {
   await checkPw(ctx, pw);
   const s = await ctx.settings();
-  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), customPw: !!s.teacher_pw_hash };
+  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), perMastery: num(s.per_mastery), customPw: !!s.teacher_pw_hash };
 };
 
 API.tSaveSettings = async (ctx, pw, data) => {
@@ -695,6 +778,7 @@ API.tSaveSettings = async (ctx, pw, data) => {
   if (data.passRatio !== undefined) stmts.push(put('pass_ratio', Math.min(1, Math.max(0.1, num(data.passRatio) || 0.7))));
   if (data.perStamp !== undefined) stmts.push(put('per_stamp', Math.min(100, Math.max(0, Math.floor(num(data.perStamp))))));
   if (data.coinsPerPoint !== undefined) stmts.push(put('coins_per_point', Math.min(10000, Math.max(0, Math.floor(num(data.coinsPerPoint))))));
+  if (data.perMastery !== undefined) stmts.push(put('per_mastery', Math.min(100, Math.max(0, Math.floor(num(data.perMastery))))));
   if (data.newPw !== undefined) {
     const np = String(data.newPw);
     if (np.length < 6) fail('新密碼至少要 6 個字。');
@@ -719,7 +803,7 @@ API.tExport = async (ctx, pw, what, code) => {
       連續天數: liveStreak(s), 最後完成日: s.last_day, 總答題: s.total, 答對題: s.right_count, 正確率: s.total ? Math.round(s.right_count / s.total * 100) + '%' : ''
     }));
   }
-  if (what === 'points') return (await API.tPointsLog(ctx, pw, cls.code)).map(r => ({ 時間: r.ts, 座號: r.seat, 暱稱: r.nick, 點數: r.points, 用掉印章: r.stamps, 用掉累積金幣: r.coins, 備註: r.note }));
+  if (what === 'points') return (await API.tPointsLog(ctx, pw, cls.code)).map(r => ({ 時間: r.ts, 座號: r.seat, 暱稱: r.nick, 點數: r.points, 用掉印章: r.stamps, 用掉累積金幣: r.coins, 精熟單元: r.mastery, 備註: r.note }));
   if (what === 'logs') return ctx.all('SELECT ts AS 時間, seat AS 座號, subject AS 科目, unit AS 單元, qid AS 題號, answer AS 作答, CASE ok WHEN 1 THEN \'對\' ELSE \'錯\' END AS 對錯 FROM logs WHERE class_code = ? ORDER BY id DESC LIMIT 20000', cls.code);
   fail('沒有這種匯出。');
 };
