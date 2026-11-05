@@ -100,6 +100,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <div class="tbl"><table id="stuTbl"></table></div>
       </div>
       <div class="grid2">
+        <div class="panel"><h2>需要加強的觀念</h2><p class="muted small">依題庫的「觀念」欄統計。座號是目前這個觀念還有錯題的學生，可以找時間個別指導。</p><div id="weakC"></div></div>
         <div class="panel"><h2>需要加強的單元</h2><div id="weak"></div></div>
         <div class="panel"><h2>全班最常錯的題目</h2><div id="hard"></div></div>
       </div>
@@ -108,9 +109,17 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <section id="tUnits" class="hidden">
       <div class="panel">
         <h2>已經教過的單元</h2>
-        <p class="muted small">勾選的單元才會出現在學生的島上。每上完一課就來勾一下。單元清單來自「題庫」分頁，同一套題庫每一屆都能用。</p>
+        <p class="muted small">勾選的單元才會出現在學生的島上。每上完一課就來勾一下。這裡只列出這個班的課本版本（<b id="verLabel"></b>）和「通用」題目，版本可以在「班級管理」修改。</p>
+        <label class="row small" style="margin-bottom:6px"><input type="checkbox" id="showAllVer">也顯示其他版本的單元</label>
         <div id="unitBox"></div>
         <div class="row" style="margin-top:14px"><button class="btn" id="bSaveUnits">儲存進度</button><span class="muted small" id="unitCount"></span></div>
+      </div>
+      <div class="panel">
+        <h2>段考衝刺</h2>
+        <p class="muted small">設定考試日期和範圍後，學生的地圖會出現倒數和「段考衝刺島」，只出考試範圍內的題目，並優先出錯過的題。考試日過後會自動消失。</p>
+        <div class="row"><input id="exName" placeholder="考試名稱，例如：第一次段考" style="min-width:200px"><input id="exDate" type="date"><button class="btn2 sm" id="bExFromTaught">範圍＝目前已教單元</button><button class="btn2 sm" id="bExClear">清除考試</button></div>
+        <div id="examBox"></div>
+        <div class="row" style="margin-top:14px"><button class="btn" id="bSaveExam">儲存考試設定</button><span class="muted small" id="examCount"></span></div>
       </div>
     </section>
 
@@ -119,7 +128,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <div class="panel">
           <h2>1. 用 AI 出題（選用）</h2>
           <p class="muted small">填好後按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼到右邊匯入。匯入前請先看過一遍題目和答案。</p>
-          <div class="row"><select id="aGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+          <div class="row"><input id="aVer" list="verList" placeholder="版本" style="width:90px"><select id="aGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
             <select id="aSem"><option>上</option><option>下</option></select>
             <select id="aSubj"><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select>
             <input id="aCount" type="number" value="10" min="1" max="30" style="width:80px"></div>
@@ -129,9 +138,10 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         </div>
         <div class="panel">
           <h2>2. 貼上題目匯入</h2>
-          <p class="muted small">可以直接從 Excel／Google 試算表複製貼上，也可以貼 CSV。欄位順序：<br>年級、學期、科目、單元、題型、題目、選項A、選項B、選項C、選項D、答案、解析</p>
-          <textarea id="iImport" placeholder="6	上	數學	分數除法	選擇	3/4 ÷ 1/4 = ?	1	2	3	4	C	3/4 × 4 = 3"></textarea>
+          <p class="muted small">可以直接從 Excel／Google 試算表複製貼上，也可以貼 CSV。沒有標題列時，欄位順序是：<br>版本、年級、學期、科目、單元、觀念、題型、題目、選項A、選項B、選項C、選項D、答案、解析<br>有標題列的話，欄位順序可以不同。版本空白時，會用下面選的版本。</p>
+          <textarea id="iImport" placeholder="南一	6	上	數學	分數除法	分數除以分數	選擇	3/4 ÷ 1/4 = ?	1	2	3	4	C	3/4 × 4 = 3"></textarea>
           <div class="row" style="margin-top:10px">
+            <label class="small">版本 <input id="iVer" list="verList" style="width:90px"></label>
             <select id="iSource"><option>老師</option><option>AI</option></select>
             <button class="btn" id="bImport">匯入</button>
           </div>
@@ -141,6 +151,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
       <div class="panel small muted">
         <h3 style="margin-top:0">題型寫法</h3>
         <ul>
+          <li><b>版本</b>：例如 南一、康軒、翰林。不分版本都適用的題目（例如英文單字、成語）填「通用」，每個班都看得到。</li>
+          <li><b>觀念</b>：這題考的觀念，例如「通分」「單位換算」「過去式」。有好幾個時用「、」隔開。後台會依這欄找出學生的弱點觀念。</li>
           <li><b>選擇</b>：填選項A～D，答案寫 A、B、C 或 D。</li>
           <li><b>是非</b>：選項留空，答案寫 O 或 X。</li>
           <li><b>填空</b>：選項留空。可接受多個答案時用「|」隔開，例如 <code>3/2|1又1/2|1.5</code>。</li>
@@ -156,9 +168,9 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <p class="muted small">把這個連結做成 QR code 或貼在班網，學生打開後輸入座號和自己設的 4 位數密碼。</p>
           <div class="copybox"><code id="stuUrl"></code><button class="btn2 sm" id="bCopyUrl">複製</button></div>
           <h3>這個班級</h3>
-          <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select></div>
+          <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select><label class="small">版本 <input id="eVer" list="verList" style="width:90px"></label></div>
           <div class="row" style="margin-top:10px"><button class="btn2" id="bSaveCls">儲存</button><button class="btn2" id="bAddStu">加 1 位學生</button><button class="btn2" id="bArchive"></button></div>
-          <p class="muted small">學期換了改這裡就好。畢業或結業時按「封存」，學生就不能再登入，資料仍保留在試算表。</p>
+          <p class="muted small">學期或課本版本換了，改這裡就好。畢業或結業時按「封存」，學生就不能再登入，資料仍保留在試算表。</p>
         </div>
         <div class="panel">
           <h2>新的一屆</h2>
@@ -166,6 +178,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row"><input id="nCode" placeholder="班級代碼" style="width:140px"><input id="nName" placeholder="名稱，例如 115 學年 六年一班" style="flex:1;min-width:180px"></div>
           <div class="row" style="margin-top:10px"><label class="small">年級 <select id="nGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
             <label class="small">學期 <select id="nSem"><option>上</option><option>下</option></select></label>
+            <label class="small">版本 <input id="nVer" list="verList" value="南一" style="width:80px"></label>
             <label class="small">人數 <input id="nCount" type="number" value="28" min="1" max="60" style="width:80px"></label>
             <button class="btn" id="bNewCls">建立</button></div>
           <p class="err small" id="newErr"></p>
@@ -175,6 +188,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
   </main>
 </div>
 <div class="toast hidden" id="toast"></div>
+<datalist id="verList"></datalist>
 
 <script>
 let PW = '', CLASSES = [], CUR = null, DASH = null, URL0 = '';
@@ -196,11 +210,12 @@ $('fLogin').addEventListener('submit', async e => {
   }catch(err){ $('loginErr').textContent = err.message; }
 });
 
+function setVersions(v){ $('verList').innerHTML = (v || []).map(x => `<option value="${esc(x)}">`).join(''); }
 function afterLogin(r){
-  CLASSES = r.classes; URL0 = r.url;
+  CLASSES = r.classes; URL0 = r.url; setVersions(r.versions);
   $('vLogin').classList.add('hidden'); $('vApp').classList.remove('hidden');
   const active = CLASSES.filter(c => c.status === '進行中');
-  $('selClass').innerHTML = CLASSES.map(c => `<option value="${esc(c.code)}">${esc(c.name)}（${esc(c.code)}）${c.status === '進行中' ? '' : '・已封存'}</option>`).join('');
+  $('selClass').innerHTML = CLASSES.map(c => `<option value="${esc(c.code)}">${esc(c.name)}（${esc(c.code)}・${esc(c.version)}）${c.status === '進行中' ? '' : '・已封存'}</option>`).join('');
   let pick = null; try{ pick = localStorage.getItem('kq_tc'); }catch(_){}
   if (!CLASSES.some(c => c.code === pick)) pick = (active[active.length - 1] || CLASSES[0] || {}).code;
   if (pick){ $('selClass').value = pick; loadClass(pick); }
@@ -215,7 +230,8 @@ async function loadClass(code){
   catch(e){ toast(e.message); }
 }
 
-function renderAll(){ renderOverview(); renderUnits(); renderClass(); }
+function renderAll(){ setVersions(DASH.versions); renderOverview(); renderUnits(); renderExam(); renderClass();
+  $('aVer').value = CUR.version; $('iVer').value = CUR.version; }
 
 function renderOverview(){
   const S = DASH.students;
@@ -229,7 +245,7 @@ function renderOverview(){
     ['待兌換印章', pending + ' 個']
   ].map(k => `<div class="kpi"><span class="small muted">${k[0]}</span><b>${k[1]}</b></div>`).join('');
 
-  $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">待兌換印章</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th class="num">金幣</th><th></th></tr></thead><tbody>` +
+  $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">待兌換印章</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th>弱點觀念</th><th class="num">金幣</th><th></th></tr></thead><tbody>` +
     S.map(s => {
       const pct = s.total ? Math.round(s.right / s.total * 100) : null;
       const pill = !s.hasPin ? '<span class="pill p-mute">未登入</span>'
@@ -240,11 +256,16 @@ function renderOverview(){
         <td>${s.seat}</td><td>${esc(s.nick) || '<span class="muted">—</span>'}</td>
         <td class="num">${s.stamps ? '<span class="stamp">' + s.stamps + '</span>' : '<span class="muted">0</span>'}</td>
         <td class="num">${s.streak}</td><td class="num">${s.weekDays}</td><td>${pill}</td>
-        <td class="num">${pct === null ? '<span class="muted">—</span>' : pct + '%'}</td><td class="num">${s.wrongNow}</td><td class="num">${s.coins}</td>
+        <td class="num">${pct === null ? '<span class="muted">—</span>' : pct + '%'}</td><td class="num">${s.wrongNow}</td><td>${s.weak.length ? s.weak.map(w => '<span class="pill p-warn">' + esc(w) + '</span>').join(' ') : '<span class="muted">—</span>'}</td><td class="num">${s.coins}</td>
         <td><button class="btn2 sm" data-redeem="${s.seat}" ${s.stamps ? '' : 'disabled'}>兌換</button> <button class="btn2 sm" data-reset="${s.seat}">重設密碼</button></td></tr>`;
     }).join('') + '</tbody>';
   $('cAll').onchange = e => document.querySelectorAll('.cStu:not(:disabled)').forEach(c => c.checked = e.target.checked);
 
+  $('weakC').innerHTML = DASH.weakConcepts.length ? DASH.weakConcepts.map(c => {
+    const p = Math.round(c.right / c.total * 100);
+    return `<div style="margin-bottom:10px"><span class="bar"><i style="width:${p}%"></i></span><b>${p}%</b>　${esc(c.subject)}・<b>${esc(c.concept)}</b>
+      <div class="small muted" style="white-space:normal">${c.people.length ? '還有錯題：' + c.people.map(n => n + ' 號').join('、') : '目前大家都答對了'}</div></div>`;
+  }).join('') : '<p class="muted">題目有填「觀念」、作答累積多一點後，這裡會列出全班最弱的觀念。</p>';
   $('weak').innerHTML = DASH.weakUnits.length ? DASH.weakUnits.map(u => {
     const p = Math.round(u.right / u.total * 100);
     return `<div style="margin-bottom:8px"><span class="bar"><i style="width:${p}%"></i></span><b>${p}%</b>　${esc(u.unit)} <span class="muted small">（${u.total} 次作答）</span></div>`;
@@ -277,40 +298,67 @@ async function redeem(seats){
   }catch(e){ toast(e.message); }
 }
 
-function renderUnits(){
-  const chosen = new Set(CUR.units);
+/* 單元清單：依 版本 → 年級學期 → 科目 分組；預設只列這班的版本和「通用」 */
+function unitListHtml(cls, chosen, all){
+  const units = DASH.units.filter(u => all || u.version === cls.version || u.version === '通用' || chosen.has(u.key));
   const bySem = {};
-  DASH.units.forEach(u => { const k = u.grade + '年級' + u.sem + '學期'; (bySem[k] = bySem[k] || {})[u.subject] = (bySem[k][u.subject] || []).concat(u); });
+  units.forEach(u => { const k = (u.version === '通用' ? '通用' : u.version + '版') + '・' + u.grade + '年級' + u.sem + '學期'; (bySem[k] = bySem[k] || {})[u.subject] = (bySem[k][u.subject] || []).concat(u); });
   const keys = Object.keys(bySem);
-  if (!keys.length){ $('unitBox').innerHTML = '<p class="muted">題庫還是空的，先到「題庫匯入」加題目。</p>'; return; }
-  $('unitBox').innerHTML = keys.map(k => `<div class="semhead"><h3>${k}</h3><button class="btn2 sm" data-all="${esc(k)}">全選</button><button class="btn2 sm" data-none="${esc(k)}">全不選</button></div>
+  if (!keys.length) return '<p class="muted">這個版本的題庫還是空的，先到「題庫匯入」加題目。</p>';
+  return keys.map(k => `<div class="semhead"><h3>${esc(k)}</h3><button class="btn2 sm" data-all="${esc(k)}">全選</button><button class="btn2 sm" data-none="${esc(k)}">全不選</button></div>
     <div class="units">` + Object.keys(bySem[k]).map(sj => `<div class="ugroup"><h4>${esc(sj)}</h4>` + bySem[k][sj].map(u =>
-      `<label><input type="checkbox" class="cUnit" data-sem="${esc(k)}" value="${esc(u.key)}" ${chosen.has(u.key) ? 'checked' : ''}>${esc(u.unit)} <span class="muted small">${u.count} 題</span></label>`).join('') + '</div>').join('') + '</div>').join('');
+      `<label><input type="checkbox" class="cU" data-sem="${esc(k)}" value="${esc(u.key)}" ${chosen.has(u.key) ? 'checked' : ''}>${esc(u.unit)} <span class="muted small">${u.count} 題</span></label>`).join('') + '</div>').join('') + '</div>').join('');
+}
+function checked(box){ return [...$(box).querySelectorAll('.cU:checked')].map(c => c.value); }
+function renderUnits(){
+  $('verLabel').textContent = CUR.version;
+  $('unitBox').innerHTML = unitListHtml(CUR, new Set(CUR.units), $('showAllVer').checked);
   countUnits();
 }
-function countUnits(){ $('unitCount').textContent = '已勾選 ' + document.querySelectorAll('.cUnit:checked').length + ' 個單元'; }
-$('unitBox').addEventListener('change', countUnits);
-$('unitBox').addEventListener('click', e => {
-  const a = e.target.closest('[data-all]'), n = e.target.closest('[data-none]');
-  const k = (a || n || {}).dataset; if (!k) return;
-  document.querySelectorAll('.cUnit').forEach(c => { if (c.dataset.sem === (k.all || k.none)) c.checked = !!a; });
+function renderExam(){
+  const ex = CUR.exam || {};
+  $('exName').value = ex.name || ''; $('exDate').value = ex.date || '';
+  $('examBox').innerHTML = unitListHtml(CUR, new Set(ex.units || []), $('showAllVer').checked);
   countUnits();
+}
+function countUnits(){
+  $('unitCount').textContent = '已勾選 ' + checked('unitBox').length + ' 個單元';
+  $('examCount').textContent = '考試範圍 ' + checked('examBox').length + ' 個單元';
+}
+$('showAllVer').addEventListener('change', () => { const u = checked('unitBox'), e = checked('examBox'); CUR.units = u; CUR.exam = Object.assign({}, CUR.exam, {units:e}); renderUnits(); renderExam(); });
+['unitBox','examBox'].forEach(id => {
+  $(id).addEventListener('change', countUnits);
+  $(id).addEventListener('click', e => {
+    const a = e.target.closest('[data-all]'), n = e.target.closest('[data-none]');
+    const k = (a || n || {}).dataset; if (!k) return;
+    $(id).querySelectorAll('.cU').forEach(c => { if (c.dataset.sem === (k.all || k.none)) c.checked = !!a; });
+    countUnits();
+  });
+});
+$('bExFromTaught').addEventListener('click', () => { const t = new Set(checked('unitBox')); $('examBox').querySelectorAll('.cU').forEach(c => c.checked = t.has(c.value)); countUnits(); });
+$('bExClear').addEventListener('click', () => { $('exName').value = ''; $('exDate').value = ''; $('examBox').querySelectorAll('.cU').forEach(c => c.checked = false); countUnits(); });
+$('bSaveExam').addEventListener('click', async () => {
+  const units = checked('examBox'), name = $('exName').value.trim(), date = $('exDate').value;
+  if (units.length && !date){ toast('請填考試日期'); return; }
+  try{ CUR = await api('tSaveClass', PW, CUR.code, {exam:{name: name || '段考', date, units}}); toast(units.length ? '考試設定已儲存，學生地圖會出現段考衝刺島' : '已清除考試設定'); }catch(e){ toast(e.message); }
 });
 $('bSaveUnits').addEventListener('click', async () => {
-  const units = [...document.querySelectorAll('.cUnit:checked')].map(c => c.value);
+  const units = checked('unitBox');
   try{ CUR = await api('tSaveClass', PW, CUR.code, {units}); toast('進度已儲存，學生重新整理就會看到'); }catch(e){ toast(e.message); }
 });
 
 $('bPrompt').addEventListener('click', () => {
+  const v = $('aVer').value.trim() || CUR.version || '通用';
   const g = $('aGrade').value, s = $('aSem').value, sj = $('aSubj').value, u = $('aUnit').value.trim() || '（單元名稱）', n = $('aCount').value || 10, notes = $('aNotes').value.trim();
-  const p = `請幫我出 ${n} 題給臺灣國小${g}年級${s}學期「${sj}」科、單元「${u}」的複習題，難度符合課綱，用詞適合${g}年級學生。
+  const p = `請幫我出 ${n} 題給臺灣國小${g}年級${s}學期「${sj}」科、單元「${u}」的複習題${v !== '通用' ? '（' + v + '版課本）' : ''}，難度符合課綱，用詞適合${g}年級學生。
 ${notes ? '\n請以下面的上課內容為主出題：\n' + notes + '\n' : ''}
 題型請混合：約六成選擇題、兩成是非題、兩成填空題。
-請「只」輸出一個用 Tab 分隔的表格，不要有其他文字、不要加標題列，每題一行，12 欄依序是：
-年級	學期	科目	單元	題型	題目	選項A	選項B	選項C	選項D	答案	解析
+請「只」輸出一個用 Tab 分隔的表格，不要有其他文字、不要加標題列，每題一行，14 欄依序是：
+版本	年級	學期	科目	單元	觀念	題型	題目	選項A	選項B	選項C	選項D	答案	解析
 
 規則：
-- 年級填 ${g}，學期填 ${s}，科目填 ${sj}，單元填 ${u}
+- 版本填 ${v}，年級填 ${g}，學期填 ${s}，科目填 ${sj}，單元填 ${u}
+- 觀念填這題考的核心觀念（2～8 個字，例如「通分」「單位換算」「過去式」），同一個單元內相同觀念要用一樣的寫法，方便統計
 - 題型只能是：選擇、是非、填空
 - 選擇題：四個選項都要填，答案填 A、B、C 或 D，正確答案的位置要平均分散
 - 是非題：選項A～D留空，答案填 O 或 X
@@ -327,7 +375,7 @@ $('bImport').addEventListener('click', async () => {
   if (!text.trim()){ toast('先貼上題目'); return; }
   $('bImport').disabled = true;
   try{
-    const r = await api('tImport', PW, text, $('iSource').value);
+    const r = await api('tImport', PW, text, $('iSource').value, $('iVer').value.trim() || CUR.version);
     $('importMsg').innerHTML = `<p><b>成功匯入 ${r.added} 題。</b>${r.added ? '記得到「教學進度」勾選新單元。' : ''}</p>` +
       (r.errors.length ? '<p class="err">以下幾行沒有匯入：</p><ul>' + r.errors.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '');
     if (r.added && !r.errors.length) $('iImport').value = '';
@@ -338,12 +386,12 @@ $('bImport').addEventListener('click', async () => {
 
 function renderClass(){
   $('stuUrl').textContent = DASH.url;
-  $('eName').value = CUR.name; $('eGrade').value = String(CUR.grade); $('eSem').value = CUR.sem;
+  $('eName').value = CUR.name; $('eGrade').value = String(CUR.grade); $('eSem').value = CUR.sem; $('eVer').value = CUR.version;
   $('bArchive').textContent = CUR.status === '進行中' ? '封存（結業）' : '恢復使用';
 }
 $('bCopyUrl').addEventListener('click', () => copy(DASH.url, '連結已複製'));
 $('bSaveCls').addEventListener('click', async () => {
-  try{ CUR = await api('tSaveClass', PW, CUR.code, {name:$('eName').value.trim(), grade:$('eGrade').value, sem:$('eSem').value}); toast('已儲存'); refreshList(); }catch(e){ toast(e.message); }
+  try{ CUR = await api('tSaveClass', PW, CUR.code, {name:$('eName').value.trim(), grade:$('eGrade').value, sem:$('eSem').value, version:$('eVer').value.trim() || '通用'}); toast('已儲存'); renderUnits(); renderExam(); refreshList(); }catch(e){ toast(e.message); }
 });
 $('bAddStu').addEventListener('click', async () => { try{ await api('tAddStudents', PW, CUR.code, 1); toast('已新增 1 位學生'); loadClass(CUR.code); }catch(e){ toast(e.message); } });
 $('bArchive').addEventListener('click', async e => {
@@ -357,7 +405,7 @@ $('bNewCls').addEventListener('click', async () => {
   $('newErr').textContent = '';
   const code = $('nCode').value.trim().toUpperCase();
   try{
-    const r = await api('tCreateClass', PW, {code, name:$('nName').value.trim(), grade:$('nGrade').value, sem:$('nSem').value, count:$('nCount').value});
+    const r = await api('tCreateClass', PW, {code, name:$('nName').value.trim(), grade:$('nGrade').value, sem:$('nSem').value, version:$('nVer').value.trim() || '通用', count:$('nCount').value});
     try{ localStorage.setItem('kq_tc', code); }catch(_){}
     afterLogin(r); toast('班級 ' + code + ' 建立好了，接著到「教學進度」勾選單元'); switchTab('tUnits');
   }catch(e){ $('newErr').textContent = e.message; }

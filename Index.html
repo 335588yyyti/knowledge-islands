@@ -133,6 +133,32 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .gain b{display:block;font-size:24px}
 .stampin{animation:stamp .6s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes stamp{from{transform:scale(2.4) rotate(-30deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
+/* 段考倒數 */
+.exam{display:flex;align-items:center;gap:14px;background:#fff;border-radius:24px;padding:12px 18px;margin-bottom:16px;border:3px dashed var(--peach)}
+.exam .cd{flex:none;text-align:center;background:var(--peach);color:#fff;border-radius:18px;padding:6px 12px;font-weight:800;line-height:1.15}
+.exam .cd b{display:block;font-size:30px}
+.exam .info{flex:1;min-width:0}
+.exam .info b{font-size:19px}
+.exam .bar{margin:6px 0 0;max-width:none;border-color:var(--cream2);background:var(--cream2)}
+.exam .bar i{background:var(--peach)}
+/* 衣櫃 */
+.wardrobe-btn{background:#fff;border-radius:999px;padding:6px 14px 6px 6px;font-weight:800;display:flex;align-items:center;gap:6px;box-shadow:0 3px 0 rgba(74,69,102,.08)}
+.wardrobe-btn svg{width:30px;height:30px}
+.shop{max-width:760px;margin:0 auto}
+.shop-head{display:grid;grid-template-columns:minmax(0,200px) 1fr;gap:16px;align-items:center}
+.shop-head .stage{background:radial-gradient(circle at 50% 60%,#fff 0 55%,var(--cream2) 56%);border-radius:50%;aspect-ratio:1;display:grid;place-items:center;max-width:100%}
+.shop-head .stage svg{width:78%}
+.shop h3{margin:18px 0 8px;font-size:19px}
+.items{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.item{background:#fff;border:3px solid #f1e3c8;border-radius:20px;padding:8px 6px 10px;text-align:center;font-size:14px;font-weight:700;box-shadow:0 3px 0 #f1e3c8}
+.item svg{width:70px;height:auto;display:block;margin:0 auto}
+.item small{display:flex;align-items:center;justify-content:center;gap:3px;font-weight:800;color:var(--muted)}
+.item small svg{width:16px;margin:0}
+.item.on{border-color:var(--peach);box-shadow:0 3px 0 var(--peach)}
+.item.sel{outline:4px solid var(--butter);outline-offset:1px}
+.item.wear small{color:var(--ok)}
+.tips{margin:10px 0 0;padding:10px 14px;background:var(--cream2);border-radius:16px;font-weight:600}
+@media (max-width:520px){.shop-head{grid-template-columns:1fr}.shop-head .stage{width:170px;margin:0 auto}}
 .loading{text-align:center;padding:60px 0;font-size:22px;font-weight:800}
 .loading svg{width:110px;display:block;margin:0 auto 8px}
 /* 答對時的小星星 */
@@ -174,10 +200,12 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <span class="chip" title="金幣"><span class="ic-coin"></span><span id="cCoins">0</span></span>
         <span class="chip" title="星星"><span class="ic-star"></span><span id="cStars">0</span></span>
         <span class="chip" title="連續天數"><span class="ic-fire"></span><span><span id="cStreak">0</span> 天</span></span>
+        <button class="wardrobe-btn" id="bShop"><span id="shopIcon"></span>波波的衣櫃</button>
       </div>
     </div>
     <div class="talk today"><span class="bob" id="mapMascot"></span>
       <div class="say"><div class="seal" id="todaySeal">今日</div><span id="todayText"></span></div></div>
+    <div class="exam hidden" id="exam"></div>
     <div class="map" id="map"></div>
     <div class="foot"><button class="btn soft small" id="bLogout">登出</button></div>
   </section>
@@ -190,6 +218,18 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <div id="qBody"></div>
       <div id="qFb"></div>
       <div class="actions"><button class="btn hidden" id="bNext">下一題</button></div>
+    </div>
+  </section>
+
+  <section id="vShop" class="shop hidden">
+    <div class="qtop"><h2 style="flex:1">波波的衣櫃</h2><span class="chip"><span class="ic-coin"></span><span id="shopCoins">0</span></span><button class="btn soft small" id="bShopBack">回地圖</button></div>
+    <div class="card">
+      <div class="shop-head">
+        <div class="stage" id="shopStage"></div>
+        <div><p id="shopMsg" style="margin:0 0 12px;font-weight:600">點選下面的東西，先幫波波試穿看看！</p><button class="btn" id="bShopAct" disabled>選一樣東西</button></div>
+      </div>
+      <div id="shopList"></div>
+      <p class="tips">金幣是答對題目賺來的，每答對 1 題得 1 枚。花掉的金幣不會影響老師的加點。</p>
     </div>
   </section>
 
@@ -214,14 +254,39 @@ function api(fn, ...args){
   });
 }
 const $ = id => document.getElementById(id);
-function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
+function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function store(k, v){ try{ v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
 
 /* ---------- 插圖 ---------- */
-/* 船長波波：戴水手帽的小海豹。mood: happy / cheer / oops / sleep */
-function mascot(mood){
+/* 船長波波：小海豹吉祥物。mood: happy / cheer / oops / sleep；outfit: {hat, acc, color}（可以在金幣商店換） */
+const COLORS = {
+  color_blue:['#cfe3f0','#eef6fb','#a9c7dc'], color_pink:['#ffd3dc','#fff0f3','#f2a7b7'], color_mint:['#c5edd9','#eefaf4','#8fd1b2'],
+  color_cocoa:['#ead6c2','#f8efe6','#c8a688'], color_lav:['#ddd3f7','#f5f1fe','#b5a3e6'], color_gold:['#ffe08a','#fff7d9','#e6b33c']
+};
+const HATS = {
+  hat_sailor:'<path d="M46 36 Q60 14 74 36 Q60 30 46 36 Z" fill="#fff" stroke="#c9dbe6" stroke-width="2" stroke-linejoin="round"/><path d="M32 44 Q60 22 88 44 L84 50 Q60 38 36 50 Z" fill="#fff" stroke="#c9dbe6" stroke-width="2" stroke-linejoin="round"/><path d="M36 50 Q60 38 84 50 L82 55 Q60 45 38 55 Z" fill="#7cc2ff"/><circle cx="60" cy="26" r="4" fill="#ff8fa3"/>',
+  hat_flower:'<g transform="translate(84 40)"><circle cx="0" cy="-7" r="6" fill="#ff8fa3"/><circle cx="7" cy="-2" r="6" fill="#ff8fa3"/><circle cx="4" cy="6" r="6" fill="#ff8fa3"/><circle cx="-4" cy="6" r="6" fill="#ff8fa3"/><circle cx="-7" cy="-2" r="6" fill="#ff8fa3"/><circle r="4.5" fill="#ffd66b"/></g>',
+  hat_bow:'<path d="M60 36 L38 24 Q34 36 38 46 Z M60 36 L82 24 Q86 36 82 46 Z" fill="#ff8fa3" stroke="#e66d84" stroke-width="2" stroke-linejoin="round"/><circle cx="60" cy="36" r="6" fill="#e66d84"/>',
+  hat_straw:'<ellipse cx="60" cy="42" rx="42" ry="8" fill="#f3d58c" stroke="#ddb65e" stroke-width="2"/><path d="M38 42 Q38 18 60 18 Q82 18 82 42 Z" fill="#f3d58c" stroke="#ddb65e" stroke-width="2"/><path d="M39 36 Q60 31 81 36 L81 41 Q60 36 39 41 Z" fill="#ff8fa3"/>',
+  hat_pirate:'<path d="M26 44 Q34 20 60 18 Q86 20 94 44 Q60 34 26 44 Z" fill="#4a4566"/><path d="M26 44 Q60 34 94 44" stroke="#ffd66b" stroke-width="3" fill="none"/><circle cx="60" cy="30" r="6" fill="#fff"/><path d="M56 27 L64 33 M64 27 L56 33" stroke="#4a4566" stroke-width="2"/>',
+  hat_crown:'<path d="M38 44 L36 20 L48 32 L60 14 L72 32 L84 20 L82 44 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="60" cy="34" r="4" fill="#ff8fa3"/><circle cx="46" cy="38" r="3" fill="#7cc2ff"/><circle cx="74" cy="38" r="3" fill="#7fd8b5"/>',
+  hat_wizard:'<ellipse cx="60" cy="44" rx="34" ry="7" fill="#8e72e0"/><path d="M40 44 Q50 20 70 0 Q72 26 80 44 Z" fill="#a98bf0"/><path d="M58 22 l2.5 5 5.5 .8 -4 3.9 1 5.4 -5 -2.6 -5 2.6 1 -5.4 -4 -3.9 5.5 -.8 Z" fill="#ffd66b"/>'
+};
+const ACCS = {
+  acc_none:'',
+  acc_bowtie:'<path d="M60 88 L46 80 L46 96 Z M60 88 L74 80 L74 96 Z" fill="#ff8fa3" stroke="#e66d84" stroke-width="2" stroke-linejoin="round"/><circle cx="60" cy="88" r="4.5" fill="#e66d84"/>',
+  acc_scarf:'<path d="M28 82 Q60 96 92 82 L92 92 Q60 106 28 92 Z" fill="#7fd8b5"/><path d="M74 94 L80 116 L90 112 L84 92 Z" fill="#6cc6a3"/><path d="M34 86 L34 94 M46 90 L46 98 M58 92 L58 100" stroke="#fff" stroke-width="3" opacity=".7"/>',
+  acc_glasses:'<circle cx="45" cy="62" r="11" fill="rgba(255,255,255,.25)" stroke="#4a4566" stroke-width="3"/><circle cx="75" cy="62" r="11" fill="rgba(255,255,255,.25)" stroke="#4a4566" stroke-width="3"/><path d="M56 61 Q60 57 64 61" stroke="#4a4566" stroke-width="3" fill="none"/>',
+  acc_medal:'<path d="M50 82 L56 100 L64 100 L70 82" fill="#7cc2ff" stroke="#549fe0" stroke-width="2" stroke-linejoin="round"/><circle cx="60" cy="104" r="10" fill="#ffd66b" stroke="#e6a92a" stroke-width="2.5"/><path d="M60 98 l2 4 4.4 .6 -3.2 3.1 .8 4.3 -4 -2.1 -4 2.1 .8 -4.3 -3.2 -3.1 4.4 -.6 Z" fill="#fff"/>'
+};
+function mascot(mood, outfit){
+  const o = outfit || (state && state.outfit) || {};
+  const [body, belly, arm] = COLORS[o.color] || COLORS.color_blue;
+  const hat = HATS[o.hat] != null ? HATS[o.hat] : HATS.hat_sailor;
+  const acc = ACCS[o.acc] || '';
+  const front = o.acc === 'acc_glasses' ? acc : '', neck = o.acc === 'acc_glasses' ? '' : acc;
   const mouth = {
     happy:'<path d="M54 74 Q60 80 66 74" stroke="#4a4566" stroke-width="3" fill="none" stroke-linecap="round"/>',
     cheer:'<path d="M52 72 Q60 86 68 72 Z" fill="#4a4566"/><path d="M56 78 Q60 82 64 78" fill="#ff8fa3"/>',
@@ -234,20 +299,17 @@ function mascot(mood){
     ? '<path d="M39 64 Q45 56 51 64 M69 64 Q75 56 81 64" stroke="#4a4566" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
     : '<g class="blink"><ellipse cx="45" cy="62" rx="5" ry="6" fill="#4a4566"/><ellipse cx="75" cy="62" rx="5" ry="6" fill="#4a4566"/><circle cx="47" cy="59.5" r="2" fill="#fff"/><circle cx="77" cy="59.5" r="2" fill="#fff"/></g>';
   const arms = mood === 'cheer'
-    ? '<path d="M22 84 Q8 66 14 56" stroke="#a9c7dc" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M98 84 Q112 66 106 56" stroke="#a9c7dc" stroke-width="10" fill="none" stroke-linecap="round"/>'
-    : '<ellipse cx="22" cy="96" rx="9" ry="14" transform="rotate(30 22 96)" fill="#a9c7dc"/><ellipse cx="98" cy="96" rx="9" ry="14" transform="rotate(-30 98 96)" fill="#a9c7dc"/>';
-  return `<svg class="mascot" viewBox="0 0 120 124" aria-hidden="true">
+    ? `<path d="M22 84 Q8 66 14 56" stroke="${arm}" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M98 84 Q112 66 106 56" stroke="${arm}" stroke-width="10" fill="none" stroke-linecap="round"/>`
+    : `<ellipse cx="22" cy="96" rx="9" ry="14" transform="rotate(30 22 96)" fill="${arm}"/><ellipse cx="98" cy="96" rx="9" ry="14" transform="rotate(-30 98 96)" fill="${arm}"/>`;
+  return `<svg class="mascot" viewBox="0 -4 120 128" aria-hidden="true">
     <ellipse cx="60" cy="118" rx="38" ry="5" fill="rgba(74,69,102,.12)"/>
     ${arms}
-    <path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 C102 112 84 118 60 118 C36 118 18 112 18 92 Z" fill="#cfe3f0"/>
-    <ellipse cx="60" cy="98" rx="26" ry="18" fill="#eef6fb"/>
+    <path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 C102 112 84 118 60 118 C36 118 18 112 18 92 Z" fill="${body}"/>
+    <ellipse cx="60" cy="98" rx="26" ry="18" fill="${belly}"/>
     <ellipse cx="36" cy="74" rx="7" ry="4.5" fill="#ffb3c1" opacity=".9"/><ellipse cx="84" cy="74" rx="7" ry="4.5" fill="#ffb3c1" opacity=".9"/>
     ${eyes}
     <ellipse cx="60" cy="69" rx="5" ry="3.5" fill="#4a4566"/>${mouth}
-    <path d="M32 44 Q60 22 88 44 L84 50 Q60 38 36 50 Z" fill="#fff"/>
-    <path d="M36 50 Q60 38 84 50 L82 55 Q60 45 38 55 Z" fill="#7cc2ff"/>
-    <path d="M46 36 Q60 14 74 36 Q60 30 46 36 Z" fill="#fff"/>
-    <circle cx="60" cy="26" r="4" fill="#ff8fa3"/>
+    ${neck}${front}${hat}
     ${mood === 'sleep' ? '<text x="92" y="30" font-size="16" font-weight="800" fill="#8a85a3">z</text><text x="102" y="18" font-size="12" font-weight="800" fill="#8a85a3">z</text>' : ''}
   </svg>`;
 }
@@ -321,17 +383,28 @@ function renderMap(){
   $('todaySeal').className = 'seal' + (s.todayDone ? ' on' : '');
   $('todaySeal').textContent = s.todayDone ? '已蓋章' : '今日';
   $('mapMascot').innerHTML = mascot(s.todayDone ? 'cheer' : 'happy');
+  $('shopIcon').innerHTML = mascot('happy');
+  const ex = s.exam;
+  $('exam').classList.toggle('hidden', !ex);
+  if (ex){
+    const pct = ex.total ? Math.round(ex.mastered / ex.total * 100) : 0;
+    $('exam').innerHTML = `<div class="cd">${ex.days ? '倒數<b>' + ex.days + '</b>天' : '<b>今天</b>考試'}</div>
+      <div class="info"><b>${esc(ex.name)}</b>　<span class="small">${esc(ex.date.slice(5).replace('-', '/'))}</span><br>
+      <span style="font-size:14px;font-weight:600">考試範圍已掌握 ${ex.mastered} / ${ex.total} 題</span><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+  }
   $('todayText').textContent = s.todayDone
     ? '今天的印章拿到了，好棒！還想玩的話可以繼續賺金幣喔。'
     : '選一座島出發吧！答對 ' + Math.ceil(s.perRound * 0.7) + ' 題以上，就能蓋今天的印章。';
-  const cards = SUBJ.map((sj, i) => {
+  const cards = [];
+  if (ex) cards.push(`<button class="island" data-island="段考">${islandSvg({c:'#ff8fa3', d:'#e66d84', ch:'考'}, 2, false)}<div class="name">段考衝刺島</div><div class="meta">只出考試範圍</div><div class="bar"><i style="width:${ex.total ? Math.round(ex.mastered / ex.total * 100) : 0}%;background:#ff8fa3"></i></div></button>`);
+  SUBJ.forEach((sj, i) => {
     const it = s.islands[sj.k] || {total:0, mastered:0};
     const locked = !it.total;
     const pct = it.total ? Math.round(it.mastered / it.total * 100) : 0;
-    return `<button class="island${locked?' locked':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
+    cards.push(`<button class="island${locked?' locked':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
       ${islandSvg(sj, i, locked)}<div class="name">${sj.k}島</div>
       <div class="meta">${locked ? '還在睡覺，等老師開放' : '已掌握 ' + it.mastered + ' / ' + it.total}</div>
-      <div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></button>`;
+      <div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></button>`);
   });
   cards.push(`<button class="island${s.wrong?'':' locked'}" data-island="錯題">${reefSvg(!s.wrong)}<div class="name">錯題礁</div><div class="meta">${s.wrong ? '有 ' + s.wrong + ' 題等你救援' : '沒有錯題，太厲害了'}</div></button>`);
   const any = SUBJ.some(sj => (s.islands[sj.k]||{}).total);
@@ -446,6 +519,7 @@ function renderResult(r){
       ${r.stamp ? `<div class="gain"><div class="seal on stampin" style="margin:0 auto 4px">已蓋章</div>今日印章</div>` : ''}
     </div>
     ${r.stamp ? '<p>連續完成 <b>' + r.state.streak + '</b> 天！印章可以跟老師換加點喔。</p>' : ''}
+    ${r.missed && r.missed.length ? '<p class="tips">波波建議多練習：<b>' + r.missed.map(esc).join('、') + '</b></p>' : ''}
     ${r.correct < r.total ? '<p class="hint">答錯的題目跑去錯題礁了，答對就能救回來。</p>' : ''}
     <div class="actions" style="justify-content:center"><button class="btn" id="bBack">回群島地圖</button></div>`;
   if (r.passed) setTimeout(() => sparkle(document.querySelector('#resultBox .big')), 200);
@@ -453,6 +527,48 @@ function renderResult(r){
 }
 
 $('bQuit').addEventListener('click', () => { renderMap(); show('vMap'); });
+
+/* ---------- 波波的衣櫃 ---------- */
+const SLOTS = [['hat','帽子'],['acc','配件'],['color','顏色']];
+let trying = null, selId = null;
+function openShop(){ trying = Object.assign({}, state.outfit); selId = null; renderShop(); show('vShop'); }
+function renderShop(){
+  const shop = state.shop, owned = new Set(state.owned);
+  const has = id => shop[id].price === 0 || owned.has(id);
+  $('shopCoins').textContent = state.coins;
+  $('shopStage').innerHTML = mascot('cheer', trying);
+  $('shopList').innerHTML = SLOTS.map(([slot, label]) => `<h3>${label}</h3><div class="items">` +
+    Object.keys(shop).filter(id => shop[id].slot === slot).map(id => {
+      const it = shop[id], wear = state.outfit[slot] === id;
+      const pv = Object.assign({}, DEFAULT_LOOK, {[slot]: id});
+      return `<button class="item${wear ? ' on wear' : ''}${selId === id ? ' sel' : ''}" data-id="${id}">${mascot('happy', pv)}${esc(it.name)}
+        <small>${wear ? '穿著中' : has(id) ? '已擁有' : IC.coin + it.price}</small></button>`;
+    }).join('') + '</div>').join('');
+  const b = $('bShopAct');
+  if (!selId){ b.disabled = true; b.textContent = '選一樣東西'; return; }
+  const it = shop[selId];
+  if (state.outfit[it.slot] === selId){ b.disabled = true; b.textContent = '穿著中'; $('shopMsg').textContent = '波波已經穿著「' + it.name + '」了。'; }
+  else if (has(selId)){ b.disabled = false; b.textContent = '穿上'; $('shopMsg').textContent = '這是你的「' + it.name + '」，要幫波波穿上嗎？'; }
+  else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = '「' + it.name + '」很適合波波喔！'; }
+  else { b.disabled = true; b.textContent = '還差 ' + (it.price - state.coins) + ' 金幣'; $('shopMsg').textContent = '再去島上答對幾題，就能買「' + it.name + '」了。'; }
+}
+const DEFAULT_LOOK = {hat:'hat_sailor', acc:'acc_none', color:'color_blue'};
+$('shopList').addEventListener('click', e => {
+  const b = e.target.closest('.item'); if (!b) return;
+  selId = b.dataset.id; trying = Object.assign({}, state.outfit, {[state.shop[selId].slot]: selId}); renderShop();
+});
+$('bShopAct').addEventListener('click', async () => {
+  const it = state.shop[selId]; const owned = it.price === 0 || state.owned.includes(selId);
+  $('bShopAct').disabled = true;
+  try{
+    state = owned ? await api('setOutfit', cred, {[it.slot]: selId}) : await api('buyItem', cred, selId);
+    trying = Object.assign({}, state.outfit);
+    renderShop(); $('shopMsg').textContent = owned ? '換好了！' : '買到了！波波好開心～';
+    sparkle($('shopStage'));
+  }catch(err){ $('shopMsg').textContent = err.message; renderShop(); }
+});
+$('bShop').addEventListener('click', openShop);
+$('bShopBack').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 登入 ---------- */
 $('fLogin').addEventListener('submit', async ev => {

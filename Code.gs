@@ -3,33 +3,58 @@
  *
  * 試算表就是資料庫：
  *   設定      老師密碼、每回合題數、過關門檻
- *   班級      每一屆／每一班一列，記錄已教單元
- *   學生      每位學生一列：金幣、星星、印章、連續天數
- *   題庫      所有題目，依 年級＋學期＋科目＋單元 分類，每一屆共用
- *   作答紀錄  每一題作答都記一列，用來算錯題本與弱點單元
+ *   班級      每一屆／每一班一列：課本版本、已教單元、段考設定
+ *   學生      每位學生一列：金幣、星星、印章、連續天數、波波的裝扮
+ *   題庫      所有題目，依 版本＋年級＋學期＋科目＋單元 分類，每一屆共用；「觀念」欄用來診斷弱點
+ *   作答紀錄  每一題作答都記一列，用來算錯題本、弱點單元與弱點觀念
  *   加點紀錄  老師兌換印章（日常加點）的紀錄
  *
  * 第一次使用：在 Apps Script 編輯器選擇函式 setup 並執行。
+ * 更新程式後也請再執行一次 setup，它會補上新版需要的欄位，不會動到原本的資料。
  */
 
 const SH = { SET: '設定', CLS: '班級', STU: '學生', Q: '題庫', LOG: '作答紀錄', PTS: '加點紀錄' };
 const HEAD = {
-  '班級': ['班級代碼', '班級名稱', '年級', '學期', '已教單元', '狀態', '建立日期'],
-  '學生': ['班級代碼', '座號', '暱稱', '密碼', '金幣', '星星', '印章', '已兌換印章', '連續天數', '最後完成日', '總答題', '答對題'],
-  '題庫': ['題號', '年級', '學期', '科目', '單元', '題型', '題目', '選項A', '選項B', '選項C', '選項D', '答案', '解析', '來源', '啟用'],
+  '班級': ['班級代碼', '班級名稱', '年級', '學期', '版本', '已教單元', '狀態', '建立日期', '考試名稱', '考試日期', '考試範圍'],
+  '學生': ['班級代碼', '座號', '暱稱', '密碼', '金幣', '星星', '印章', '已兌換印章', '連續天數', '最後完成日', '總答題', '答對題', '已購買', '裝扮'],
+  '題庫': ['題號', '版本', '年級', '學期', '科目', '單元', '觀念', '題型', '題目', '選項A', '選項B', '選項C', '選項D', '答案', '解析', '來源', '啟用'],
   '作答紀錄': ['時間', '日期', '班級代碼', '座號', '題號', '科目', '單元', '作答', '對錯'],
   '加點紀錄': ['時間', '班級代碼', '座號', '兌換印章數', '備註']
 };
 // 這些欄位一律存成純文字，避免 0123、3/4 被試算表自動轉成數字或日期
 const TEXT_COLS = {
-  '班級': ['班級代碼', '班級名稱', '學期', '已教單元', '狀態', '建立日期'],
-  '學生': ['班級代碼', '暱稱', '密碼', '最後完成日'],
+  '班級': ['班級代碼', '班級名稱', '學期', '版本', '已教單元', '狀態', '建立日期', '考試名稱', '考試日期', '考試範圍'],
+  '學生': ['班級代碼', '暱稱', '密碼', '最後完成日', '已購買', '裝扮'],
   '題庫': HEAD['題庫'].filter(h => h !== '年級'),
   '作答紀錄': ['時間', '日期', '班級代碼', '題號', '作答'],
   '加點紀錄': ['時間', '班級代碼', '備註']
 };
 const SUBJECTS = ['國語', '數學', '自然', '社會', '英文'];
+const COMMON = '通用';
 const TZ = 'Asia/Taipei';
+
+/** 金幣商店：幫船長波波換裝。價格只在這裡設定，學生端無法竄改 */
+const SHOP = {
+  hat_sailor: { slot: 'hat', name: '水手帽', price: 0 },
+  hat_flower: { slot: 'hat', name: '小花髮夾', price: 20 },
+  hat_bow: { slot: 'hat', name: '蝴蝶結', price: 25 },
+  hat_straw: { slot: 'hat', name: '草帽', price: 30 },
+  hat_pirate: { slot: 'hat', name: '海盜帽', price: 60 },
+  hat_crown: { slot: 'hat', name: '小皇冠', price: 80 },
+  hat_wizard: { slot: 'hat', name: '魔法帽', price: 100 },
+  acc_none: { slot: 'acc', name: '不戴配件', price: 0 },
+  acc_bowtie: { slot: 'acc', name: '領結', price: 30 },
+  acc_scarf: { slot: 'acc', name: '圍巾', price: 35 },
+  acc_glasses: { slot: 'acc', name: '圓眼鏡', price: 40 },
+  acc_medal: { slot: 'acc', name: '金牌', price: 120 },
+  color_blue: { slot: 'color', name: '海豹藍', price: 0 },
+  color_pink: { slot: 'color', name: '草莓粉', price: 50 },
+  color_mint: { slot: 'color', name: '薄荷綠', price: 50 },
+  color_cocoa: { slot: 'color', name: '奶茶色', price: 50 },
+  color_lav: { slot: 'color', name: '薰衣草', price: 50 },
+  color_gold: { slot: 'color', name: '閃亮金', price: 150 }
+};
+const DEFAULT_OUTFIT = { hat: 'hat_sailor', acc: 'acc_none', color: 'color_blue' };
 
 /* ---------- 網頁入口 ---------- */
 
@@ -40,18 +65,26 @@ function doGet(e) {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
 }
 
-/* ---------- 初始化 ---------- */
+/* ---------- 初始化／升級 ---------- */
 
 function setup() {
   const ss = ss_();
   Object.keys(HEAD).forEach(name => {
     let sh = ss.getSheetByName(name);
     if (!sh) sh = ss.insertSheet(name);
-    if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, HEAD[name].length).setValues([HEAD[name]]);
+    if (sh.getLastRow() === 0) {
+      sh.getRange(1, 1, 1, HEAD[name].length).setValues([HEAD[name]]);
+    } else {
+      // 舊版試算表：把缺少的欄位補在最後面
+      const have = headers_(sh);
+      const missing = HEAD[name].filter(h => have.indexOf(h) < 0);
+      if (missing.length) sh.getRange(1, have.length + 1, 1, missing.length).setValues([missing]);
+    }
     sh.setFrozenRows(1);
+    const have = headers_(sh);
     (TEXT_COLS[name] || []).forEach(col => {
-      const c = HEAD[name].indexOf(col) + 1;
-      sh.getRange(1, c, sh.getMaxRows(), 1).setNumberFormat('@');
+      const c = have.indexOf(col) + 1;
+      if (c > 0) sh.getRange(1, c, sh.getMaxRows(), 1).setNumberFormat('@');
     });
   });
   let set = ss.getSheetByName(SH.SET);
@@ -65,10 +98,25 @@ function setup() {
     ]);
     set.getRange('B2').setNumberFormat('@');
   }
+  // 舊資料補值：沒有版本的題目與班級視為「通用」
+  ['題庫', '班級'].forEach(name => {
+    const t = table_(name);
+    t.rows.forEach(r => { if (!String(r['版本'] || '').trim()) { r['版本'] = COMMON; writeRow_(t, r); } });
+  });
+  // 舊版的單元代號沒有版本（6上｜科目｜單元），補上「通用｜」
+  const ct = table_(SH.CLS);
+  ct.rows.forEach(c => {
+    const fix = list => list.map(k => String(k).split('｜').length === 3 ? COMMON + '｜' + k : k);
+    const u = json_(c['已教單元'], []), e = json_(c['考試範圍'], []);
+    const u2 = fix(u), e2 = fix(e);
+    if (JSON.stringify(u) !== JSON.stringify(u2) || JSON.stringify(e) !== JSON.stringify(e2)) {
+      c['已教單元'] = JSON.stringify(u2); c['考試範圍'] = JSON.stringify(e2); writeRow_(ct, c);
+    }
+  });
   if (table_(SH.Q).rows.length === 0) append_(SH.Q, sampleQuestions_());
   if (!table_(SH.CLS).rows.some(r => r['班級代碼'] === 'DEMO')) {
     const units = unitCatalog_().map(u => u.key);
-    append_(SH.CLS, [{ '班級代碼': 'DEMO', '班級名稱': '示範班', '年級': 6, '學期': '上', '已教單元': JSON.stringify(units), '狀態': '進行中', '建立日期': today_() }]);
+    append_(SH.CLS, [{ '班級代碼': 'DEMO', '班級名稱': '示範班', '年級': 6, '學期': '上', '版本': COMMON, '已教單元': JSON.stringify(units), '狀態': '進行中', '建立日期': today_(), '考試範圍': '[]' }]);
     append_(SH.STU, [1, 2, 3].map(n => newStudent_('DEMO', n)));
   }
   const pw = settings_()['老師密碼'];
@@ -87,23 +135,30 @@ function studentLogin(cred) {
 function getRound(cred, island) {
   const { cls, s } = auth_(cred, false);
   const n = Number(settings_()['每回合題數']) || 10;
-  const pool = pool_(cls);
   const hist = history_(cls['班級代碼'], s['座號']);
+  const isWrong = q => hist[q['題號']] && !hist[q['題號']].last;
+  const prioritized = list => {
+    const wrong = shuffle_(list.filter(isWrong));
+    const fresh = shuffle_(list.filter(q => !hist[q['題號']]));
+    const done = shuffle_(list.filter(q => hist[q['題號']] && hist[q['題號']].last));
+    return wrong.slice(0, 3).concat(fresh, wrong.slice(3), done).slice(0, n);
+  };
   let picked;
   if (SUBJECTS.indexOf(island) >= 0) {
-    const sub = pool.filter(q => q['科目'] === island);
-    const wrong = shuffle_(sub.filter(q => hist[q['題號']] && !hist[q['題號']].last));
-    const fresh = shuffle_(sub.filter(q => !hist[q['題號']]));
-    const done = shuffle_(sub.filter(q => hist[q['題號']] && hist[q['題號']].last));
-    picked = wrong.slice(0, 3).concat(fresh, wrong.slice(3), done).slice(0, n);
+    picked = prioritized(pool_(cls).filter(q => q['科目'] === island));
   } else if (island === '錯題') {
-    picked = shuffle_(pool.filter(q => hist[q['題號']] && !hist[q['題號']].last)).slice(0, n);
+    picked = shuffle_(pool_(cls).filter(isWrong)).slice(0, n);
   } else if (island === '綜合') {
+    const pool = pool_(cls);
     const by = SUBJECTS.map(sj => shuffle_(pool.filter(q => q['科目'] === sj)));
     picked = [];
     for (let i = 0; picked.length < n && by.some(b => b.length); i = (i + 1) % by.length) {
       if (by[i].length) picked.push(by[i].shift());
     }
+  } else if (island === '段考') {
+    const ex = exam_(cls);
+    if (!ex) throw new Error('目前沒有要準備的考試。');
+    picked = prioritized(poolFor_(ex.units));
   } else {
     throw new Error('沒有這座島。');
   }
@@ -117,16 +172,16 @@ function submitRound(cred, island, responses) {
     const set = settings_();
     const qmap = {};
     table_(SH.Q).rows.forEach(q => qmap[q['題號']] = q);
-    const now = new Date();
-    const stamp = Utilities.formatDate(now, TZ, 'yyyy-MM-dd HH:mm:ss');
+    const stamp = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm:ss');
     const day = today_();
-    const logs = [];
+    const logs = [], missed = {};
     let correct = 0;
     (responses || []).slice(0, 50).forEach(r => {
       const q = qmap[r.id];
       if (!q) return;
       const ok = grade_(q, r.answer);
       if (ok) correct++;
+      else String(q['觀念'] || '').split(/[、,，|]/).map(x => x.trim()).filter(Boolean).forEach(c => missed[c] = 1);
       logs.push({ '時間': stamp, '日期': day, '班級代碼': cls['班級代碼'], '座號': s['座號'], '題號': q['題號'], '科目': q['科目'], '單元': q['單元'], '作答': String(r.answer == null ? '' : r.answer).slice(0, 100), '對錯': ok ? 1 : 0 });
     });
     const total = logs.length;
@@ -147,7 +202,42 @@ function submitRound(cred, island, responses) {
     s['總答題'] = num_(s['總答題']) + total;
     s['答對題'] = num_(s['答對題']) + correct;
     writeRow_(t, s);
-    return { correct, total, passed, coins: correct, star: passed, stamp: gotStamp, state: state_(cls, s) };
+    return { correct, total, passed, coins: correct, star: passed, stamp: gotStamp, missed: Object.keys(missed).slice(0, 4), state: state_(cls, s) };
+  });
+}
+
+/** 用金幣買波波的裝扮；買了就直接穿上 */
+function buyItem(cred, id) {
+  return withLock_(() => {
+    const { cls, s, t } = auth_(cred, false);
+    const item = SHOP[id];
+    if (!item) throw new Error('商店沒有這個東西。');
+    const owned = owned_(s);
+    if (owned.indexOf(id) >= 0) throw new Error('你已經有這個了。');
+    if (num_(s['金幣']) < item.price) throw new Error('金幣還不夠，再去島上挑戰吧！');
+    s['金幣'] = num_(s['金幣']) - item.price;
+    owned.push(id);
+    s['已購買'] = JSON.stringify(owned);
+    const outfit = outfit_(s);
+    outfit[item.slot] = id;
+    s['裝扮'] = JSON.stringify(outfit);
+    writeRow_(t, s);
+    return state_(cls, s);
+  });
+}
+
+function setOutfit(cred, outfit) {
+  return withLock_(() => {
+    const { cls, s, t } = auth_(cred, false);
+    const owned = owned_(s);
+    const next = outfit_(s);
+    Object.keys(DEFAULT_OUTFIT).forEach(slot => {
+      const id = outfit && outfit[slot];
+      if (id && SHOP[id] && SHOP[id].slot === slot && (SHOP[id].price === 0 || owned.indexOf(id) >= 0)) next[slot] = id;
+    });
+    s['裝扮'] = JSON.stringify(next);
+    writeRow_(t, s);
+    return state_(cls, s);
   });
 }
 
@@ -156,7 +246,8 @@ function submitRound(cred, island, responses) {
 function tLogin(pw) {
   checkPw_(pw);
   return {
-    classes: table_(SH.CLS).rows.map(c => ({ code: c['班級代碼'], name: c['班級名稱'], grade: c['年級'], sem: c['學期'], status: c['狀態'] })),
+    classes: table_(SH.CLS).rows.map(c => ({ code: c['班級代碼'], name: c['班級名稱'], grade: c['年級'], sem: c['學期'], version: c['版本'] || COMMON, status: c['狀態'] })),
+    versions: versions_(),
     url: ScriptApp.getService().getUrl()
   };
 }
@@ -169,19 +260,27 @@ function tDashboard(pw, code) {
   const week = Utilities.formatDate(new Date(Date.now() - 6 * 864e5), TZ, 'yyyy-MM-dd');
   const qmap = {};
   table_(SH.Q).rows.forEach(q => qmap[q['題號']] = q);
+  const concepts = q => String((q && q['觀念']) || '').split(/[、,，|]/).map(x => x.trim()).filter(Boolean);
 
-  const per = {}, unitStat = {}, qStat = {};
+  const per = {}, unitStat = {}, qStat = {}, cStat = {};
   logs.forEach(l => {
     const seat = Number(l['座號']);
+    const ok = Number(l['對錯']) === 1;
     const p = per[seat] = per[seat] || { days: {}, latest: {} };
     const d = normDate_(l['日期']);
     if (d >= week) p.days[d] = 1;
-    p.latest[l['題號']] = Number(l['對錯']) === 1;
+    p.latest[l['題號']] = ok;
     const uk = l['科目'] + '｜' + l['單元'];
     const u = unitStat[uk] = unitStat[uk] || { unit: uk, right: 0, total: 0 };
-    u.total++; u.right += Number(l['對錯']) === 1 ? 1 : 0;
+    u.total++; if (ok) u.right++;
     const qs = qStat[l['題號']] = qStat[l['題號']] || { wrong: 0, total: 0 };
-    qs.total++; if (Number(l['對錯']) !== 1) qs.wrong++;
+    qs.total++; if (!ok) qs.wrong++;
+    const q = qmap[l['題號']];
+    concepts(q).forEach(c => {
+      const k = q['科目'] + '｜' + c;
+      const cs = cStat[k] = cStat[k] || { concept: c, subject: q['科目'], right: 0, total: 0, people: {} };
+      cs.total++; if (ok) cs.right++; else cs.people[seat] = 1;
+    });
   });
 
   return {
@@ -189,6 +288,8 @@ function tDashboard(pw, code) {
     url: ScriptApp.getService().getUrl() + '?c=' + encodeURIComponent(cls['班級代碼']),
     students: students.map(s => {
       const p = per[Number(s['座號'])] || { days: {}, latest: {} };
+      const weak = {};
+      Object.keys(p.latest).forEach(id => { if (!p.latest[id]) concepts(qmap[id]).forEach(c => weak[c] = (weak[c] || 0) + 1); });
       return {
         seat: Number(s['座號']), nick: s['暱稱'] || '', hasPin: !!String(s['密碼']).trim(),
         coins: num_(s['金幣']), stars: num_(s['星星']),
@@ -196,14 +297,19 @@ function tDashboard(pw, code) {
         streak: liveStreak_(s), last: normDate_(s['最後完成日']),
         weekDays: Object.keys(p.days).length,
         total: num_(s['總答題']), right: num_(s['答對題']),
-        wrongNow: Object.keys(p.latest).filter(k => !p.latest[k]).length
+        wrongNow: Object.keys(p.latest).filter(k => !p.latest[k]).length,
+        weak: Object.keys(weak).sort((a, b) => weak[b] - weak[a]).slice(0, 2)
       };
     }).sort((a, b) => a.seat - b.seat),
     units: unitCatalog_(),
+    versions: versions_(),
     weakUnits: Object.keys(unitStat).map(k => unitStat[k]).filter(u => u.total >= 5)
       .sort((a, b) => a.right / a.total - b.right / b.total).slice(0, 6),
-    hardQs: Object.keys(qStat).filter(id => qmap[id] && qStat[id].total >= 3)
-      .map(id => ({ id, text: qmap[id]['題目'], subject: qmap[id]['科目'], unit: qmap[id]['單元'], answer: qmap[id]['答案'], wrong: qStat[id].wrong, total: qStat[id].total }))
+    weakConcepts: Object.keys(cStat).map(k => cStat[k]).filter(c => c.total >= 3)
+      .map(c => ({ concept: c.concept, subject: c.subject, right: c.right, total: c.total, people: Object.keys(c.people).map(Number).sort((a, b) => a - b) }))
+      .sort((a, b) => a.right / a.total - b.right / b.total).slice(0, 8),
+    hardQs: Object.keys(qStat).filter(id => qmap[id] && qStat[id].total >= 3 && qStat[id].wrong > 0)
+      .map(id => ({ id, text: qmap[id]['題目'], subject: qmap[id]['科目'], unit: qmap[id]['單元'], answer: cellText_(qmap[id]['答案']), wrong: qStat[id].wrong, total: qStat[id].total }))
       .sort((a, b) => b.wrong / b.total - a.wrong / a.total).slice(0, 8)
   };
 }
@@ -218,7 +324,14 @@ function tSaveClass(pw, code, data) {
     if (data.name) c['班級名稱'] = data.name;
     if (data.grade) c['年級'] = Number(data.grade);
     if (data.sem) c['學期'] = data.sem;
+    if (data.version) c['版本'] = String(data.version).trim();
     if (data.status) c['狀態'] = data.status;
+    if (data.exam) {
+      if (data.exam.date && !/^\d{4}-\d{2}-\d{2}$/.test(data.exam.date)) throw new Error('考試日期格式不對。');
+      c['考試名稱'] = String(data.exam.name || '').trim().slice(0, 20);
+      c['考試日期'] = data.exam.date || '';
+      c['考試範圍'] = JSON.stringify(data.exam.units || []);
+    }
     writeRow_(t, c);
     return classOut_(c);
   });
@@ -231,7 +344,7 @@ function tCreateClass(pw, data) {
     if (!/^[A-Z0-9]{3,12}$/.test(code)) throw new Error('班級代碼請用 3 到 12 個英文字母或數字，例如 115A601。');
     if (table_(SH.CLS).rows.some(r => sameCode_(r['班級代碼'], code))) throw new Error('這個班級代碼已經有人用了。');
     const count = Math.min(Math.max(Number(data.count) || 0, 1), 60);
-    append_(SH.CLS, [{ '班級代碼': code, '班級名稱': data.name || code, '年級': Number(data.grade) || 6, '學期': data.sem || '上', '已教單元': '[]', '狀態': '進行中', '建立日期': today_() }]);
+    append_(SH.CLS, [{ '班級代碼': code, '班級名稱': data.name || code, '年級': Number(data.grade) || 6, '學期': data.sem || '上', '版本': String(data.version || COMMON).trim(), '已教單元': '[]', '狀態': '進行中', '建立日期': today_(), '考試範圍': '[]' }]);
     const list = [];
     for (let i = 1; i <= count; i++) list.push(newStudent_(code, i));
     append_(SH.STU, list);
@@ -287,22 +400,32 @@ function tRedeem(pw, code, seats, note) {
 
 /**
  * 匯入題目。可貼上 CSV 或從試算表複製的表格（Tab 分隔）。
- * 欄位順序：年級, 學期, 科目, 單元, 題型, 題目, 選項A, 選項B, 選項C, 選項D, 答案, 解析
+ * 有標題列時依標題對應欄位；沒有標題列時欄位順序為：
+ *   版本, 年級, 學期, 科目, 單元, 觀念, 題型, 題目, 選項A, 選項B, 選項C, 選項D, 答案, 解析
  */
-function tImport(pw, text, source) {
+const IMPORT_COLS = ['版本', '年級', '學期', '科目', '單元', '觀念', '題型', '題目', '選項A', '選項B', '選項C', '選項D', '答案', '解析'];
+function tImport(pw, text, source, defaultVersion) {
   checkPw_(pw);
   return withLock_(() => {
     const lines = parseTable_(String(text || ''));
+    let cols = IMPORT_COLS, start = 0;
+    if (lines.length && lines[0].some(c => String(c).trim() === '題目')) {
+      cols = lines[0].map(c => String(c).trim());
+      start = 1;
+    }
     const rows = [], errors = [];
     const base = Utilities.formatDate(new Date(), TZ, 'yyMMddHHmmss');
-    lines.forEach((cells, i) => {
-      if (!cells.join('').trim()) return;
-      if (i === 0 && String(cells[0]).indexOf('年級') >= 0) return; // 標題列
-      const [grade, sem, subject, unit, type, text, a, b, c, d, answer, explain] = cells.map(x => String(x == null ? '' : x).trim());
-      const msg = validateQ_({ grade, sem, subject, unit, type, text, a, b, answer });
-      if (msg) { errors.push('第 ' + (i + 1) + ' 行：' + msg); return; }
-      rows.push({ '題號': 'Q' + base + ('00' + rows.length).slice(-3), '年級': Number(grade), '學期': sem.replace('學期', ''), '科目': subject, '單元': unit, '題型': type, '題目': text, '選項A': a, '選項B': b, '選項C': c, '選項D': d, '答案': answer, '解析': explain || '', '來源': source || '老師', '啟用': 'Y' });
-    });
+    for (let i = start; i < lines.length; i++) {
+      const cells = lines[i];
+      if (!cells.join('').trim()) continue;
+      const v = {};
+      cols.forEach((c, j) => v[c] = String(cells[j] == null ? '' : cells[j]).trim());
+      v['版本'] = v['版本'] || String(defaultVersion || COMMON).trim();
+      v['學期'] = (v['學期'] || '').replace('學期', '');
+      const msg = validateQ_(v);
+      if (msg) { errors.push('第 ' + (i + 1) + ' 行：' + msg); continue; }
+      rows.push({ '題號': 'Q' + base + ('00' + rows.length).slice(-3), '版本': v['版本'], '年級': Number(v['年級']), '學期': v['學期'], '科目': v['科目'], '單元': v['單元'], '觀念': v['觀念'] || '', '題型': v['題型'], '題目': v['題目'], '選項A': v['選項A'] || '', '選項B': v['選項B'] || '', '選項C': v['選項C'] || '', '選項D': v['選項D'] || '', '答案': v['答案'], '解析': v['解析'] || '', '來源': source || '老師', '啟用': 'Y' });
+    }
     append_(SH.Q, rows);
     return { added: rows.length, errors: errors.slice(0, 30) };
   });
@@ -311,6 +434,11 @@ function tImport(pw, text, source) {
 /* ---------- 內部工具 ---------- */
 
 function ss_() { return SpreadsheetApp.getActive(); }
+
+function headers_(sh) {
+  const n = sh.getLastColumn();
+  return n ? sh.getRange(1, 1, 1, n).getValues()[0].map(String) : [];
+}
 
 function table_(name) {
   const sh = ss_().getSheetByName(name);
@@ -327,7 +455,7 @@ function writeRow_(t, o) {
 function append_(name, objs) {
   if (!objs || !objs.length) return;
   const sh = ss_().getSheetByName(name);
-  const h = HEAD[name];
+  const h = headers_(sh);
   const last = sh.getLastRow();
   const need = last + objs.length - sh.getMaxRows();
   if (need > 0) sh.insertRowsAfter(sh.getMaxRows(), need + 500);
@@ -358,6 +486,7 @@ function today_() { return Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'); }
 function yesterday_() { return Utilities.formatDate(new Date(Date.now() - 864e5), TZ, 'yyyy-MM-dd'); }
 function normDate_(v) { return v instanceof Date ? Utilities.formatDate(v, TZ, 'yyyy-MM-dd') : String(v || '').trim(); }
 function cellText_(v) { return v instanceof Date ? Utilities.formatDate(v, TZ, 'M/d') : String(v == null ? '' : v).trim(); }
+function json_(v, def) { try { const x = JSON.parse(v || ''); return x == null ? def : x; } catch (e) { return def; } }
 
 function findClass_(code) {
   const c = table_(SH.CLS).rows.find(r => sameCode_(r['班級代碼'], code));
@@ -366,13 +495,23 @@ function findClass_(code) {
 }
 
 function classOut_(c) {
-  let units = [];
-  try { units = JSON.parse(c['已教單元'] || '[]'); } catch (e) { }
-  return { code: c['班級代碼'], name: c['班級名稱'], grade: c['年級'], sem: c['學期'], status: c['狀態'], units };
+  return {
+    code: c['班級代碼'], name: c['班級名稱'], grade: c['年級'], sem: c['學期'], version: c['版本'] || COMMON, status: c['狀態'],
+    units: json_(c['已教單元'], []),
+    exam: { name: c['考試名稱'] || '', date: normDate_(c['考試日期']), units: json_(c['考試範圍'], []) }
+  };
 }
 
 function newStudent_(code, seat) {
-  return { '班級代碼': code, '座號': seat, '暱稱': '', '密碼': '', '金幣': 0, '星星': 0, '印章': 0, '已兌換印章': 0, '連續天數': 0, '最後完成日': '', '總答題': 0, '答對題': 0 };
+  return { '班級代碼': code, '座號': seat, '暱稱': '', '密碼': '', '金幣': 0, '星星': 0, '印章': 0, '已兌換印章': 0, '連續天數': 0, '最後完成日': '', '總答題': 0, '答對題': 0, '已購買': '[]', '裝扮': JSON.stringify(DEFAULT_OUTFIT) };
+}
+
+function owned_(s) { return json_(s['已購買'], []).filter(id => SHOP[id]); }
+function outfit_(s) {
+  const o = json_(s['裝扮'], {});
+  const out = {};
+  Object.keys(DEFAULT_OUTFIT).forEach(k => out[k] = SHOP[o[k]] ? o[k] : DEFAULT_OUTFIT[k]);
+  return out;
 }
 
 function auth_(cred, allowSetPin) {
@@ -401,26 +540,42 @@ function liveStreak_(s) {
   return (last === today_() || last === yesterday_()) ? num_(s['連續天數']) : 0;
 }
 
-function unitKey_(q) { return q['年級'] + String(q['學期']) + '｜' + q['科目'] + '｜' + q['單元']; }
+/** 單元代號：版本｜6上｜科目｜單元。同一個單元名稱在不同出版社會分開 */
+function unitKey_(q) { return (String(q['版本'] || '').trim() || COMMON) + '｜' + q['年級'] + String(q['學期']) + '｜' + q['科目'] + '｜' + q['單元']; }
 
 function unitCatalog_() {
   const m = {};
   table_(SH.Q).rows.forEach(q => {
     if (!q['題號'] || String(q['啟用']).toUpperCase() === 'N') return;
     const k = unitKey_(q);
-    m[k] = m[k] || { key: k, grade: Number(q['年級']), sem: String(q['學期']), subject: q['科目'], unit: q['單元'], count: 0 };
+    m[k] = m[k] || { key: k, version: String(q['版本'] || '').trim() || COMMON, grade: Number(q['年級']), sem: String(q['學期']), subject: q['科目'], unit: q['單元'], count: 0 };
     m[k].count++;
   });
   return Object.keys(m).map(k => m[k]).sort((a, b) =>
-    a.grade - b.grade || a.sem.localeCompare(b.sem) || SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject));
+    a.version.localeCompare(b.version) || a.grade - b.grade || a.sem.localeCompare(b.sem) || SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject));
 }
 
-function pool_(cls) {
-  let units = [];
-  try { units = JSON.parse(cls['已教單元'] || '[]'); } catch (e) { }
+function versions_() {
+  const v = {};
+  [COMMON, '南一', '康軒', '翰林'].forEach(x => v[x] = 1);
+  table_(SH.Q).rows.forEach(q => { const x = String(q['版本'] || '').trim(); if (x) v[x] = 1; });
+  table_(SH.CLS).rows.forEach(c => { const x = String(c['版本'] || '').trim(); if (x) v[x] = 1; });
+  return Object.keys(v);
+}
+
+function poolFor_(units) {
   const set = {};
-  units.forEach(u => set[u] = 1);
+  (units || []).forEach(u => set[u] = 1);
   return table_(SH.Q).rows.filter(q => q['題號'] && String(q['啟用']).toUpperCase() !== 'N' && set[unitKey_(q)]);
+}
+function pool_(cls) { return poolFor_(json_(cls['已教單元'], [])); }
+
+function exam_(cls) {
+  const date = normDate_(cls['考試日期']);
+  const units = json_(cls['考試範圍'], []);
+  if (!date || !units.length || date < today_()) return null;
+  const days = Math.round((Date.parse(date + 'T00:00:00Z') - Date.parse(today_() + 'T00:00:00Z')) / 864e5);
+  return { name: cls['考試名稱'] || '段考', date, units, days };
 }
 
 /** 每一題最近一次的作答結果：{ 題號: { last: true/false } } */
@@ -445,17 +600,23 @@ function state_(cls, s) {
     if (it) { it.total++; if (h && h.last) it.mastered++; }
     if (h && !h.last) wrong++;
   });
+  let exam = exam_(cls);
+  if (exam) {
+    const ep = poolFor_(exam.units);
+    exam = { name: exam.name, date: exam.date, days: exam.days, total: ep.length, mastered: ep.filter(q => hist[q['題號']] && hist[q['題號']].last).length };
+  }
   return {
     className: cls['班級名稱'], seat: Number(s['座號']), nick: s['暱稱'] || '',
     coins: num_(s['金幣']), stars: num_(s['星星']), stamps: num_(s['印章']),
     streak: liveStreak_(s), todayDone: normDate_(s['最後完成日']) === today_(),
-    islands, wrong, perRound: Number(settings_()['每回合題數']) || 10
+    islands, wrong, exam, perRound: Number(settings_()['每回合題數']) || 10,
+    owned: owned_(s), outfit: outfit_(s), shop: SHOP
   };
 }
 
 function publicQ_(q) {
   const options = ['選項A', '選項B', '選項C', '選項D'].map(k => cellText_(q[k])).filter(Boolean);
-  return { id: q['題號'], subject: q['科目'], unit: q['單元'], type: q['題型'], text: cellText_(q['題目']), options, answer: cellText_(q['答案']), explain: cellText_(q['解析']) };
+  return { id: q['題號'], subject: q['科目'], unit: q['單元'], concept: cellText_(q['觀念']), type: q['題型'], text: cellText_(q['題目']), options, answer: cellText_(q['答案']), explain: cellText_(q['解析']) };
 }
 
 function normAns_(v) {
@@ -479,17 +640,17 @@ function tf_(v) {
   return null;
 }
 
-function validateQ_(q) {
-  if (!/^[1-6]$/.test(q.grade)) return '年級要填 1 到 6';
-  if (!/^[上下]/.test(q.sem)) return '學期要填「上」或「下」';
-  if (SUBJECTS.indexOf(q.subject) < 0) return '科目要是 ' + SUBJECTS.join('、') + ' 其中之一';
-  if (!q.unit) return '缺少單元名稱';
-  if (!q.text) return '缺少題目';
-  if (['選擇', '是非', '填空'].indexOf(q.type) < 0) return '題型要是 選擇、是非、填空';
-  if (!q.answer) return '缺少答案';
-  if (q.type === '選擇' && (!q.a || !q.b)) return '選擇題至少要有選項A和選項B';
-  if (q.type === '選擇' && !/^[A-Da-d]$/.test(q.answer)) return '選擇題答案請填 A、B、C 或 D';
-  if (q.type === '是非' && tf_(q.answer) === null) return '是非題答案請填 O 或 X';
+function validateQ_(v) {
+  if (!/^[1-6]$/.test(v['年級'])) return '年級要填 1 到 6';
+  if (!/^[上下]$/.test(v['學期'])) return '學期要填「上」或「下」';
+  if (SUBJECTS.indexOf(v['科目']) < 0) return '科目要是 ' + SUBJECTS.join('、') + ' 其中之一';
+  if (!v['單元']) return '缺少單元名稱';
+  if (!v['題目']) return '缺少題目';
+  if (['選擇', '是非', '填空'].indexOf(v['題型']) < 0) return '題型要是 選擇、是非、填空';
+  if (!v['答案']) return '缺少答案';
+  if (v['題型'] === '選擇' && (!v['選項A'] || !v['選項B'])) return '選擇題至少要有選項A和選項B';
+  if (v['題型'] === '選擇' && !/^[A-Da-d]$/.test(v['答案'])) return '選擇題答案請填 A、B、C 或 D';
+  if (v['題型'] === '是非' && tf_(v['答案']) === null) return '是非題答案請填 O 或 X';
   return '';
 }
 
@@ -523,26 +684,26 @@ function shuffle_(a) {
 
 function sampleQuestions_() {
   const raw = [
-    ['國語', '詞語運用', '選擇', '「他做事總是半途而廢」中的「半途而廢」是什麼意思？', '做到一半就放棄', '走路走到一半', '把東西丟掉一半', '只做一半的工作量', 'A', '比喻做事不能堅持到底。'],
-    ['國語', '詞語運用', '選擇', '下列哪一個詞語用得正確？', '他的成績一落千丈，大家都很羨慕', '這幅畫栩栩如生，好像真的一樣', '他說話語無倫次，條理分明', '比賽結果出爐，大家都忐忑不安地慶祝', 'B', '栩栩如生：形容藝術作品逼真生動。'],
-    ['國語', '修辭', '是非', '「月亮害羞地躲進雲裡」用了擬人法。', '', '', '', '', 'O', '把月亮當成人來寫，會「害羞」。'],
-    ['國語', '修辭', '填空', '「時間就像流水，一去不回頭」使用的修辭法是（　）法。', '', '', '', '', '譬喻|明喻', '有「像」把時間比喻成流水，是譬喻（明喻）。'],
-    ['數學', '分數除法', '填空', '3/4 ÷ 1/2 = ？（用最簡分數或帶分數作答）', '', '', '', '', '3/2|1又1/2|1 1/2|1.5', '3/4 × 2 = 6/4 = 3/2。'],
-    ['數學', '分數除法', '選擇', '一條 5/6 公尺的緞帶，每 1/6 公尺剪一段，可以剪幾段？', '4 段', '5 段', '6 段', '30 段', 'B', '5/6 ÷ 1/6 = 5。'],
-    ['數學', '圓面積', '填空', '半徑 10 公分的圓，面積是多少平方公分？（圓周率用 3.14）', '', '', '', '', '314', '10 × 10 × 3.14 = 314。'],
-    ['數學', '圓面積', '是非', '圓的直徑是半徑的 2 倍。', '', '', '', '', 'O', ''],
-    ['自然', '天氣變化', '選擇', '颱風來臨前，氣壓通常會怎麼變化？', '變高', '變低', '不變', '忽高忽低', 'B', '颱風是低氣壓系統。'],
-    ['自然', '天氣變化', '是非', '鋒面通過時，常常會帶來降雨。', '', '', '', '', 'O', ''],
-    ['自然', '熱對物質的影響', '選擇', '鐵軌之間要留一點縫隙，主要是為了什麼？', '省材料', '排水', '預留熱脹冷縮的空間', '讓火車跑得更快', 'C', '夏天鐵軌受熱膨脹，需要空間。'],
-    ['自然', '熱對物質的影響', '填空', '熱的傳播方式有傳導、對流和（　）。', '', '', '', '', '輻射', ''],
-    ['社會', '地方自治', '選擇', '下列哪一位是由人民直接選出來的？', '鄉（鎮、市）長', '學校校長', '警察局長', '法官', 'A', '地方首長由居民投票選出。'],
-    ['社會', '地方自治', '是非', '在臺灣，年滿 18 歲就可以參加總統選舉投票。', '', '', '', '', 'X', '總統選舉投票年齡目前是年滿 20 歲。'],
-    ['社會', '臺灣的地理', '選擇', '臺灣最高的山是哪一座？', '雪山', '玉山', '阿里山', '合歡山', 'B', '玉山主峰約 3952 公尺。'],
-    ['社會', '臺灣的地理', '填空', '臺灣最長的河流是（　）溪。', '', '', '', '', '濁水', ''],
-    ['英文', 'Unit 1 單字', '選擇', '"I usually ____ to school by bus."', 'go', 'goes', 'going', 'went', 'A', '主詞 I 用原形動詞。'],
-    ['英文', 'Unit 1 單字', '填空', '「圖書館」的英文是？', '', '', '', '', 'library', ''],
-    ['英文', 'Unit 2 時態', '選擇', '"She ____ TV last night."', 'watch', 'watches', 'watched', 'watching', 'C', 'last night 表示過去，用過去式。'],
-    ['英文', 'Unit 2 時態', '是非', '"He don\'t like apples." 這句話文法正確。', '', '', '', '', 'X', '應該是 He doesn\'t like apples.']
+    ['國語', '詞語運用', '成語意思', '選擇', '「他做事總是半途而廢」中的「半途而廢」是什麼意思？', '做到一半就放棄', '走路走到一半', '把東西丟掉一半', '只做一半的工作量', 'A', '比喻做事不能堅持到底。'],
+    ['國語', '詞語運用', '成語運用', '選擇', '下列哪一個詞語用得正確？', '他的成績一落千丈，大家都很羨慕', '這幅畫栩栩如生，好像真的一樣', '他說話語無倫次，條理分明', '比賽結果出爐，大家都忐忑不安地慶祝', 'B', '栩栩如生：形容藝術作品逼真生動。'],
+    ['國語', '修辭', '擬人', '是非', '「月亮害羞地躲進雲裡」用了擬人法。', '', '', '', '', 'O', '把月亮當成人來寫，會「害羞」。'],
+    ['國語', '修辭', '譬喻', '填空', '「時間就像流水，一去不回頭」使用的修辭法是（　）法。', '', '', '', '', '譬喻|明喻', '有「像」把時間比喻成流水，是譬喻（明喻）。'],
+    ['數學', '分數除法', '分數除以分數', '填空', '3/4 ÷ 1/2 = ？（用最簡分數或帶分數作答）', '', '', '', '', '3/2|1又1/2|1 1/2|1.5', '3/4 × 2 = 6/4 = 3/2。'],
+    ['數學', '分數除法', '包含除應用題', '選擇', '一條 5/6 公尺的緞帶，每 1/6 公尺剪一段，可以剪幾段？', '4 段', '5 段', '6 段', '30 段', 'B', '5/6 ÷ 1/6 = 5。'],
+    ['數學', '圓面積', '圓面積公式', '填空', '半徑 10 公分的圓，面積是多少平方公分？（圓周率用 3.14）', '', '', '', '', '314', '10 × 10 × 3.14 = 314。'],
+    ['數學', '圓面積', '半徑與直徑', '是非', '圓的直徑是半徑的 2 倍。', '', '', '', '', 'O', ''],
+    ['自然', '天氣變化', '氣壓', '選擇', '颱風來臨前，氣壓通常會怎麼變化？', '變高', '變低', '不變', '忽高忽低', 'B', '颱風是低氣壓系統。'],
+    ['自然', '天氣變化', '鋒面', '是非', '鋒面通過時，常常會帶來降雨。', '', '', '', '', 'O', ''],
+    ['自然', '熱對物質的影響', '熱脹冷縮', '選擇', '鐵軌之間要留一點縫隙，主要是為了什麼？', '省材料', '排水', '預留熱脹冷縮的空間', '讓火車跑得更快', 'C', '夏天鐵軌受熱膨脹，需要空間。'],
+    ['自然', '熱對物質的影響', '熱的傳播', '填空', '熱的傳播方式有傳導、對流和（　）。', '', '', '', '', '輻射', ''],
+    ['社會', '地方自治', '選舉', '選擇', '下列哪一位是由人民直接選出來的？', '鄉（鎮、市）長', '學校校長', '警察局長', '法官', 'A', '地方首長由居民投票選出。'],
+    ['社會', '地方自治', '選舉', '是非', '在臺灣，年滿 18 歲就可以參加總統選舉投票。', '', '', '', '', 'X', '總統選舉投票年齡目前是年滿 20 歲。'],
+    ['社會', '臺灣的地理', '地形', '選擇', '臺灣最高的山是哪一座？', '雪山', '玉山', '阿里山', '合歡山', 'B', '玉山主峰約 3952 公尺。'],
+    ['社會', '臺灣的地理', '河川', '填空', '臺灣最長的河流是（　）溪。', '', '', '', '', '濁水', ''],
+    ['英文', 'Unit 1 單字', '第一人稱動詞', '選擇', '"I usually ____ to school by bus."', 'go', 'goes', 'going', 'went', 'A', '主詞 I 用原形動詞。'],
+    ['英文', 'Unit 1 單字', '場所單字', '填空', '「圖書館」的英文是？', '', '', '', '', 'library', ''],
+    ['英文', 'Unit 2 時態', '過去式', '選擇', '"She ____ TV last night."', 'watch', 'watches', 'watched', 'watching', 'C', 'last night 表示過去，用過去式。'],
+    ['英文', 'Unit 2 時態', '第三人稱否定', '是非', '"He don\'t like apples." 這句話文法正確。', '', '', '', '', 'X', '應該是 He doesn\'t like apples.']
   ];
-  return raw.map((r, i) => ({ '題號': 'S' + ('00' + (i + 1)).slice(-3), '年級': 6, '學期': '上', '科目': r[0], '單元': r[1], '題型': r[2], '題目': r[3], '選項A': r[4], '選項B': r[5], '選項C': r[6], '選項D': r[7], '答案': r[8], '解析': r[9], '來源': '範例', '啟用': 'Y' }));
+  return raw.map((r, i) => ({ '題號': 'S' + ('00' + (i + 1)).slice(-3), '版本': COMMON, '年級': 6, '學期': '上', '科目': r[0], '單元': r[1], '觀念': r[2], '題型': r[3], '題目': r[4], '選項A': r[5], '選項B': r[6], '選項C': r[7], '選項D': r[8], '答案': r[9], '解析': r[10], '來源': '範例', '啟用': 'Y' }));
 }
