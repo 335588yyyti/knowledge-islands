@@ -9,23 +9,29 @@ import { chromium } from 'playwright';
 
 const PORT = 8788, BASE = `http://127.0.0.1:${PORT}`, PW = 'test-pass-123';
 const dir = mkdtempSync(join(tmpdir(), 'ki-'));
-execSync(`npx wrangler d1 migrations apply DB --local --persist-to ${dir}`, { stdio: 'ignore' });
+let current = '啟動';
+// 保險：整個測試超過 4 分鐘就印出卡在哪裡並結束，不會一直卡住
+const watchdog = setTimeout(() => { console.error('\n測試超時，卡在：' + current + '\n--- wrangler 輸出 ---\n' + log.slice(-4000)); stop(); process.exit(1); }, 240e3);
+console.log('套用資料表…');
+execSync(`npx wrangler d1 migrations apply DB --local --persist-to ${dir}`, { stdio: ['ignore', 'ignore', 'inherit'], timeout: 120e3 });
+console.log('啟動 wrangler dev…');
 const dev = spawn('npx', ['wrangler', 'dev', '--port', String(PORT), '--ip', '127.0.0.1', '--persist-to', dir, '--var', 'TEACHER_PASSWORD:' + PW], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; dev.stdout.on('data', d => log += d); dev.stderr.on('data', d => log += d);
 const stop = () => { try { process.kill(-dev.pid); } catch (e) {} rmSync(dir, { recursive: true, force: true }); };
 
 async function waitUp() {
   for (let i = 0; i < 120; i++) {
-    try { if ((await fetch(BASE + '/')).ok) return; } catch (e) {}
+    try { if ((await fetch(BASE + '/', { signal: AbortSignal.timeout(3000) })).ok) return; } catch (e) {}
     await new Promise(r => setTimeout(r, 500));
   }
   throw new Error('wrangler dev 沒有啟動：\n' + log);
 }
-const call = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', body: JSON.stringify({ args }) })).json());
+const call = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', body: JSON.stringify({ args }), signal: AbortSignal.timeout(15000) })).json());
 
 let passed = 0;
 const pages = [];
 async function step(name, fn) {
+  current = name;
   try { await fn(); } catch (e) {
     console.error('  ✗ ' + name);
     for (const [i, p] of pages.entries()) await p.screenshot({ path: `test-results/fail-${i}.png`, fullPage: true }).catch(() => {});
@@ -200,5 +206,7 @@ try {
   console.error('\n測試失敗：', e && e.message || e);
   process.exitCode = 1;
 } finally {
+  clearTimeout(watchdog);
   stop();
+  process.exit(process.exitCode || 0);
 }
