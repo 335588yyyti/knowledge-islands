@@ -37,6 +37,44 @@ const SHOP = {
 };
 const DEFAULT_OUTFIT = { hat: 'hat_sailor', acc: 'acc_none', color: 'color_blue' };
 
+/**
+ * 徽章：每一個都要做到一件有意義的事，而且只拿一次。
+ * 分成四類：好習慣（每天練）、精熟（真的記住）、成長（從錯誤中學）、挑戰。
+ * 刻意不做「答很多題」「賺很多金幣」這種只靠刷題就能拿的徽章。
+ */
+const BADGES = [
+  // 好習慣
+  { id: 'streak3', group: '好習慣', icon: '🔥', name: '小火苗', desc: '連續 3 天拿到今日印章' },
+  { id: 'streak7', group: '好習慣', icon: '🔥', name: '一週不間斷', desc: '連續 7 天拿到今日印章' },
+  { id: 'streak14', group: '好習慣', icon: '⛵', name: '穩定航行', desc: '連續 14 天拿到今日印章' },
+  { id: 'streak30', group: '好習慣', icon: '👑', name: '航海王', desc: '連續 30 天拿到今日印章' },
+  { id: 'days10', group: '好習慣', icon: '📅', name: '十日水手', desc: '累積 10 天拿到今日印章' },
+  { id: 'days30', group: '好習慣', icon: '📅', name: '三十日水手', desc: '累積 30 天拿到今日印章' },
+  { id: 'days60', group: '好習慣', icon: '🧭', name: '老練水手', desc: '累積 60 天拿到今日印章' },
+  // 精熟
+  { id: 'master1', group: '精熟', icon: '🌱', name: '第一棵樹', desc: '第一次精熟一個單元' },
+  { id: 'master5', group: '精熟', icon: '🌳', name: '小樹林', desc: '精熟 5 個單元' },
+  { id: 'master10', group: '精熟', icon: '🌲', name: '森林守護者', desc: '精熟 10 個單元' },
+  { id: 'master20', group: '精熟', icon: '🏞️', name: '知識森林', desc: '精熟 20 個單元' },
+  { id: 'isle_國語', group: '精熟', icon: '📜', name: '國語島主', desc: '國語島開放的單元全部精熟（至少 2 個單元）' },
+  { id: 'isle_數學', group: '精熟', icon: '📐', name: '數學島主', desc: '數學島開放的單元全部精熟（至少 2 個單元）' },
+  { id: 'isle_自然', group: '精熟', icon: '🔬', name: '自然島主', desc: '自然島開放的單元全部精熟（至少 2 個單元）' },
+  { id: 'isle_社會', group: '精熟', icon: '🗺️', name: '社會島主', desc: '社會島開放的單元全部精熟（至少 2 個單元）' },
+  { id: 'isle_英文', group: '精熟', icon: '🔤', name: '英文島主', desc: '英文島開放的單元全部精熟（至少 2 個單元）' },
+  { id: 'allfive', group: '精熟', icon: '🌈', name: '五島通航', desc: '五科都至少精熟 1 個單元' },
+  // 成長
+  { id: 'rescue10', group: '成長', icon: '🛟', name: '救援小隊', desc: '把 10 題答錯過的題目重新答對' },
+  { id: 'rescue50', group: '成長', icon: '🚁', name: '救援隊長', desc: '把 50 題答錯過的題目重新答對' },
+  { id: 'comeback', group: '成長', icon: '💪', name: '越挫越勇', desc: '同一天沒過關之後，再挑戰並過關' },
+  { id: 'review', group: '成長', icon: '⏰', name: '溫故知新', desc: '回去複習一個「該複習了」的精熟單元，並答對' },
+  // 挑戰
+  { id: 'reader10', group: '挑戰', icon: '📖', name: '閱讀偵探', desc: '答對 10 題素養題' },
+  { id: 'reader30', group: '挑戰', icon: '🔎', name: '情境高手', desc: '答對 30 題素養題' },
+  { id: 'perfect', group: '挑戰', icon: '🎯', name: '百發百中', desc: '一回合至少 8 題，全部答對' },
+  { id: 'exam', group: '挑戰', icon: '🚩', name: '備戰完成', desc: '在段考衝刺島過關' }
+];
+const BADGE_MAP = Object.fromEntries(BADGES.map(b => [b.id, b]));
+
 class UserError extends Error {}
 const fail = msg => { throw new UserError(msg); };
 
@@ -258,8 +296,9 @@ async function state(ctx, cls, s) {
     const us = units.filter(u => u.subject === sj);
     islands[sj].units = us.length; islands[sj].masteredUnits = us.filter(u => u.level === 3).length;
   });
+  const badges = (await ctx.all('SELECT badge FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.badge);
   return {
-    units,
+    units, badges, badgeList: BADGES,
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(),
@@ -312,8 +351,31 @@ const API = {};
 
 API.studentLogin = async (ctx, cred) => {
   const { cls, s } = await auth(ctx, cred, true);
-  return state(ctx, cls, s);
+  const st = await state(ctx, cls, s);
+  const nb = await awardBadges(ctx, cls, s, st, {});
+  if (nb.length) st.badges = st.badges.concat(nb.map(b => b.id));
+  return st;
 };
+
+/** 檢查並頒發徽章，回傳這次新拿到的 */
+async function awardBadges(ctx, cls, s, st, ev) {
+  const have = new Set(st.badges || []);
+  const mastered = (await ctx.first('SELECT COUNT(*) AS n FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
+  const subj = sj => st.units.filter(u => u.subject === sj);
+  const cond = {
+    streak3: s.streak >= 3, streak7: s.streak >= 7, streak14: s.streak >= 14, streak30: s.streak >= 30,
+    days10: s.stamps >= 10, days30: s.stamps >= 30, days60: s.stamps >= 60,
+    master1: mastered >= 1, master5: mastered >= 5, master10: mastered >= 10, master20: mastered >= 20,
+    allfive: SUBJECTS.every(sj => subj(sj).some(u => u.level === 3)),
+    rescue10: s.rescued >= 10, rescue50: s.rescued >= 50,
+    reader10: s.passage_right >= 10, reader30: s.passage_right >= 30,
+    comeback: !!ev.comeback, review: !!ev.review, perfect: !!ev.perfect, exam: !!ev.exam
+  };
+  SUBJECTS.forEach(sj => { const us = subj(sj); cond['isle_' + sj] = us.length >= 2 && us.every(u => u.level === 3); });
+  const fresh = BADGES.filter(b => cond[b.id] && !have.has(b.id));
+  if (fresh.length) await ctx.batch(fresh.map(b => ctx.stmt('INSERT OR IGNORE INTO badges (class_code, seat, badge, day) VALUES (?,?,?,?)', cls.code, s.seat, b.id, today())));
+  return fresh;
+}
 
 API.getRound = async (ctx, cred, island) => {
   const { cls, s } = await auth(ctx, cred, false);
@@ -372,13 +434,20 @@ API.submitRound = async (ctx, cred, island, responses) => {
   (await ctx.all('SELECT * FROM questions WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(ids))).forEach(q => qmap[q.id] = q);
   const ts = stampNow(), day = today();
   const stmts = [], missed = new Set(), seen = new Set();
-  let correct = 0;
+  const before = await history(ctx, cls.code, s.seat);
+  const reviewUnits = new Set(unitLevels(await poolFor(ctx, jsonp(cls.units, [])), before).filter(u => u.review).map(u => u.key));
+  let correct = 0, rescued = 0, passageRight = 0, reviewDone = false;
   list.forEach(r => {
     const q = qmap[str(r && r.id, 40)];
     if (!q || seen.has(q.id)) return;  // 同一題只算一次
     seen.add(q.id);
     const ok = grade(q, r.answer);
-    if (ok) correct++; else concepts(q.concept).forEach(c => missed.add(c));
+    if (ok) {
+      correct++;
+      if (before[q.id] && !before[q.id].last) rescued++;   // 之前答錯，這次答對
+      if (q.passage) passageRight++;
+      if (reviewUnits.has(q.unit_key)) reviewDone = true;
+    } else concepts(q.concept).forEach(c => missed.add(c));
     stmts.push(ctx.stmt('INSERT INTO logs (ts, day, class_code, seat, qid, subject, unit, answer, ok) VALUES (?,?,?,?,?,?,?,?,?)', ts, day, cls.code, s.seat, q.id, q.subject, q.unit, str(r.answer, 100), ok ? 1 : 0));
     // 答對：如果今天還沒答對過這題，答對的日子數 +1
     stmts.push(ctx.stmt(`INSERT INTO progress (class_code, seat, qid, last_ok, right_days, last_right_day, last_day) VALUES (?,?,?,?,?,?,?)
@@ -400,6 +469,11 @@ API.submitRound = async (ctx, cred, island, responses) => {
   s.coins += correct; s.earned += correct;
   if (passed) s.stars += 1;
   s.total += total; s.right_count += correct;
+  const comeback = passed && s.last_fail_day === day;
+  s.rescued += rescued; s.passage_right += passageRight;
+  if (!passed) s.last_fail_day = day;
+  stmts.push(ctx.stmt('UPDATE students SET rescued = rescued + ?, passage_right = passage_right + ?, last_fail_day = ? WHERE class_code = ? AND seat = ?',
+    rescued, passageRight, s.last_fail_day, cls.code, s.seat));
   stmts.push(ctx.stmt(`UPDATE students SET coins = coins + ?, earned = earned + ?, stars = stars + ?, stamps = stamps + ?,
       streak = ?, last_day = ?, total = total + ?, right_count = right_count + ? WHERE class_code = ? AND seat = ?`,
     correct, correct, passed ? 1 : 0, gotStamp ? 1 : 0, s.streak, s.last_day, total, correct, cls.code, s.seat));
@@ -409,7 +483,10 @@ API.submitRound = async (ctx, cred, island, responses) => {
   const had = new Set((await ctx.all('SELECT unit_key FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.unit_key));
   const newly = st.units.filter(u => u.level === 3 && !had.has(u.key));
   if (newly.length) await ctx.batch(newly.map(u => ctx.stmt('INSERT OR IGNORE INTO mastery (class_code, seat, unit_key, day) VALUES (?,?,?,?)', cls.code, s.seat, u.key, day)));
-  return { correct, total, passed, coins: correct, star: passed, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit), state: st };
+  const nb = await awardBadges(ctx, cls, s, st, { comeback, review: reviewDone, perfect: total >= 8 && correct === total, exam: island === '段考' && passed });
+  st.badges = st.badges.concat(nb.map(b => b.id));
+  return { correct, total, passed, coins: correct, star: passed, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
+    badges: nb.map(b => ({ id: b.id, icon: b.icon, name: b.name, desc: b.desc })), state: st };
 };
 
 API.buyItem = async (ctx, cred, id) => {
@@ -483,6 +560,8 @@ API.tDashboard = async (ctx, pw, code) => {
     ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code)
   ]);
   const mMap = {}; mPend.forEach(r => mMap[r.seat] = r.n);
+  const bMap = {};
+  (await ctx.all('SELECT seat, badge FROM badges WHERE class_code = ?', cls.code)).forEach(r => (bMap[r.seat] = bMap[r.seat] || []).push(r.badge));
   const dayMap = {}; days.forEach(r => dayMap[r.seat] = r.n);
   const weakBy = {}, wrongCount = {}, cPeople = {};
   wrongNow.forEach(r => {
@@ -499,7 +578,7 @@ API.tDashboard = async (ctx, pw, code) => {
     x.right += r.right; x.total += r.total;
   }));
   return {
-    cls: classOut(cls), rate: rt,
+    cls: classOut(cls), rate: rt, badgeTotal: BADGES.length,
     students: students.map(s => {
       const stamps = s.stamps - s.stamps_redeemed, coinsPending = s.earned - s.coins_redeemed;
       const coinPts = rt.coinsPerPoint > 0 ? Math.floor(coinsPending / rt.coinsPerPoint) : 0;
@@ -510,7 +589,8 @@ API.tDashboard = async (ctx, pw, code) => {
         streak: liveStreak(s), last: s.last_day, weekDays: dayMap[s.seat] || 0,
         total: s.total, right: s.right_count, wrongNow: wrongCount[s.seat] || 0,
         weak: Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2),
-        locked: s.locked_until > Date.now()
+        locked: s.locked_until > Date.now(),
+        badges: (bMap[s.seat] || []).map(id => BADGE_MAP[id]).filter(Boolean).map(b => b.icon + ' ' + b.name)
       };
     }),
     units: await unitCatalog(ctx),

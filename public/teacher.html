@@ -336,14 +336,21 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <li>「學生與加點」勾選學生 → 換成點數 → 「複製清單」貼到你的集點系統。每次換點都會留下紀錄，可以匯出。</li>
         </ul>
 
-        <h3>六、新的一屆／換課本</h3>
+        <h3>六、徽章</h3>
+        <ul>
+          <li>共 25 個徽章，分成四類：<b>好習慣</b>（連續或累積幾天拿到今日印章）、<b>精熟</b>（精熟幾個單元、某科島全部精熟、五科都精熟）、<b>成長</b>（把錯題重新答對、沒過關後再挑戰成功、回去複習該複習的單元）、<b>挑戰</b>（素養題答對、一回合全對、段考衝刺島過關）。</li>
+          <li>刻意不做「答很多題」「賺很多金幣」這種只靠刷題就能拿的徽章。</li>
+          <li>每個徽章只拿一次。學生在「徽章牆」看得到還沒拿到的徽章要怎麼達成；「學生與加點」的表格有每位學生的徽章數，滑鼠移上去可以看是哪些。</li>
+        </ul>
+
+        <h3>七、新的一屆／換課本</h3>
         <ul>
           <li>上一屆畢業：「班級管理」按「封存」，學生不能再登入，資料仍保留。</li>
           <li>新的一屆：建立新的班級代碼，題庫自動沿用，勾選單元就能開始。</li>
           <li>換出版社：在「班級管理」把版本改掉。不同版本的題目會分開，不會混在一起；不分版本的題目請標「通用」。</li>
         </ul>
 
-        <h3>七、常見問題</h3>
+        <h3>八、常見問題</h3>
         <ul>
           <li><b>學生忘記密碼</b>：在「學生與加點」那一列按「重設密碼」，學生下次登入重新設定。</li>
           <li><b>學生說被鎖住了</b>：密碼連續錯 5 次會鎖 10 分鐘；按「重設密碼」可以馬上解鎖。</li>
@@ -447,7 +454,7 @@ function renderOverview(){
     ['全班可加點數', pending + ' 點']
   ].map(k => `<div class="kpi"><span class="small muted">${k[0]}</span><b>${k[1]}</b></div>`).join('');
 
-  $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">可加點數</th><th class="num">未換印章</th><th class="num">未換金幣</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th>弱點觀念</th><th class="num" title="學生目前可以在商店花的金幣">金幣餘額</th><th></th></tr></thead><tbody>` +
+  $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">可加點數</th><th class="num">未換印章</th><th class="num">未換金幣</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th>弱點觀念</th><th class="num">徽章</th><th class="num" title="學生目前可以在商店花的金幣">金幣餘額</th><th></th></tr></thead><tbody>` +
     S.map(s => {
       const pct = s.total ? Math.round(s.right / s.total * 100) : null;
       const pill = s.locked ? '<span class="pill p-bad">密碼錯太多次，鎖住中</span>' : !s.hasPin ? '<span class="pill p-mute">未登入</span>'
@@ -459,7 +466,7 @@ function renderOverview(){
         <td class="num">${s.points ? '<span class="stamp">' + s.points + '</span>' : '<span class="muted">0</span>'}</td>
         <td class="num">${s.stamps}</td><td class="num" title="累積 ${s.earned} 枚，已換 ${s.earned - s.coinsPending} 枚">${s.coinsPending}</td>
         <td class="num">${s.streak}</td><td class="num">${s.weekDays}</td><td>${pill}</td>
-        <td class="num">${pct === null ? '<span class="muted">—</span>' : pct + '%'}</td><td class="num">${s.wrongNow}</td><td>${s.weak.length ? s.weak.map(w => '<span class="pill p-warn">' + esc(w) + '</span>').join(' ') : '<span class="muted">—</span>'}</td><td class="num">${s.coins}</td>
+        <td class="num">${pct === null ? '<span class="muted">—</span>' : pct + '%'}</td><td class="num">${s.wrongNow}</td><td>${s.weak.length ? s.weak.map(w => '<span class="pill p-warn">' + esc(w) + '</span>').join(' ') : '<span class="muted">—</span>'}</td><td class="num" title="${esc(s.badges.join('、'))}">${s.badges.length}</td><td class="num">${s.coins}</td>
         <td><button class="btn2 sm" data-redeem="${s.seat}" ${s.points ? '' : 'disabled'}>換點</button> <button class="btn2 sm" data-reset="${s.seat}">重設密碼</button></td></tr>`;
     }).join('') + '</tbody>';
   $('cAll').onchange = e => document.querySelectorAll('.cStu:not(:disabled)').forEach(c => c.checked = e.target.checked);

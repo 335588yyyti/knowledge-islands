@@ -277,6 +277,39 @@ try {
     await t.click('[data-tab="tGuide"]'); await t.waitForSelector('#tGuide:not(.hidden)');
     assert.match(await t.textContent('#tGuide'), /初學和熟練的差別/);
   });
+  await step('徽章：達成有意義的事才拿得到，只拿一次', async () => {
+    const c4 = { code: 'DEMO', seat: 3, pin: '3333' };
+    const play4 = async (isl, wrong = 0) => {
+      const qs = (await call('getRound', c4, isl)).ok;
+      return (await call('submitRound', c4, isl, qs.map((q, i) => ({ id: q.id, answer: i < wrong ? 'zzz' : q.type === '選擇' ? q.options['ABCD'.indexOf(q.answer)] : q.answer.split('|')[0] })))).ok;
+    };
+    let r = await play4('國語', 4);           // 全錯，沒過關
+    assert.equal(r.passed, false);
+    assert.equal(r.badges.length, 0);
+    r = await play4('國語');                  // 同一天再挑戰並過關
+    const ids = r.badges.map(b => b.id);
+    assert.ok(ids.includes('comeback'), '越挫越勇');
+    r = await play4('國語');
+    assert.ok(!r.badges.some(b => b.id === 'comeback'), '不會重複拿');
+    // 段考衝刺島過關 + 一回合 8 題以上全對
+    r = await play4('段考');
+    assert.ok(r.badges.some(b => b.id === 'exam'));
+    const st = (await call('studentLogin', c4)).ok;
+    assert.ok(st.badges.includes('comeback') && st.badges.includes('exam'));
+    assert.equal(st.badgeList.length, 25);
+    const d = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 3);
+    assert.ok(d.badges.length >= 2);
+  });
+  await step('精熟過的學生登入時補發精熟徽章、徽章牆顯示', async () => {
+    const st = (await call('studentLogin', { code: 'DEMO', seat: 2, pin: '2222' })).ok;
+    assert.ok(st.badges.includes('master1'), '第一棵樹');
+    assert.ok(st.badges.includes('isle_英文'), '英文島主');
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
+    assert.ok(await p.locator('.bcard.got').count() >= 2);
+    assert.equal(await p.locator('.bcard').count(), 25);
+  });
   await step('題庫管理：查詢、編輯、停用、刪除', async () => {
     await t.click('[data-tab="tBank"]'); await t.waitForSelector('#bankTbl tbody tr');
     await t.fill('#fQ', '長度'); await t.click('#bFind'); await t.waitForFunction(() => document.querySelectorAll('#bankTbl tbody tr').length === 1);
