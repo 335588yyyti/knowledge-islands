@@ -6,7 +6,7 @@ DB_NAME="knowledge-islands"
 ID=$(npx wrangler d1 list --json | jq -r ".[] | select(.name==\"$DB_NAME\") | .uuid")
 if [ -z "$ID" ]; then
   echo "第一次部署：建立 D1 資料庫 $DB_NAME"
-  npx wrangler d1 create "$DB_NAME" >/dev/null
+  npx wrangler d1 create "$DB_NAME" --location apac --update-config=false
   ID=$(npx wrangler d1 list --json | jq -r ".[] | select(.name==\"$DB_NAME\") | .uuid")
 fi
 sed -i "s/^database_id = .*/database_id = \"$ID\"/" wrangler.toml
