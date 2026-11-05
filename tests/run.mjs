@@ -226,7 +226,7 @@ try {
     const g = (await call('tMastery', PW, 'DEMO')).ok;
     const s2 = g.students.find(x => x.seat === 2);
     assert.equal(Object.values(s2.levels).filter(v => v === 3).length, 2);
-    await t.click('[data-tab="tMastery"]'); await t.waitForSelector('#mTbl td.lvc.l3');
+    await t.click('[data-tab="tMastery"]'); await t.waitForSelector('#mTbl td.lvc.l3'); assert.match(await t.textContent('#mTbl'), /精熟/); assert.doesNotMatch(await t.textContent('#mTbl'), /🌳/);
     const before = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 2);
     assert.equal(before.masteryPending, 2);
     const out = (await call('tRedeem', PW, 'DEMO', [2], '精熟測試')).ok;

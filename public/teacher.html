@@ -75,9 +75,9 @@ td.num,th.num{text-align:right}
 .legend{display:flex;flex-wrap:wrap;gap:6px}
 .lvc{text-align:center;border-radius:6px}
 .legend .lvc{padding:2px 10px;font-size:13px}
-.lvc.l0{background:#f3f4f2;color:var(--muted)} .lvc.l1{background:#fdf1d8} .lvc.l2{background:#e3f1fb} .lvc.l3{background:#dff3e8}
+.lvc.l0{background:#f3f4f2;color:var(--muted)} .lvc.l1{background:#fdf1d8;color:#8a6312} .lvc.l2{background:#e3f1fb;color:#2f6f9e} .lvc.l3{background:#dff3e8;color:#23704f;font-weight:700} .lvc.l4{background:#fde8d8;color:#a0522d;font-weight:700}
 .mgrid td,.mgrid th{padding:6px 8px}
-.mgrid td.lvc{font-size:18px;border:2px solid #fff}
+.mgrid td.lvc{font-size:14px;border:2px solid #fff;white-space:nowrap}
 .mgrid th.uh{white-space:normal;min-width:72px;max-width:110px;font-size:12px;line-height:1.3;vertical-align:bottom}
 .mgrid th.uh span{display:block;color:var(--coral);font-weight:700}
 .mgrid tr.sum td{font-weight:700;color:var(--muted);border-top:2px solid var(--line)}
@@ -194,8 +194,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <section id="tMastery" class="hidden">
       <div class="panel">
         <h2>精熟總覽</h2>
-        <p class="muted small">規則只有一條：<b>同一題在兩個不同的日子都答對，就算記住了</b>（不限定隔天）。一個單元 9 成的題目記住 = 🌳 精熟；7 成最近答對 = 🌿 熟練；有練習 = 🌱 初學。已精熟的單元超過 21 天沒練會標 ⏰，提醒複習（等級不會被扣）。只列出「教學進度」已勾選的單元。</p>
-        <div class="legend"><span class="lvc l0">未練習</span><span class="lvc l1">🌱 初學</span><span class="lvc l2">🌿 熟練</span><span class="lvc l3">🌳 精熟</span><span class="lvc l3">⏰ 該複習</span></div>
+        <p class="muted small">規則只有一條：<b>同一題在兩個不同的日子都答對，就算記住了</b>（不限定隔天）。一個單元 9 成的題目記住＝精熟；7 成的題目最近一次答對＝熟練；有練習但還不到 7 成＝初學。已精熟的單元超過 21 天沒練會標「該複習」（等級不會被扣）。只列出「教學進度」已勾選的單元。</p>
+        <div class="legend"><span class="lvc l0">－ 未練習</span><span class="lvc l1">初學</span><span class="lvc l2">熟練</span><span class="lvc l3">精熟</span><span class="lvc l4">該複習</span></div>
         <div class="tbl" style="margin-top:10px"><table id="mTbl" class="mgrid"></table></div>
       </div>
     </section>
@@ -316,10 +316,10 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <p class="rule">規則只有一條：<b>同一題在兩個不同的日子都答對，就算記住了</b>（不限定隔天）。</p>
         <table>
           <tr><th>等級</th><th>條件</th><th>代表什麼</th></tr>
-          <tr><td>🌱 初學</td><td>這個單元有練過，但最近一次答對的題目還不到 7 成</td><td>剛開始接觸，或還有不少觀念不清楚</td></tr>
-          <tr><td>🌿 熟練</td><td>這個單元 7 成以上的題目，最近一次答對</td><td>現在會了，但還沒證明「隔一段時間還記得」</td></tr>
-          <tr><td>🌳 精熟</td><td>這個單元 9 成以上的題目，在兩個不同的日子都答對過（且最近一次是對的）</td><td>真的記住了</td></tr>
-          <tr><td>⏰ 該複習</td><td>精熟的單元超過 21 天沒練</td><td>只是提醒，等級不會被扣</td></tr>
+          <tr><td>初學</td><td>這個單元有練過，但最近一次答對的題目還不到 7 成</td><td>剛開始接觸，或還有不少觀念不清楚</td></tr>
+          <tr><td>熟練</td><td>這個單元 7 成以上的題目，最近一次答對</td><td>現在會了，但還沒證明「隔一段時間還記得」</td></tr>
+          <tr><td>精熟</td><td>這個單元 9 成以上的題目，在兩個不同的日子都答對過（且最近一次是對的）</td><td>真的記住了</td></tr>
+          <tr><td>該複習</td><td>精熟的單元超過 21 天沒練</td><td>只是提醒，等級不會被扣</td></tr>
         </table>
         <ul>
           <li><b>初學和熟練的差別</b>：看「現在答得對不對」（最近一次 7 成答對）。<b>熟練和精熟的差別</b>：看「換一天還記不記得」。所以一個學生同一天把整個單元全答對，最多只會到熟練，要換一天再答對才會精熟。</li>
@@ -692,11 +692,11 @@ async function loadMastery(){
   try{
     const m = await api('tMastery', PW, CUR.code);
     if (!m.units.length){ $('mTbl').innerHTML = '<tbody><tr><td class="muted">還沒有勾選任何已教單元。</td></tr></tbody>'; return; }
-    const icon = ['', '🌱', '🌿', '🌳'], name = ['未練習', '初學', '熟練', '精熟'];
+    const label = ['－', '初學', '熟練', '精熟'], name = ['未練習', '初學', '熟練', '精熟'];
     $('mTbl').innerHTML = '<thead><tr><th>座號</th><th>暱稱</th>' + m.units.map(u => `<th class="uh" title="${esc(u.subject + '・' + u.unit)}"><span>${esc(u.subject)}</span>${esc(u.unit)}</th>`).join('') + '<th class="num">精熟數</th></tr></thead><tbody>' +
       m.students.map(st => '<tr><td>' + st.seat + '</td><td>' + (esc(st.nick) || '—') + '</td>' + m.units.map(u => {
         const lv = st.levels[u.key] || 0, rv = st.review.includes(u.key);
-        return `<td class="lvc l${lv}" title="${esc(u.unit)}：${name[lv]}${rv ? '，該複習了' : ''}">${rv ? '⏰' : icon[lv]}</td>`;
+        return `<td class="lvc l${rv ? 4 : lv}" title="${esc(u.unit)}：${name[lv]}${rv ? '，該複習了' : ''}">${rv ? '該複習' : label[lv]}</td>`;
       }).join('') + '<td class="num"><b>' + m.units.filter(u => st.levels[u.key] === 3).length + '</b></td></tr>').join('') +
       '<tr class="sum"><td colspan="2">全班精熟人數</td>' + m.units.map(u => `<td class="num">${u.mastered}</td>`).join('') + '<td></td></tr></tbody>';
   }catch(e){ toast(e.message); }
