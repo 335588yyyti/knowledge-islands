@@ -2,7 +2,9 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<base target="_top">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
 <title>知識群島 教師後台</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@400;600;800&display=swap">
 <style>
@@ -20,6 +22,8 @@ header{background:linear-gradient(90deg,#c9f0f7,#9fdcec);color:var(--ink)}
 header .in{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding-block:14px}
 header h1{font-family:var(--f-display);font-weight:800;font-size:24px;margin:0;flex:1 1 auto}
 select,input,textarea{font:inherit;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}
+select,input,textarea{max-width:100%;min-width:0}
+#eName,#sPw1,#sPw2{flex:1 1 160px}
 textarea{width:100%;min-height:180px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
 button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid transparent;padding:8px 14px}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--gold);outline-offset:1px}
@@ -70,7 +74,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
 <section id="vLogin" class="login in">
   <form class="panel" id="fLogin">
     <h2>知識群島 教師後台</h2>
-    <p class="muted small">密碼在試算表的「設定」分頁。</p>
+    <p class="muted small">第一次登入請用部署時設定的老師密碼（TEACHER_PASSWORD），登入後可以在「班級管理 → 系統設定」修改。</p>
     <div class="row"><input id="iPw" type="password" placeholder="老師密碼" style="flex:1" required><button class="btn">進入</button></div>
     <p class="err" id="loginErr"></p>
   </form>
@@ -85,6 +89,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <button role="tab" data-tab="tOverview" aria-selected="true">學生與加點</button>
     <button role="tab" data-tab="tUnits">教學進度</button>
     <button role="tab" data-tab="tImport">題庫匯入</button>
+    <button role="tab" data-tab="tBank">題庫管理</button>
     <button role="tab" data-tab="tClass">班級管理</button>
   </nav>
   <main class="in">
@@ -157,8 +162,40 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <li><b>選擇</b>：填選項A～D，答案寫 A、B、C 或 D。</li>
           <li><b>是非</b>：選項留空，答案寫 O 或 X。</li>
           <li><b>填空</b>：選項留空。可接受多個答案時用「|」隔開，例如 <code>3/2|1又1/2|1.5</code>。</li>
-          <li>要停用某題，到「題庫」分頁把「啟用」改成 N。直接在試算表修改題目也可以。</li>
+          <li>要修改、停用或刪除題目，到「題庫管理」。</li>
         </ul>
+      </div>
+    </section>
+
+    <section id="tBank" class="hidden">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between"><h2 style="margin:0">題庫管理</h2>
+          <div class="row"><button class="btn2" id="bNewQ">新增一題</button><button class="btn2" id="bExpQ">匯出全部題目（Excel）</button></div></div>
+        <div class="row" style="margin-top:12px">
+          <select id="fVer"><option value="">全部版本</option></select>
+          <select id="fSubj"><option value="">全部科目</option><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select>
+          <select id="fUnit" style="max-width:280px"><option value="">全部單元</option></select>
+          <input id="fQ" placeholder="搜尋題目、單元、觀念" style="flex:1;min-width:160px"><button class="btn2" id="bFind">查詢</button>
+        </div>
+        <div class="row small" style="margin-top:10px"><span class="muted" id="bankCount"></span>
+          <button class="btn2 sm" id="bQOn">啟用勾選的</button><button class="btn2 sm" id="bQOff">停用勾選的</button><button class="btn2 sm" id="bQDel">刪除勾選的</button></div>
+        <div class="tbl" style="margin-top:8px"><table id="bankTbl"></table></div>
+      </div>
+      <div class="panel hidden" id="qEditor">
+        <h2 id="qEdTitle">編輯題目</h2>
+        <div class="row">
+          <label class="small">版本 <input id="qVer" list="verList" style="width:90px"></label>
+          <label class="small">年級 <select id="qGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
+          <label class="small">學期 <select id="qSem"><option>上</option><option>下</option></select></label>
+          <label class="small">科目 <select id="qSubj"><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select></label>
+          <label class="small">題型 <select id="qType"><option>選擇</option><option>是非</option><option>填空</option></select></label>
+        </div>
+        <div class="row" style="margin-top:8px"><input id="qUnit" placeholder="單元" style="flex:1;min-width:160px"><input id="qConcept" placeholder="觀念（例如：通分）" style="flex:1;min-width:160px"></div>
+        <p><textarea id="qText" placeholder="題目" style="min-height:70px;font-family:var(--f-body)"></textarea></p>
+        <div class="grid2" id="qOpts" style="gap:8px"><input id="qA" placeholder="選項A"><input id="qB" placeholder="選項B"><input id="qC" placeholder="選項C"><input id="qD" placeholder="選項D"></div>
+        <div class="row" style="margin-top:8px"><input id="qAns" placeholder="答案" style="width:220px"><input id="qExp" placeholder="解析（選填）" style="flex:1;min-width:200px"></div>
+        <p class="small muted" id="qHint"></p>
+        <div class="row"><button class="btn" id="bSaveQ">儲存題目</button><button class="btn2" id="bCancelQ">取消</button><span class="err small" id="qErr"></span></div>
       </div>
     </section>
 
@@ -168,10 +205,12 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <h2>學生登入連結</h2>
           <p class="muted small">把這個連結做成 QR code 或貼在班網，學生打開後輸入座號和自己設的 4 位數密碼。</p>
           <div class="copybox"><code id="stuUrl"></code><button class="btn2 sm" id="bCopyUrl">複製</button></div>
+          <div id="qr" style="margin-top:10px;width:160px;height:160px"></div>
+          <p class="muted small">教師後台網址：<code id="tUrl"></code>（不要給學生）</p>
           <h3>這個班級</h3>
           <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select><label class="small">版本 <input id="eVer" list="verList" style="width:90px"></label></div>
           <div class="row" style="margin-top:10px"><button class="btn2" id="bSaveCls">儲存</button><button class="btn2" id="bAddStu">加 1 位學生</button><button class="btn2" id="bArchive"></button></div>
-          <p class="muted small">學期或課本版本換了，改這裡就好。畢業或結業時按「封存」，學生就不能再登入，資料仍保留在試算表。</p>
+          <p class="muted small">學期或課本版本換了，改這裡就好。畢業或結業時按「封存」，學生就不能再登入，資料仍會保留。</p>
         </div>
         <div class="panel">
           <h2>新的一屆</h2>
@@ -184,6 +223,24 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
             <button class="btn" id="bNewCls">建立</button></div>
           <p class="err small" id="newErr"></p>
         </div>
+        <div class="panel">
+          <h2>匯出（Excel）</h2>
+          <p class="muted small">下載 CSV 檔，可以直接用 Excel 或 Google 試算表打開。學期末建議匯出一份留存。</p>
+          <div class="row"><button class="btn2" data-exp="students">這班學生成績</button><button class="btn2" data-exp="points">這班加點紀錄</button><button class="btn2" data-exp="logs">這班作答紀錄</button><button class="btn2" data-exp="questions">全部題目</button></div>
+        </div>
+        <div class="panel">
+          <h2>系統設定</h2>
+          <p class="muted small">所有班級共用。</p>
+          <div class="row"><label class="small">每回合題數 <input id="sRound" type="number" min="3" max="30" style="width:70px"></label>
+            <label class="small">過關門檻（答對 %） <input id="sPass" type="number" min="10" max="100" style="width:70px"></label></div>
+          <div class="row" style="margin-top:8px"><label class="small">1 個印章換 <input id="sStamp" type="number" min="0" style="width:60px"> 點</label>
+            <label class="small">累積金幣每 <input id="sCoin" type="number" min="0" style="width:70px"> 枚換 1 點</label></div>
+          <p class="muted small">換點比例填 0，代表那一項不換點。</p>
+          <div class="row"><button class="btn2" id="bSaveSet">儲存設定</button></div>
+          <h3>修改老師密碼</h3>
+          <div class="row"><input id="sPw1" type="password" placeholder="新密碼（至少 6 個字）"><input id="sPw2" type="password" placeholder="再輸入一次"><button class="btn2" id="bSavePw">修改</button></div>
+          <p class="err small" id="setErr"></p>
+        </div>
       </div>
     </section>
   </main>
@@ -194,7 +251,15 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
 <script>
 let PW = '', CLASSES = [], CUR = null, DASH = null, URL0 = '';
 const $ = id => document.getElementById(id);
-function api(fn, ...args){ return new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e && e.message ? e : new Error(String(e))))[fn](...args)); }
+async function api(fn, ...args){
+  let r;
+  try{ r = await fetch('/api/' + fn, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({args})}); }
+  catch(e){ throw new Error('連不上網路，請確認網路後再試一次。'); }
+  let j = null; try{ j = await r.json(); }catch(e){}
+  if (!j) throw new Error('系統暫時沒有回應，請稍後再試。');
+  if (j.err) throw new Error(j.err);
+  return j.ok;
+}
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 let tt; function toast(m){ $('toast').textContent = m; $('toast').classList.remove('hidden'); clearTimeout(tt); tt = setTimeout(() => $('toast').classList.add('hidden'), 3200); }
 async function copy(text, okMsg){
@@ -239,7 +304,7 @@ function renderOverview(){
   const today = S.filter(s => s.last === todayStr()).length;
   const pending = S.reduce((a, s) => a + s.points, 0);
   const rt = DASH.rate;
-  $('rateText').innerHTML = `換算方式：每個印章 <b>${rt.perStamp}</b> 點${rt.coinsPerPoint ? '，累積金幣每 <b>' + rt.coinsPerPoint + '</b> 枚 1 點（不足的留到下次）' : '，金幣不換點'}。比例可以在試算表的「設定」分頁修改。<br>「累積金幣」是學生答對賺到的金幣總數，在商店花掉也不會減少，所以加點不受影響。按「換點」會記到「加點紀錄」分頁，再把清單複製到你的集點系統就好。`;
+  $('rateText').innerHTML = `換算方式：每個印章 <b>${rt.perStamp}</b> 點${rt.coinsPerPoint ? '，累積金幣每 <b>' + rt.coinsPerPoint + '</b> 枚 1 點（不足的留到下次）' : '，金幣不換點'}。比例可以在「班級管理 → 系統設定」修改。<br>「累積金幣」是學生答對賺到的金幣總數，在商店花掉也不會減少，所以加點不受影響。按「換點」會留下加點紀錄（可在「班級管理」匯出），再把清單複製到你的集點系統就好。`;
   const acc = S.reduce((a, s) => a + s.right, 0) / Math.max(1, S.reduce((a, s) => a + s.total, 0));
   $('kpis').innerHTML = [
     ['今天完成', today + ' / ' + S.length + ' 人'],
@@ -251,12 +316,12 @@ function renderOverview(){
   $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">可加點數</th><th class="num">未換印章</th><th class="num">未換金幣</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th>弱點觀念</th><th class="num" title="學生目前可以在商店花的金幣">金幣餘額</th><th></th></tr></thead><tbody>` +
     S.map(s => {
       const pct = s.total ? Math.round(s.right / s.total * 100) : null;
-      const pill = !s.hasPin ? '<span class="pill p-mute">未登入</span>'
+      const pill = s.locked ? '<span class="pill p-bad">密碼錯太多次，鎖住中</span>' : !s.hasPin ? '<span class="pill p-mute">未登入</span>'
         : s.last === todayStr() ? '<span class="pill p-ok">今天完成</span>'
         : s.last ? '<span class="pill p-warn">' + esc(s.last.slice(5).replace('-', '/')) + '</span>'
         : s.weekDays ? '<span class="pill p-warn">練習中，還沒過關</span>' : '<span class="pill p-bad">本週沒練習</span>';
       return `<tr><td><input type="checkbox" class="cStu" value="${s.seat}" ${s.points ? '' : 'disabled'} aria-label="${s.seat} 號"></td>
-        <td>${s.seat}</td><td>${esc(s.nick) || '<span class="muted">—</span>'}</td>
+        <td>${s.seat}</td><td><button class="btn2 sm" data-nick="${s.seat}" title="修改暱稱">${esc(s.nick) || '—'}</button></td>
         <td class="num">${s.points ? '<span class="stamp">' + s.points + '</span>' : '<span class="muted">0</span>'}</td>
         <td class="num">${s.stamps}</td><td class="num" title="累積 ${s.earned} 枚，已換 ${s.earned - s.coinsPending} 枚">${s.coinsPending}</td>
         <td class="num">${s.streak}</td><td class="num">${s.weekDays}</td><td>${pill}</td>
@@ -282,7 +347,14 @@ function renderOverview(){
 function todayStr(){ const d = new Date(Date.now() + (8 * 60 + new Date().getTimezoneOffset()) * 60000); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
 $('stuTbl').addEventListener('click', async e => {
-  const r = e.target.closest('[data-redeem]'), z = e.target.closest('[data-reset]');
+  const r = e.target.closest('[data-redeem]'), z = e.target.closest('[data-reset]'), nk = e.target.closest('[data-nick]');
+  if (nk){
+    const cur = (DASH.students.find(x => x.seat === Number(nk.dataset.nick)) || {}).nick || '';
+    const v = window.prompt(nk.dataset.nick + ' 號的暱稱（最多 10 個字，不要用全名）', cur);
+    if (v === null) return;
+    try{ await api('tSetNick', PW, CUR.code, Number(nk.dataset.nick), v.trim()); toast('暱稱已更新'); loadClass(CUR.code); }catch(err){ toast(err.message); }
+    return;
+  }
   if (r) redeem([Number(r.dataset.redeem)]);
   if (z){
     if (z.dataset.armed !== '1'){ z.dataset.armed = '1'; z.textContent = '確定重設？'; setTimeout(() => { z.dataset.armed = ''; z.textContent = '重設密碼'; }, 3000); return; }
@@ -405,11 +477,22 @@ $('bImport').addEventListener('click', async () => {
 });
 
 function renderClass(){
-  $('stuUrl').textContent = DASH.url;
+  $('stuUrl').textContent = stuUrl();
+  $('tUrl').textContent = location.origin + '/teacher';
+  drawQR(stuUrl());
   $('eName').value = CUR.name; $('eGrade').value = String(CUR.grade); $('eSem').value = CUR.sem; $('eVer').value = CUR.version;
   $('bArchive').textContent = CUR.status === '進行中' ? '封存（結業）' : '恢復使用';
 }
-$('bCopyUrl').addEventListener('click', () => copy(DASH.url, '連結已複製'));
+$('bCopyUrl').addEventListener('click', () => copy(stuUrl(), '連結已複製'));
+function stuUrl(){ return location.origin + '/?c=' + encodeURIComponent(CUR.code); }
+let qrLib = null;
+function drawQR(text){
+  const box = $('qr'); box.innerHTML = '';
+  const go = () => { try{ new QRCode(box, {text, width:160, height:160, colorDark:'#4a4566', colorLight:'#ffffff'}); }catch(e){} };
+  if (window.QRCode) return go();
+  if (!qrLib){ qrLib = document.createElement('script'); qrLib.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; document.head.appendChild(qrLib); }
+  qrLib.addEventListener('load', go, {once:true});
+}
 $('bSaveCls').addEventListener('click', async () => {
   try{ CUR = await api('tSaveClass', PW, CUR.code, {name:$('eName').value.trim(), grade:$('eGrade').value, sem:$('eSem').value, version:$('eVer').value.trim() || '通用'}); toast('已儲存'); renderUnits(); renderExam(); refreshList(); }catch(e){ toast(e.message); }
 });
@@ -431,9 +514,123 @@ $('bNewCls').addEventListener('click', async () => {
   }catch(e){ $('newErr').textContent = e.message; }
 });
 
+/* ---------- 題庫管理 ---------- */
+let BANK = [], editing = null;
+function fillBankFilters(){
+  const vs = DASH.versions || [];
+  const fv = $('fVer').value; $('fVer').innerHTML = '<option value="">全部版本</option>' + vs.map(v => `<option>${esc(v)}</option>`).join(''); $('fVer').value = fv;
+  const fu = $('fUnit').value;
+  $('fUnit').innerHTML = '<option value="">全部單元</option>' + DASH.units
+    .filter(u => (!$('fVer').value || u.version === $('fVer').value) && (!$('fSubj').value || u.subject === $('fSubj').value))
+    .map(u => `<option value="${esc(u.key)}">${esc(u.version + '・' + u.grade + u.sem + '・' + u.subject + '・' + u.unit)}</option>`).join('');
+  $('fUnit').value = fu;
+}
+['fVer','fSubj'].forEach(id => $(id).addEventListener('change', () => { fillBankFilters(); loadBank(); }));
+$('fUnit').addEventListener('change', loadBank);
+$('bFind').addEventListener('click', loadBank);
+$('fQ').addEventListener('keydown', e => { if (e.key === 'Enter') loadBank(); });
+async function loadBank(){
+  try{
+    const r = await api('tQuestions', PW, {version:$('fVer').value, subject:$('fSubj').value, unitKey:$('fUnit').value, q:$('fQ').value.trim()});
+    BANK = r.rows;
+    $('bankCount').textContent = '共 ' + BANK.length + ' 題' + (r.more ? '（只顯示前 300 題，請用上面的條件縮小範圍）' : '');
+    $('bankTbl').innerHTML = '<thead><tr><th><input type="checkbox" id="qAll" aria-label="全選"></th><th>狀態</th><th>版本・單元</th><th>題型</th><th>題目</th><th>答案</th><th>觀念</th><th></th></tr></thead><tbody>' +
+      BANK.map(q => `<tr><td><input type="checkbox" class="cQ" value="${esc(q.id)}"></td>
+        <td>${q.enabled ? '<span class="pill p-ok">啟用</span>' : '<span class="pill p-mute">停用</span>'}</td>
+        <td class="small">${esc(q.version)}・${q.grade}${esc(q.sem)}・${esc(q.subject)}<br>${esc(q.unit)}</td><td>${esc(q.type)}</td>
+        <td style="white-space:normal;min-width:240px">${esc(q.text)}</td><td>${esc(q.answer)}</td><td class="small">${esc(q.concept)}</td>
+        <td><button class="btn2 sm" data-edit="${esc(q.id)}">編輯</button></td></tr>`).join('') + '</tbody>';
+    $('qAll').onchange = e => document.querySelectorAll('.cQ').forEach(c => c.checked = e.target.checked);
+  }catch(e){ toast(e.message); }
+}
+$('bankTbl').addEventListener('click', e => { const b = e.target.closest('[data-edit]'); if (b) openEditor(BANK.find(q => q.id === b.dataset.edit)); });
+const pickedQ = () => [...document.querySelectorAll('.cQ:checked')].map(c => c.value);
+async function bulk(fn, ...extra){
+  const ids = pickedQ(); if (!ids.length){ toast('先勾選題目'); return null; }
+  try{ const r = await api(fn, PW, ids, ...extra); await refreshUnits(); loadBank(); return r; }catch(e){ toast(e.message); return null; }
+}
+$('bQOn').addEventListener('click', async () => { if (await bulk('tSetEnabled', true) !== null) toast('已啟用'); });
+$('bQOff').addEventListener('click', async () => { if (await bulk('tSetEnabled', false) !== null) toast('已停用'); });
+$('bQDel').addEventListener('click', async e => {
+  const b = e.currentTarget;
+  if (!pickedQ().length){ toast('先勾選題目'); return; }
+  if (b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.textContent = '再按一次確定刪除'; setTimeout(() => { b.dataset.armed = ''; b.textContent = '刪除勾選的'; }, 3000); return; }
+  b.dataset.armed = ''; b.textContent = '刪除勾選的';
+  const r = await bulk('tDeleteQuestions');
+  if (r) toast('刪除 ' + r.deleted + ' 題' + (r.disabled ? '；' + r.disabled + ' 題已經有人作答過，改成停用以保留紀錄' : ''));
+});
+async function refreshUnits(){ const d = await api('tDashboard', PW, CUR.code); DASH = d; fillBankFilters(); renderUnits(); renderExam(); }
+const QF = {版本:'qVer', 年級:'qGrade', 學期:'qSem', 科目:'qSubj', 單元:'qUnit', 觀念:'qConcept', 題型:'qType', 題目:'qText', 選項A:'qA', 選項B:'qB', 選項C:'qC', 選項D:'qD', 答案:'qAns', 解析:'qExp'};
+const QK = {版本:'version', 年級:'grade', 學期:'sem', 科目:'subject', 單元:'unit', 觀念:'concept', 題型:'type', 題目:'text', 選項A:'a', 選項B:'b', 選項C:'c', 選項D:'d', 答案:'answer', 解析:'explain'};
+function openEditor(q){
+  editing = q ? q.id : null;
+  $('qEdTitle').textContent = q ? '編輯題目' : '新增一題';
+  const d = q || {version: $('fVer').value || CUR.version, grade: CUR.grade, sem: CUR.sem, subject: $('fSubj').value || '數學', type:'選擇'};
+  Object.keys(QF).forEach(k => $(QF[k]).value = d[QK[k]] == null ? '' : String(d[QK[k]]));
+  $('qErr').textContent = ''; typeHint();
+  $('qEditor').classList.remove('hidden'); $('qEditor').scrollIntoView({behavior:'smooth'});
+}
+function typeHint(){
+  const t = $('qType').value;
+  $('qOpts').classList.toggle('hidden', t !== '選擇');
+  $('qHint').textContent = t === '選擇' ? '答案填 A、B、C 或 D。' : t === '是非' ? '答案填 O（對）或 X（錯）。' : '可接受多種寫法時用「|」隔開，例如 3/2|1又1/2|1.5。';
+}
+$('qType').addEventListener('change', typeHint);
+$('bNewQ').addEventListener('click', () => openEditor(null));
+$('bCancelQ').addEventListener('click', () => $('qEditor').classList.add('hidden'));
+$('bSaveQ').addEventListener('click', async () => {
+  const data = {id: editing};
+  Object.keys(QF).forEach(k => data[k] = $(QF[k]).value.trim());
+  if (data['題型'] !== '選擇') ['選項A','選項B','選項C','選項D'].forEach(k => data[k] = '');
+  try{ await api('tSaveQuestion', PW, data); toast(editing ? '題目已更新' : '已新增一題，記得到「教學進度」確認單元有勾選'); $('qEditor').classList.add('hidden'); await refreshUnits(); loadBank(); }
+  catch(e){ $('qErr').textContent = e.message; }
+});
+
+/* ---------- 匯出 ---------- */
+function toCSV(rows){
+  if (!rows.length) return '';
+  const cols = Object.keys(rows[0]);
+  const cell = v => { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  return '\uFEFF' + [cols.map(cell).join(',')].concat(rows.map(r => cols.map(c => cell(r[c])).join(','))).join('\r\n');
+}
+function download(name, text){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:'text/csv;charset=utf-8'}));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+async function exportData(what){
+  const names = {students:'學生成績', points:'加點紀錄', logs:'作答紀錄', questions:'題庫'};
+  try{
+    const rows = await api('tExport', PW, what, CUR && CUR.code);
+    if (!rows.length){ toast('目前沒有資料'); return; }
+    download('知識群島_' + (what === 'questions' ? '' : CUR.code + '_') + names[what] + '_' + todayStr() + '.csv', toCSV(rows));
+  }catch(e){ toast(e.message); }
+}
+document.querySelectorAll('[data-exp]').forEach(b => b.addEventListener('click', () => exportData(b.dataset.exp)));
+$('bExpQ').addEventListener('click', () => exportData('questions'));
+
+/* ---------- 系統設定 ---------- */
+async function loadSettings(){
+  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; }catch(e){}
+}
+$('bSaveSet').addEventListener('click', async () => {
+  $('setErr').textContent = '';
+  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
+  catch(e){ $('setErr').textContent = e.message; }
+});
+$('bSavePw').addEventListener('click', async () => {
+  $('setErr').textContent = '';
+  if ($('sPw1').value !== $('sPw2').value){ $('setErr').textContent = '兩次輸入的密碼不一樣。'; return; }
+  try{ await api('tSaveSettings', PW, {newPw:$('sPw1').value}); PW = $('sPw1').value; try{ sessionStorage.setItem('kq_t', PW); }catch(_){} $('sPw1').value = $('sPw2').value = ''; toast('老師密碼已修改，下次請用新密碼登入'); }
+  catch(e){ $('setErr').textContent = e.message; }
+});
+
 function switchTab(id){
+  if (id === 'tBank' && DASH){ fillBankFilters(); if (!BANK.length) loadBank(); }
+  if (id === 'tClass') loadSettings();
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
-  ['tOverview','tUnits','tImport','tClass'].forEach(t => $(t).classList.toggle('hidden', t !== id));
+  ['tOverview','tUnits','tImport','tBank','tClass'].forEach(t => $(t).classList.toggle('hidden', t !== id));
 }
 document.querySelector('nav').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) switchTab(b.dataset.tab); });
 

@@ -1,0 +1,9 @@
+{
+  "name": "知識群島",
+  "short_name": "知識群島",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#c9f0f7",
+  "theme_color": "#9fdcec",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

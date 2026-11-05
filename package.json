@@ -1,0 +1,14 @@
+{
+  "name": "knowledge-islands",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler d1 migrations apply DB --local && wrangler dev",
+    "test": "node tests/run.mjs",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "playwright": "^1.63.0",
+    "wrangler": "4.151.2"
+  }
+}

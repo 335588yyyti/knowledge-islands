@@ -2,7 +2,10 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<base target="_top">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#9fdcec">
 <title>知識群島</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chiron+GoRound+TC:wght@400;600;800&display=swap">
@@ -248,10 +251,14 @@ const SUBJ = [
 const SC = Object.fromEntries(SUBJ.map(s => [s.k, s]));
 let cred = null, state = null, round = null;
 
-function api(fn, ...args){
-  return new Promise((res, rej) => {
-    google.script.run.withSuccessHandler(res).withFailureHandler(e => rej(e && e.message ? e : new Error(String(e))))[fn](...args);
-  });
+async function api(fn, ...args){
+  let r;
+  try{ r = await fetch('/api/' + fn, {method:'POST', headers:{'content-type':'application/json'}, body:JSON.stringify({args})}); }
+  catch(e){ throw new Error('連不上網路，請確認網路後再試一次。'); }
+  let j = null; try{ j = await r.json(); }catch(e){}
+  if (!j) throw new Error('系統暫時沒有回應，請稍後再試。');
+  if (j.err) throw new Error(j.err);
+  return j.ok;
 }
 const $ = id => document.getElementById(id);
 function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
@@ -591,7 +598,7 @@ $('bLogout').addEventListener('click', () => { store('kq_cred'); cred = null; st
 (async function init(){
   const saved = load('kq_cred');
   $('iCode').value = load('kq_code') || '';
-  try{ google.script.url.getLocation(loc => { if (loc.parameter && loc.parameter.c) $('iCode').value = loc.parameter.c.toUpperCase(); }); }catch(e){}
+  const qc = new URLSearchParams(location.search).get('c'); if (qc) $('iCode').value = qc.toUpperCase();
   if (saved){
     show('vLoading');
     try{ state = await api('studentLogin', saved); cred = saved; renderMap(); show('vMap'); return; }
