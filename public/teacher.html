@@ -135,7 +135,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <div class="panel">
           <h2>1. 用 AI 出題（選用）</h2>
           <p class="muted small">填好後按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼到右邊匯入。匯入前請先看過一遍題目和答案。</p>
-          <div class="row"><input id="aVer" list="verList" placeholder="版本" style="width:90px"><select id="aGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
+          <div class="row"><select id="aVer" class="verSel" aria-label="版本"></select><select id="aGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
             <select id="aSem"><option>上</option><option>下</option></select>
             <select id="aSubj"><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select>
             <input id="aCount" type="number" value="10" min="1" max="30" style="width:80px"></div>
@@ -148,7 +148,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <p class="muted small">可以直接從 Excel／Google 試算表複製貼上，也可以貼 CSV。沒有標題列時，欄位順序是：<br>版本、年級、學期、科目、單元、觀念、題型、題目、選項A、選項B、選項C、選項D、答案、解析<br>有標題列的話，欄位順序可以不同。版本空白時，會用下面選的版本。</p>
           <textarea id="iImport" placeholder="南一	6	上	數學	分數除法	分數除以分數	選擇	3/4 ÷ 1/4 = ?	1	2	3	4	C	3/4 × 4 = 3"></textarea>
           <div class="row" style="margin-top:10px">
-            <label class="small">版本 <input id="iVer" list="verList" style="width:90px"></label>
+            <label class="small">版本 <select id="iVer" class="verSel"></select></label>
             <select id="iSource"><option>老師</option><option>AI</option></select>
             <button class="btn" id="bImport">匯入</button>
           </div>
@@ -185,7 +185,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
       <div class="panel hidden" id="qEditor">
         <h2 id="qEdTitle">編輯題目</h2>
         <div class="row">
-          <label class="small">版本 <input id="qVer" list="verList" style="width:90px"></label>
+          <label class="small">版本 <select id="qVer" class="verSel"></select></label>
           <label class="small">年級 <select id="qGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
           <label class="small">學期 <select id="qSem"><option>上</option><option>下</option></select></label>
           <label class="small">科目 <select id="qSubj"><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select></label>
@@ -209,7 +209,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div id="qr" style="margin-top:10px;width:160px;height:160px"></div>
           <p class="muted small">教師後台：學生登入頁最下面的「老師登入」，或直接打開 <code id="tUrl"></code></p>
           <h3>這個班級</h3>
-          <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select><label class="small">版本 <input id="eVer" list="verList" style="width:90px"></label></div>
+          <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select><label class="small">版本 <select id="eVer" class="verSel"></select></label></div>
           <div class="row" style="margin-top:10px"><button class="btn2" id="bSaveCls">儲存</button><button class="btn2" id="bAddStu">加 1 位學生</button><button class="btn2" id="bArchive"></button></div>
           <p class="muted small">學期或課本版本換了，改這裡就好。畢業或結業時按「封存」，學生就不能再登入，資料仍會保留。</p>
         </div>
@@ -219,7 +219,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row"><input id="nCode" placeholder="班級代碼" style="width:140px"><input id="nName" placeholder="名稱，例如 115 學年 六年一班" style="flex:1;min-width:180px"></div>
           <div class="row" style="margin-top:10px"><label class="small">年級 <select id="nGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
             <label class="small">學期 <select id="nSem"><option>上</option><option>下</option></select></label>
-            <label class="small">版本 <input id="nVer" list="verList" value="南一" style="width:80px"></label>
+            <label class="small">版本 <select id="nVer" class="verSel"></select></label>
             <label class="small">人數 <input id="nCount" type="number" value="28" min="1" max="60" style="width:80px"></label>
             <button class="btn" id="bNewCls">建立</button></div>
           <p class="err small" id="newErr"></p>
@@ -247,7 +247,6 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
   </main>
 </div>
 <div class="toast hidden" id="toast"></div>
-<datalist id="verList"></datalist>
 
 <script>
 let PW = '', CLASSES = [], CUR = null, DASH = null, URL0 = '';
@@ -277,7 +276,30 @@ $('fLogin').addEventListener('submit', async e => {
   }catch(err){ $('loginErr').textContent = err.message; }
 });
 
-function setVersions(v){ $('verList').innerHTML = (v || []).map(x => `<option value="${esc(x)}">`).join(''); }
+/* 版本下拉選單：列出已知版本，最後一項可以新增其他版本 */
+const NEW_VER = '__new__';
+let VERSIONS = ['南一', '康軒', '翰林', '通用'];
+function setVersions(v){
+  (v || []).forEach(x => { if (x && !VERSIONS.includes(x)) VERSIONS.push(x); });
+  VERSIONS.sort((a, b) => (a === '通用') - (b === '通用'));
+  document.querySelectorAll('.verSel').forEach(sel => fillVer(sel, sel.value || (sel.id === 'nVer' ? '南一' : '')));
+}
+function fillVer(sel, keep){
+  sel.innerHTML = VERSIONS.map(x => `<option value="${esc(x)}">${esc(x)}</option>`).join('') + `<option value="${NEW_VER}">＋ 其他版本…</option>`;
+  if (keep && keep !== NEW_VER) setVer(sel.id, keep);
+}
+function setVer(id, v){
+  v = String(v || '').trim(); if (!v) return;
+  if (!VERSIONS.includes(v)){ VERSIONS.push(v); document.querySelectorAll('.verSel').forEach(sel => { const k = sel.value; fillVer(sel); if (k && k !== NEW_VER) sel.value = k; }); }
+  $(id).value = v;
+}
+document.addEventListener('change', e => {
+  const sel = e.target.closest('.verSel'); if (!sel || sel.value !== NEW_VER) return;
+  const v = (window.prompt('輸入版本名稱（例如：部編、自編講義）', '') || '').trim().slice(0, 20);
+  if (v) setVer(sel.id, v); else sel.value = sel.dataset.last || VERSIONS[0];
+});
+document.addEventListener('focusin', e => { const sel = e.target.closest('.verSel'); if (sel) sel.dataset.last = sel.value; });
+setVersions([]);
 function afterLogin(r){
   CLASSES = r.classes; URL0 = r.url; setVersions(r.versions);
   if (!$('sRound').value) loadSettings();
@@ -299,7 +321,7 @@ async function loadClass(code){
 }
 
 function renderAll(){ setVersions(DASH.versions); renderOverview(); renderUnits(); renderExam(); renderClass();
-  $('aVer').value = CUR.version; $('iVer').value = CUR.version; }
+  setVer('aVer', CUR.version); setVer('iVer', CUR.version); }
 
 function renderOverview(){
   const S = DASH.students;
@@ -482,7 +504,7 @@ function renderClass(){
   $('stuUrl').textContent = stuUrl();
   $('tUrl').textContent = location.origin + '/teacher';
   drawQR(stuUrl());
-  $('eName').value = CUR.name; $('eGrade').value = String(CUR.grade); $('eSem').value = CUR.sem; $('eVer').value = CUR.version;
+  $('eName').value = CUR.name; $('eGrade').value = String(CUR.grade); $('eSem').value = CUR.sem; setVer('eVer', CUR.version);
   $('bArchive').textContent = CUR.status === '進行中' ? '封存（結業）' : '恢復使用';
 }
 $('bCopyUrl').addEventListener('click', () => copy(stuUrl(), '連結已複製'));
@@ -568,7 +590,8 @@ function openEditor(q){
   editing = q ? q.id : null;
   $('qEdTitle').textContent = q ? '編輯題目' : '新增一題';
   const d = q || {version: $('fVer').value || CUR.version, grade: CUR.grade, sem: CUR.sem, subject: $('fSubj').value || '數學', type:'選擇'};
-  Object.keys(QF).forEach(k => $(QF[k]).value = d[QK[k]] == null ? '' : String(d[QK[k]]));
+  Object.keys(QF).forEach(k => { if (k !== '版本') $(QF[k]).value = d[QK[k]] == null ? '' : String(d[QK[k]]); });
+  setVer('qVer', d.version || '通用');
   $('qErr').textContent = ''; typeHint();
   $('qEditor').classList.remove('hidden'); $('qEditor').scrollIntoView({behavior:'smooth'});
 }

@@ -166,13 +166,20 @@ try {
   });
   await step('匯入題目（有標題列、欄位順序不同、含錯誤行）', async () => {
     await t.click('[data-tab="tImport"]');
+    // 版本是下拉式選單，可以新增其他版本
+    assert.deepEqual(await t.$$eval('#iVer option', o => o.map(x => x.textContent)), ['南一', '康軒', '翰林', '通用', '＋ 其他版本…']);
+    t.once('dialog', d => d.accept('部編'));
+    await t.selectOption('#iVer', '__new__');
+    assert.equal(await t.inputValue('#iVer'), '部編');
+    assert.ok((await t.$$eval('#nVer option', o => o.map(x => x.value))).includes('部編'));
+    await t.selectOption('#iVer', '南一');
     await t.fill('#iImport', '題目\t題型\t答案\t年級\t學期\t科目\t單元\t觀念\t選項A\t選項B\t選項C\t選項D\t版本\n1/2 + 1/3 = ?\t選擇\tB\t6\t上\t數學\t分數加減\t通分\t2/5\t5/6\t1/6\t2/6\t南一\n2/3 + 1/4 = ?\t填空\t11/12\t6\t上\t數學\t分數加減\t通分\t\t\t\t\t南一\n5 公尺 = ? 公分\t填空\t500\t6\t上\t數學\t長度\t單位換算\t\t\t\t\t康軒\n壞掉的\t選擇\tE\t6\t上\t數學\tX\t\t1\t2\t\t\t南一');
     await t.click('#bImport'); await t.waitForFunction(() => document.querySelector('#importMsg').textContent.includes('成功'));
     const m = await t.textContent('#importMsg');
     assert.match(m, /成功匯入 3 題/); assert.match(m, /第 5 行/);
   });
   await step('班級改成南一版，只看得到南一和通用單元', async () => {
-    await t.click('[data-tab="tClass"]'); await t.fill('#eVer', '南一'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
+    await t.click('[data-tab="tClass"]'); await t.selectOption('#eVer', '南一'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
     await t.click('[data-tab="tUnits"]');
     const groups = await t.$$eval('#unitBox .semhead h3', e => e.map(x => x.textContent));
     assert.deepEqual(groups, ['南一版・6年級上學期', '通用・6年級上學期']);
@@ -213,7 +220,7 @@ try {
     assert.match(dl.suggestedFilename(), /學生成績/);
   });
   await step('建立新的一屆', async () => {
-    await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.fill('#nVer', '康軒'); await t.fill('#nCount', '25');
+    await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.selectOption('#nVer', '康軒'); await t.fill('#nCount', '25');
     await t.click('#bNewCls'); await toastHas(t, '建立好了');
     assert.equal(await t.inputValue('#selClass'), '115A601');
     assert.equal((await call('tDashboard', 'new-pass-1', '115A601')).ok.students.length, 25);
