@@ -64,6 +64,11 @@ td.num,th.num{text-align:right}
 .copybox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .copybox code{background:var(--foam);padding:6px 10px;border-radius:6px;word-break:break-all;min-width:0}
 .login{max-width:380px;margin:12vh auto}
+.guide h3{font-size:17px;margin:22px 0 8px;color:var(--sea-deep)}
+.guide ol,.guide ul{padding-left:22px;display:grid;gap:6px;margin:0;max-width:820px}
+.guide table{margin:4px 0}
+.guide td,.guide th{white-space:normal;vertical-align:top}
+.guide .rule{background:#eef8f2;border-radius:12px;padding:10px 14px;display:inline-block}
 .legend{display:flex;flex-wrap:wrap;gap:6px}
 .lvc{text-align:center;border-radius:6px}
 .legend .lvc{padding:2px 10px;font-size:13px}
@@ -102,6 +107,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <button role="tab" data-tab="tMastery">精熟總覽</button>
     <button role="tab" data-tab="tBank">題庫管理</button>
     <button role="tab" data-tab="tClass">班級管理</button>
+    <button role="tab" data-tab="tGuide">📘 領航員手冊</button>
   </nav>
   <main class="in">
 
@@ -148,14 +154,16 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row"><select id="aVer" class="verSel" aria-label="版本"></select><select id="aGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select>
             <select id="aSem"><option>上</option><option>下</option></select>
             <select id="aSubj"><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select>
-            <input id="aCount" type="number" value="10" min="1" max="30" style="width:80px"></div>
+            <input id="aCount" type="number" value="10" min="1" max="30" style="width:70px" aria-label="題數"></div>
+          <div class="row" style="margin-top:8px"><label class="small"><input type="radio" name="aMode" value="normal" checked> 一般題</label>
+            <label class="small"><input type="radio" name="aMode" value="literacy"> 素養題（生活情境＋題組）</label></div>
           <p><input id="aUnit" placeholder="單元名稱，例如：第三課 分數除法" style="width:100%"></p>
           <textarea id="aNotes" placeholder="（選填）貼上課本重點、生字詞、老師筆記，AI 會依這些內容出題" style="min-height:120px;font-family:var(--f-body)"></textarea>
           <div class="row" style="margin-top:10px"><button class="btn2" id="bPrompt">複製提示詞</button><span class="small muted" id="promptMsg"></span></div>
         </div>
         <div class="panel">
           <h2>2. 貼上題目匯入</h2>
-          <p class="muted small">可以直接從 Excel／Google 試算表複製貼上，也可以貼 CSV。沒有標題列時，欄位順序是：<br>版本、年級、學期、科目、單元、觀念、題型、題目、選項A、選項B、選項C、選項D、答案、解析<br>有標題列的話，欄位順序可以不同。版本空白時，會用下面選的版本。</p>
+          <p class="muted small">可以直接從 Excel／Google 試算表複製貼上，也可以貼 CSV。沒有標題列時，欄位順序是：<br>版本、年級、學期、科目、單元、觀念、題型、題目、選項A、選項B、選項C、選項D、答案、解析、情境（素養題才需要）<br>有標題列的話，欄位順序可以不同。版本空白時，會用下面選的版本。</p>
           <textarea id="iImport" placeholder="南一	6	上	數學	分數除法	分數除以分數	選擇	3/4 ÷ 1/4 = ?	1	2	3	4	C	3/4 × 4 = 3"></textarea>
           <div class="row" style="margin-top:10px">
             <label class="small">版本 <select id="iVer" class="verSel"></select></label>
@@ -170,6 +178,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <ul>
           <li><b>版本</b>：例如 南一、康軒、翰林。不分版本都適用的題目（例如英文單字、成語）填「通用」，每個班都看得到。</li>
           <li><b>觀念</b>：這題考的觀念，例如「通分」「單位換算」「過去式」。有好幾個時用「、」隔開。後台會依這欄找出學生的弱點觀念。</li>
+          <li><b>情境</b>（素養題）：一段生活情境或閱讀材料。同一段情境的幾題，「情境」欄填一模一樣的文字，學生作答時會排在一起當題組。一般題留空。</li>
           <li><b>選擇</b>：填選項A～D，答案寫 A、B、C 或 D。</li>
           <li><b>是非</b>：選項留空，答案寫 O 或 X。</li>
           <li><b>填空</b>：選項留空。可接受多個答案時用「|」隔開，例如 <code>3/2|1又1/2|1.5</code>。</li>
@@ -211,6 +220,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <label class="small">題型 <select id="qType"><option>選擇</option><option>是非</option><option>填空</option></select></label>
         </div>
         <div class="row" style="margin-top:8px"><input id="qUnit" placeholder="單元" style="flex:1;min-width:160px"><input id="qConcept" placeholder="觀念（例如：通分）" style="flex:1;min-width:160px"></div>
+        <p><textarea id="qPass" placeholder="情境（素養題才需要：生活情境或閱讀材料，一般題留空）" style="min-height:70px;font-family:var(--f-body)"></textarea></p>
         <p><textarea id="qText" placeholder="題目" style="min-height:70px;font-family:var(--f-body)"></textarea></p>
         <div class="grid2" id="qOpts" style="gap:8px"><input id="qA" placeholder="選項A"><input id="qB" placeholder="選項B"><input id="qC" placeholder="選項C"><input id="qD" placeholder="選項D"></div>
         <div class="row" style="margin-top:8px"><input id="qAns" placeholder="答案" style="width:220px"><input id="qExp" placeholder="解析（選填）" style="flex:1;min-width:200px"></div>
@@ -262,6 +272,82 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row"><input id="sPw1" type="password" placeholder="新密碼（至少 6 個字）"><input id="sPw2" type="password" placeholder="再輸入一次"><button class="btn2" id="bSavePw">修改</button></div>
           <p class="err small" id="setErr"></p>
         </div>
+      </div>
+    </section>
+    <section id="tGuide" class="hidden">
+      <div class="panel guide">
+        <h2>📘 領航員手冊</h2>
+        <p class="muted">給老師的使用說明。學生看的是登入頁上的「波波的航海手冊」。</p>
+
+        <h3>一、第一次使用（10 分鐘）</h3>
+        <ol>
+          <li>「班級管理 → 新的一屆」：輸入班級代碼（建議含學年度，例如 <b>115A601</b>）、課本版本、人數，按「建立」。</li>
+          <li>「題庫匯入」：加入題目（見第三節）。範例題可以在「題庫管理」停用或刪除。</li>
+          <li>「教學進度」：勾選已經教過的單元，按「儲存進度」。</li>
+          <li>「班級管理」：把學生連結或 QR code 給學生。學生第一次登入時自己設定 4 位數密碼。</li>
+          <li>「班級管理 → 系統設定」：把老師密碼改成自己的（至少 8 個字）。</li>
+        </ol>
+
+        <h3>二、平常的節奏</h3>
+        <table>
+          <tr><th>什麼時候</th><th>做什麼</th><th>在哪裡</th></tr>
+          <tr><td>上完一課</td><td>勾選新單元</td><td>教學進度</td></tr>
+          <tr><td>每天／每週</td><td>看誰完成了、換點數、複製清單貼到集點系統</td><td>學生與加點</td></tr>
+          <tr><td>每週</td><td>看全班卡在哪個單元、哪個觀念，找時間全班講解或個別指導</td><td>精熟總覽、學生與加點下方</td></tr>
+          <tr><td>段考前兩週</td><td>設定考試名稱、日期、範圍，學生會出現段考衝刺島</td><td>教學進度 → 段考衝刺</td></tr>
+          <tr><td>學期末</td><td>匯出學生成績、加點紀錄留存</td><td>班級管理 → 匯出</td></tr>
+        </table>
+
+        <h3>三、出題</h3>
+        <ul>
+          <li><b>自己出、從 Excel 貼</b>：「題庫匯入」右邊直接貼上，有標題列的話欄位順序可以不同。格式有錯的那一行會告訴你錯在哪。</li>
+          <li><b>用 AI 出一般題</b>：左邊選版本、年級、科目、單元，可以貼上課本重點，按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼回右邊，來源選「AI」。</li>
+          <li><b>用 AI 出素養題</b>：選「素養題（生活情境＋題組）」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。</li>
+          <li><b>AI 出的題目一定要先看過</b>，特別是答案和數字。錯的題目可以在「題庫管理」修改或停用。</li>
+          <li><b>觀念</b>欄很重要：同一個觀念用一樣的寫法（例如都寫「通分」），後台才能統計出學生的弱點觀念。</li>
+          <li>題庫依「版本＋年級＋學期＋科目＋單元」分類，所有班級共用，下一屆同版本直接勾選就能用。</li>
+        </ul>
+
+        <h3>四、精熟制度</h3>
+        <p class="rule">規則只有一條：<b>同一題在兩個不同的日子都答對，就算記住了</b>（不限定隔天）。</p>
+        <table>
+          <tr><th>等級</th><th>條件</th><th>代表什麼</th></tr>
+          <tr><td>🌱 初學</td><td>這個單元有練過，但最近一次答對的題目還不到 7 成</td><td>剛開始接觸，或還有不少觀念不清楚</td></tr>
+          <tr><td>🌿 熟練</td><td>這個單元 7 成以上的題目，最近一次答對</td><td>現在會了，但還沒證明「隔一段時間還記得」</td></tr>
+          <tr><td>🌳 精熟</td><td>這個單元 9 成以上的題目，在兩個不同的日子都答對過（且最近一次是對的）</td><td>真的記住了</td></tr>
+          <tr><td>⏰ 該複習</td><td>精熟的單元超過 21 天沒練</td><td>只是提醒，等級不會被扣</td></tr>
+        </table>
+        <ul>
+          <li><b>初學和熟練的差別</b>：看「現在答得對不對」（最近一次 7 成答對）。<b>熟練和精熟的差別</b>：看「換一天還記不記得」。所以一個學生同一天把整個單元全答對，最多只會到熟練，要換一天再答對才會精熟。</li>
+          <li>答錯不會歸零，只是那一題要再答對一次。</li>
+          <li>學生不用多刷題：島上會優先出「之前答對過一天、今天再答對就記住」的題目。</li>
+          <li>「精熟總覽」一張表看全班每個單元的等級，最下面是每個單元的精熟人數。</li>
+        </ul>
+
+        <h3>五、加點</h3>
+        <ul>
+          <li>學生每天第一次過關得 1 個印章；每答對 1 題得 1 枚金幣。</li>
+          <li>預設換算：1 個印章 = 1 點、累積金幣每 20 枚 = 1 點（不足的留到下次）、精熟單元預設不換點。三個比例都在「系統設定」調整，填 0 代表不換。</li>
+          <li>金幣有兩個數字：<b>金幣餘額</b>（學生在衣櫃花）和<b>累積金幣</b>（只增不減）。加點只看累積金幣，學生買東西不會被少算。</li>
+          <li>「學生與加點」勾選學生 → 換成點數 → 「複製清單」貼到你的集點系統。每次換點都會留下紀錄，可以匯出。</li>
+        </ul>
+
+        <h3>六、新的一屆／換課本</h3>
+        <ul>
+          <li>上一屆畢業：「班級管理」按「封存」，學生不能再登入，資料仍保留。</li>
+          <li>新的一屆：建立新的班級代碼，題庫自動沿用，勾選單元就能開始。</li>
+          <li>換出版社：在「班級管理」把版本改掉。不同版本的題目會分開，不會混在一起；不分版本的題目請標「通用」。</li>
+        </ul>
+
+        <h3>七、常見問題</h3>
+        <ul>
+          <li><b>學生忘記密碼</b>：在「學生與加點」那一列按「重設密碼」，學生下次登入重新設定。</li>
+          <li><b>學生說被鎖住了</b>：密碼連續錯 5 次會鎖 10 分鐘；按「重設密碼」可以馬上解鎖。</li>
+          <li><b>老師密碼輸錯被鎖</b>：同一台裝置錯 10 次會鎖那台 10 分鐘；換一台裝置或改用手機網路就能登入。</li>
+          <li><b>學生可以作弊嗎</b>：計分都在伺服器上，改網頁拿不到金幣；選擇題選項每次順序不同，背答案位置也沒用。</li>
+          <li><b>想調整每回合題數、過關門檻</b>：「班級管理 → 系統設定」。</li>
+          <li><b>想要新功能或遇到問題</b>：程式在 GitHub 的 knowledge-islands 專案，修改後會自動測試並更新網站。</li>
+        </ul>
       </div>
     </section>
   </main>
@@ -486,6 +572,33 @@ $('bSaveUnits').addEventListener('click', async () => {
 $('bPrompt').addEventListener('click', () => {
   const v = $('aVer').value.trim() || CUR.version || '通用';
   const g = $('aGrade').value, s = $('aSem').value, sj = $('aSubj').value, u = $('aUnit').value.trim() || '（單元名稱）', n = $('aCount').value || 10, notes = $('aNotes').value.trim();
+  const literacy = document.querySelector('input[name="aMode"]:checked').value === 'literacy';
+  if (literacy){
+    const groups = Math.max(1, Math.round(n / 3));
+    const lp = `請幫我出 ${groups} 組「素養導向」題組，給臺灣國小${g}年級${s}學期「${sj}」科、單元「${u}」${v !== '通用' ? '（' + v + '版課本）' : ''}，難度符合 108 課綱，用詞適合${g}年級學生。
+${notes ? '\n請以下面的上課內容為主出題：\n' + notes + '\n' : ''}
+每一組要有：
+1. 一段「情境」：貼近學生生活的真實情境或閱讀材料（例如校園活動、購物、新聞、實驗紀錄、表格資料的文字說明），約 80～200 字，要包含解題需要的資訊。
+2. 根據這段情境出 2～4 題，題目要用到情境裡的資訊，考理解、判斷與應用，不是只考背誦。題型混合選擇、是非、填空。
+
+請「只」輸出一個用 Tab 分隔的表格，不要有其他文字、不要加標題列，每題一行，15 欄依序是：
+版本	年級	學期	科目	單元	觀念	題型	題目	選項A	選項B	選項C	選項D	答案	解析	情境
+
+規則：
+- 同一組的每一題，「情境」欄都要放完全相同的那段情境文字
+- 版本填 ${v}，年級填 ${g}，學期填 ${s}，科目填 ${sj}，單元填 ${u}
+- 觀念填這題考的核心觀念（2～8 個字）
+- 題型只能是：選擇、是非、填空
+- 選擇題：四個選項都要填，答案填 A、B、C 或 D，正確答案的位置要平均分散
+- 是非題：選項A～D留空，答案填 O 或 X
+- 填空題：選項A～D留空，答案若有多種寫法用 | 分隔，答案要短、明確
+- 解析用一句話說明怎麼從情境中找到答案
+- 所有欄位都不要出現 Tab 或換行`;
+    copy(lp, '素養題提示詞已複製，貼到 AI 工具中');
+    $('promptMsg').textContent = '已複製。AI 產生後，複製它的表格貼到右邊，來源選「AI」。';
+    $('iSource').value = 'AI';
+    return;
+  }
   const p = `請幫我出 ${n} 題給臺灣國小${g}年級${s}學期「${sj}」科、單元「${u}」的複習題${v !== '通用' ? '（' + v + '版課本）' : ''}，難度符合課綱，用詞適合${g}年級學生。
 ${notes ? '\n請以下面的上課內容為主出題：\n' + notes + '\n' : ''}
 題型請混合：約六成選擇題、兩成是非題、兩成填空題。
@@ -597,7 +710,7 @@ async function loadBank(){
       BANK.map(q => `<tr><td><input type="checkbox" class="cQ" value="${esc(q.id)}"></td>
         <td>${q.enabled ? '<span class="pill p-ok">啟用</span>' : '<span class="pill p-mute">停用</span>'}</td>
         <td class="small">${esc(q.version)}・${q.grade}${esc(q.sem)}・${esc(q.subject)}<br>${esc(q.unit)}</td><td>${esc(q.type)}</td>
-        <td style="white-space:normal;min-width:240px">${esc(q.text)}</td><td>${esc(q.answer)}</td><td class="small">${esc(q.concept)}</td>
+        <td style="white-space:normal;min-width:240px">${q.passage ? '<span class="pill p-warn" title="' + esc(q.passage) + '">素養</span> ' : ''}${esc(q.text)}</td><td>${esc(q.answer)}</td><td class="small">${esc(q.concept)}</td>
         <td><button class="btn2 sm" data-edit="${esc(q.id)}">編輯</button></td></tr>`).join('') + '</tbody>';
     $('qAll').onchange = e => document.querySelectorAll('.cQ').forEach(c => c.checked = e.target.checked);
   }catch(e){ toast(e.message); }
@@ -619,8 +732,8 @@ $('bQDel').addEventListener('click', async e => {
   if (r) toast('刪除 ' + r.deleted + ' 題' + (r.disabled ? '；' + r.disabled + ' 題已經有人作答過，改成停用以保留紀錄' : ''));
 });
 async function refreshUnits(){ const d = await api('tDashboard', PW, CUR.code); DASH = d; fillBankFilters(); renderUnits(); renderExam(); }
-const QF = {版本:'qVer', 年級:'qGrade', 學期:'qSem', 科目:'qSubj', 單元:'qUnit', 觀念:'qConcept', 題型:'qType', 題目:'qText', 選項A:'qA', 選項B:'qB', 選項C:'qC', 選項D:'qD', 答案:'qAns', 解析:'qExp'};
-const QK = {版本:'version', 年級:'grade', 學期:'sem', 科目:'subject', 單元:'unit', 觀念:'concept', 題型:'type', 題目:'text', 選項A:'a', 選項B:'b', 選項C:'c', 選項D:'d', 答案:'answer', 解析:'explain'};
+const QF = {版本:'qVer', 年級:'qGrade', 學期:'qSem', 科目:'qSubj', 單元:'qUnit', 觀念:'qConcept', 題型:'qType', 題目:'qText', 選項A:'qA', 選項B:'qB', 選項C:'qC', 選項D:'qD', 答案:'qAns', 解析:'qExp', 情境:'qPass'};
+const QK = {版本:'version', 年級:'grade', 學期:'sem', 科目:'subject', 單元:'unit', 觀念:'concept', 題型:'type', 題目:'text', 選項A:'a', 選項B:'b', 選項C:'c', 選項D:'d', 答案:'answer', 解析:'explain', 情境:'passage'};
 function openEditor(q){
   editing = q ? q.id : null;
   $('qEdTitle').textContent = q ? '編輯題目' : '新增一題';
@@ -690,7 +803,7 @@ function switchTab(id){
   if (id === 'tMastery' && CUR) loadMastery();
   if (id === 'tBank' && DASH){ fillBankFilters(); if (!BANK.length) loadBank(); }
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
-  ['tOverview','tUnits','tImport','tMastery','tBank','tClass'].forEach(t => $(t).classList.toggle('hidden', t !== id));
+  ['tOverview','tUnits','tImport','tMastery','tBank','tClass','tGuide'].forEach(t => $(t).classList.toggle('hidden', t !== id));
 }
 document.querySelector('nav').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) switchTab(b.dataset.tab); });
 

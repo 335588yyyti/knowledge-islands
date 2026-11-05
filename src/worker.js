@@ -273,7 +273,7 @@ const FIXED_ORDER = /以上|皆是|皆非|都對|都不對|都是|都不是|all 
 
 /** 給學生的題目：選擇題每次打亂選項順序，答案字母跟著換 */
 function publicQ(q) {
-  const out = { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, answer: q.answer, explain: q.explain };
+  const out = { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, passage: q.passage || '', answer: q.answer, explain: q.explain };
   if (q.type !== '選擇') return Object.assign(out, { options: [] });
   let opts = ['A', 'B', 'C', 'D'].map(k => ({ k, t: q[k.toLowerCase()] })).filter(o => o.t);
   if (!opts.some(o => FIXED_ORDER.test(o.t))) opts = shuffle(opts);
@@ -348,8 +348,19 @@ API.getRound = async (ctx, cred, island) => {
     picked = prioritized(await poolFor(ctx, ex.units));
   } else fail('沒有這座島。');
   if (!picked.length) fail(island === '錯題' ? '錯題本是空的，太厲害了！' : '這座島還沒有開放的題目，等老師上完課再來。');
-  return shuffle(picked).map(publicQ);
+  return groupPassages(shuffle(picked)).map(publicQ);
 };
+
+/** 同一段情境的題目排在一起（題組），其他題目順序不變 */
+function groupPassages(list) {
+  const out = [], done = new Set();
+  list.forEach(q => {
+    if (done.has(q.id)) return;
+    if (!q.passage) { out.push(q); done.add(q.id); return; }
+    list.filter(x => x.passage === q.passage).forEach(x => { out.push(x); done.add(x.id); });
+  });
+  return out;
+}
 
 API.submitRound = async (ctx, cred, island, responses) => {
   const { cls, s } = await auth(ctx, cred, false);
@@ -633,7 +644,8 @@ API.tMastery = async (ctx, pw, code) => {
 
 /* ---------- 題庫 ---------- */
 
-const IMPORT_COLS = ['版本', '年級', '學期', '科目', '單元', '觀念', '題型', '題目', '選項A', '選項B', '選項C', '選項D', '答案', '解析'];
+// 「情境」放在最後一欄，舊的 14 欄格式照樣可以匯入
+const IMPORT_COLS = ['版本', '年級', '學期', '科目', '單元', '觀念', '題型', '題目', '選項A', '選項B', '選項C', '選項D', '答案', '解析', '情境'];
 
 function validateQ(v) {
   if (!/^[1-6]$/.test(v['年級'])) return '年級要填 1 到 6';
@@ -656,12 +668,12 @@ function qFromRow(v, id, source) {
     concept: str(v['觀念'], 60), type: v['題型'], text: str(v['題目'], 1000),
     a: str(v['選項A'], 300), b: str(v['選項B'], 300), c: str(v['選項C'], 300), d: str(v['選項D'], 300),
     answer: v['題型'] === '選擇' ? v['答案'].toUpperCase() : v['題型'] === '是非' ? tf(v['答案']) : str(v['答案'], 300),
-    explain: str(v['解析'], 500), source: str(source, 10) || '老師'
+    explain: str(v['解析'], 500), passage: str(v['情境'], 3000), source: str(source, 10) || '老師'
   };
   q.unit_key = unitKey(q);
   return q;
 }
-const Q_COLS = ['id', 'version', 'grade', 'sem', 'subject', 'unit', 'unit_key', 'concept', 'type', 'text', 'a', 'b', 'c', 'd', 'answer', 'explain', 'source', 'enabled', 'created'];
+const Q_COLS = ['id', 'version', 'grade', 'sem', 'subject', 'unit', 'unit_key', 'concept', 'type', 'text', 'a', 'b', 'c', 'd', 'answer', 'explain', 'passage', 'source', 'enabled', 'created'];
 
 function parseTable(text) {
   const sep = text.indexOf('\t') >= 0 ? '\t' : ',';
@@ -717,7 +729,7 @@ API.tQuestions = async (ctx, pw, filter) => {
   if (filter.version) { where.push('version = ?'); p.push(str(filter.version, 20)); }
   if (filter.subject) { where.push('subject = ?'); p.push(str(filter.subject, 10)); }
   if (filter.unitKey) { where.push('unit_key = ?'); p.push(str(filter.unitKey, 200)); }
-  if (filter.q) { where.push("(text LIKE ? OR unit LIKE ? OR concept LIKE ?)"); const k = '%' + str(filter.q, 40) + '%'; p.push(k, k, k); }
+  if (filter.q) { where.push("(text LIKE ? OR unit LIKE ? OR concept LIKE ? OR passage LIKE ?)"); const k = '%' + str(filter.q, 40) + '%'; p.push(k, k, k, k); }
   const rows = await ctx.all(`SELECT * FROM questions ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY version, grade, sem, subject, unit, id LIMIT 301`, ...p);
   return { rows: rows.slice(0, 300), more: rows.length > 300 };
 };
@@ -731,8 +743,8 @@ API.tSaveQuestion = async (ctx, pw, data) => {
   const id = str(data.id, 40);
   const q = qFromRow(v, id || ('Q' + Date.now().toString(36).toUpperCase()), data.source || '老師');
   if (id) {
-    const r = await ctx.run(`UPDATE questions SET version=?, grade=?, sem=?, subject=?, unit=?, unit_key=?, concept=?, type=?, text=?, a=?, b=?, c=?, d=?, answer=?, explain=? WHERE id=?`,
-      q.version, q.grade, q.sem, q.subject, q.unit, q.unit_key, q.concept, q.type, q.text, q.a, q.b, q.c, q.d, q.answer, q.explain, id);
+    const r = await ctx.run(`UPDATE questions SET version=?, grade=?, sem=?, subject=?, unit=?, unit_key=?, concept=?, type=?, text=?, a=?, b=?, c=?, d=?, answer=?, explain=?, passage=? WHERE id=?`,
+      q.version, q.grade, q.sem, q.subject, q.unit, q.unit_key, q.concept, q.type, q.text, q.a, q.b, q.c, q.d, q.answer, q.explain, q.passage, id);
     if (!r.meta.changes) fail('找不到這一題。');
   } else {
     q.enabled = 1; q.created = today();
@@ -793,7 +805,7 @@ API.tSaveSettings = async (ctx, pw, data) => {
 /** 匯出資料給 Excel（前端轉成 CSV 下載） */
 API.tExport = async (ctx, pw, what, code) => {
   await checkPw(ctx, pw);
-  if (what === 'questions') return ctx.all('SELECT version AS 版本, grade AS 年級, sem AS 學期, subject AS 科目, unit AS 單元, concept AS 觀念, type AS 題型, text AS 題目, a AS 選項A, b AS 選項B, c AS 選項C, d AS 選項D, answer AS 答案, explain AS 解析, source AS 來源, CASE enabled WHEN 1 THEN \'Y\' ELSE \'N\' END AS 啟用, id AS 題號 FROM questions ORDER BY version, grade, sem, subject, unit, id');
+  if (what === 'questions') return ctx.all('SELECT version AS 版本, grade AS 年級, sem AS 學期, subject AS 科目, unit AS 單元, concept AS 觀念, type AS 題型, text AS 題目, a AS 選項A, b AS 選項B, c AS 選項C, d AS 選項D, answer AS 答案, explain AS 解析, passage AS 情境, source AS 來源, CASE enabled WHEN 1 THEN \'Y\' ELSE \'N\' END AS 啟用, id AS 題號 FROM questions ORDER BY version, grade, sem, subject, unit, id');
   const cls = await findClass(ctx, code);
   if (what === 'students') {
     const rt = await rate(ctx);

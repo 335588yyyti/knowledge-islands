@@ -91,7 +91,8 @@ try {
     await call('tResetPin', PW, 'DEMO', 1);  // 老師解鎖
     await call('studentLogin', { code: 'DEMO', seat: 1, pin: '1234' });
     const t = await play(s, '數學', [0]);
-    assert.match(t, /過關/); assert.match(t, /金幣\+3/); assert.match(t, /今日印章/);
+    assert.match(t, /過關/); assert.match(t, /今日印章/);
+    const m = t.match(/(\d+) \/ (\d+) 金幣\+(\d+)/); assert.ok(m); assert.equal(Number(m[3]), Number(m[2]) - 1);  // 錯 1 題
     assert.equal(await s.textContent('#cStreak'), '1');
     assert.match(await s.textContent('[data-island="錯題"] .meta'), /1 題/);
   });
@@ -239,6 +240,42 @@ try {
     assert.match(await p.textContent('[data-island="英文"]'), /精熟 2 \/ 2 單元/);
     await p.click('#bMastery'); await p.waitForSelector('#vMastery:not(.hidden)');
     assert.equal(await p.locator('.mrow.lv3').count(), 2);
+  });
+  await step('素養題：情境題組排在一起，畫面顯示閱讀情境', async () => {
+    const c3 = { code: 'DEMO', seat: 3, pin: '3333' };
+    await call('studentLogin', c3);
+    const qs = (await call('getRound', c3, '數學')).ok;
+    const idx = qs.map((q, i) => q.passage ? i : -1).filter(i => i >= 0);
+    assert.ok(idx.length >= 2, '應該有素養題');
+    assert.equal(idx[idx.length - 1] - idx[0], idx.length - 1, '同一段情境要連在一起');
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.click('[data-island="數學"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
+    let seen = false;
+    for (let i = 0; i < 10 && !seen; i++) {
+      const q = await p.evaluate(() => round.qs[round.i]);
+      if (q.passage) { seen = true; assert.match(await p.textContent('#qPassage'), /同樂會/); assert.match(await p.textContent('#qTag'), /素養題/); break; }
+      const a = q.answer.split('|')[0];
+      if (q.type === '填空') { await p.fill('#iFill', a); await p.click('#fFill button'); } else await p.click(`#qBody .opt[data-a="${a}"]`);
+      await p.click('#bNext');
+    }
+    assert.ok(seen);
+  });
+  await step('匯入素養題（第 15 欄是情境）', async () => {
+    const pass = '小明家的花園長 6 公尺、寬 4 公尺。';
+    const r = (await call('tImport', PW, `通用\t6\t上\t數學\t面積\t長方形面積\t填空\t花園面積是幾平方公尺？\t\t\t\t\t24\t6×4\t${pass}\n通用\t6\t上\t數學\t面積\t單位換算\t是非\t花園面積大於 20 平方公尺\t\t\t\t\tO\t\t${pass}`, 'AI', '通用')).ok;
+    assert.equal(r.added, 2);
+    const b = (await call('tQuestions', PW, { q: '花園' })).ok.rows;
+    assert.ok(b.length === 2 && b.every(q => q.passage === pass));
+  });
+  await step('手冊：學生版在登入頁，老師版在後台', async () => {
+    const p = await page('/');
+    await p.click('#bGuide1'); await p.waitForSelector('#vGuide:not(.hidden)');
+    assert.match(await p.textContent('#vGuide'), /換一天再答對一次/);
+    await p.click('#bGuideBack'); await p.waitForSelector('#vLogin:not(.hidden)');
+    assert.equal(await p.locator('text=領航員手冊').count(), 0);
+    await t.click('[data-tab="tGuide"]'); await t.waitForSelector('#tGuide:not(.hidden)');
+    assert.match(await t.textContent('#tGuide'), /初學和熟練的差別/);
   });
   await step('題庫管理：查詢、編輯、停用、刪除', async () => {
     await t.click('[data-tab="tBank"]'); await t.waitForSelector('#bankTbl tbody tr');

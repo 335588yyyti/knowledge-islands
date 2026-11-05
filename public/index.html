@@ -175,6 +175,20 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .rv{font-size:12px;font-weight:800;color:#c98d12;background:#fff4d6;border-radius:999px;padding:1px 8px;white-space:nowrap}
 .badge{display:inline-flex;gap:12px;align-items:center;text-align:left;background:#f1fbf6;border:3px solid var(--mint);border-radius:20px;padding:10px 18px;margin:4px 0 10px;font-size:15px}
 .badge > :first-child{font-size:40px}
+.passage{background:#fff;border:3px dashed #f1e3c8;border-radius:20px;padding:12px 16px;margin:0 0 14px;font-size:17px;line-height:1.75;white-space:normal}
+.passage .ph{font-weight:800;font-size:14px;color:var(--muted);margin-bottom:4px}
+.passage .ph span{font-weight:600}
+.guide-btn{width:100%;margin-top:2px}
+.guide h3{font-size:20px;margin:22px 0 8px}
+.guide ol,.guide ul{margin:0;padding-left:22px;display:grid;gap:4px}
+.guide p{margin:6px 0}
+.gcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.gcards > div{background:#fff;border:3px solid #f1e3c8;border-radius:18px;padding:10px 14px;font-size:15px}
+.gtable{border-collapse:separate;border-spacing:0 6px;width:100%}
+.gtable td{background:#fff;padding:8px 12px;vertical-align:top}
+.gtable td:first-child{border-radius:14px 0 0 14px;font-weight:800;white-space:nowrap;width:1%}
+.gtable td:last-child{border-radius:0 14px 14px 0}
+.rule{background:#f1fbf6;border:3px solid var(--mint);border-radius:18px;padding:12px 16px;text-align:center;font-size:19px}
 .teacher-link{text-align:center;margin:4px 0 0;font-size:14px}
 .teacher-link a{color:var(--ink);opacity:.6;font-weight:600}
 .teacher-link a:hover{opacity:1}
@@ -210,6 +224,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <p class="err" id="loginErr"></p>
       <button class="btn" id="bLogin">出航！</button>
     </form>
+    <button class="btn soft guide-btn" id="bGuide1" type="button">📘 波波的航海手冊</button>
     <p class="teacher-link"><a href="/teacher" id="teacherLink">老師登入</a></p>
   </section>
 
@@ -220,6 +235,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <span class="chip" title="金幣"><span class="ic-coin"></span><span id="cCoins">0</span></span>
         <span class="chip" title="星星"><span class="ic-star"></span><span id="cStars">0</span></span>
         <span class="chip" title="連續天數"><span class="ic-fire"></span><span><span id="cStreak">0</span> 天</span></span>
+        <button class="wardrobe-btn" id="bGuide2"><span class="tree">📘</span>航海手冊</button>
         <button class="wardrobe-btn" id="bMastery"><span class="tree">🌳</span>精熟圖鑑</button>
         <button class="wardrobe-btn" id="bShop"><span id="shopIcon"></span>波波的衣櫃</button>
       </div>
@@ -235,10 +251,76 @@ label{display:block;font-weight:800;margin-bottom:6px}
     <div class="qtop"><div class="dots" id="dots"></div><button class="btn soft small" id="bQuit">回地圖</button></div>
     <div class="card">
       <div class="qtag" id="qTag"></div>
+      <div class="passage hidden" id="qPassage"></div>
       <p class="qtext" id="qText"></p>
       <div id="qBody"></div>
       <div id="qFb"></div>
       <div class="actions"><button class="btn hidden" id="bNext">下一題</button></div>
+    </div>
+  </section>
+
+  <section id="vGuide" class="shop hidden">
+    <div class="qtop"><h2 style="flex:1">波波的航海手冊</h2><button class="btn soft small" id="bGuideBack">回去</button></div>
+    <div class="card guide">
+      <div class="talk"><span class="bob" id="gMascot"></span><div class="say">歡迎上船！我是船長波波。這本手冊會告訴你怎麼在知識群島冒險，看完就可以出航囉！</div></div>
+
+      <h3>⛵ 第 1 站：上船（登入）</h3>
+      <ol>
+        <li>輸入老師給的<b>班級代碼</b>（掃 QR code 進來的話，代碼已經幫你填好了）。</li>
+        <li>輸入你的<b>座號</b>。</li>
+        <li><b>第一次登入</b>：自己想一組 4 位數密碼，輸入後它就是你的密碼，要記住喔！也可以順便取個暱稱（不要用全名）。</li>
+        <li>忘記密碼？請老師幫你重設，下次登入再重新設定。</li>
+        <li>在家裡自己的平板，可以勾「記住我」；學校的平板<b>不要勾</b>，玩完記得按「登出」。</li>
+      </ol>
+
+      <h3>🏝️ 第 2 站：選一座島</h3>
+      <div class="gcards">
+        <div><b>國語島・數學島・自然島・社會島・英文島</b><br>每科一座島。老師教過的單元才會開放，還在睡覺（z z）的島是還沒上到。</div>
+        <div><b>🪸 錯題礁</b><br>答錯的題目會跑來這裡。在這裡答對，就把它救回來了！</div>
+        <div><b>🗼 燈塔挑戰</b><br>五科混在一起出題，適合考前總複習。</div>
+        <div><b>🚩 段考衝刺島</b><br>老師設定段考後才會出現，只出考試範圍，還有倒數天數。</div>
+      </div>
+
+      <h3>📖 第 3 站：答題</h3>
+      <ul>
+        <li>一回合大約 10 題，有<b>選擇、是非（○ ✕）、填空</b>三種。</li>
+        <li><b>素養題</b>會先給你一段「閱讀情境」，同一段情境會連續出好幾題。先把情境讀完，答案就藏在裡面！</li>
+        <li>選擇題的選項每次順序都不一樣，所以要真的看懂，不能只背「答案是 B」喔。</li>
+        <li>答錯沒關係，波波會告訴你正確答案和原因。</li>
+      </ul>
+
+      <h3>🪙 第 4 站：寶物怎麼來</h3>
+      <table class="gtable">
+        <tr><td>🪙 金幣</td><td>每答對 1 題得 1 枚。</td></tr>
+        <tr><td>⭐ 星星</td><td>一回合答對 7 成以上就「過關」，得 1 顆星星。</td></tr>
+        <tr><td>🔴 今日印章</td><td>每天<b>第一次過關</b>會蓋 1 個印章，可以跟老師換加點。</td></tr>
+        <tr><td>🔥 連續天數</td><td>每天都拿到印章，天數就會一直往上加。</td></tr>
+      </table>
+
+      <h3>🌳 第 5 站：精熟——讓知識真的記住</h3>
+      <p class="rule">同一題，<b>換一天再答對一次</b>，就算記住了！<br><small>（哪兩天都可以，不用一定是隔天）</small></p>
+      <table class="gtable">
+        <tr><td>🌱 初學</td><td>開始練習這個單元了，加油！</td></tr>
+        <tr><td>🌿 熟練</td><td>這個單元有 7 成題目，你最近一次都答對了。</td></tr>
+        <tr><td>🌳 精熟</td><td>這個單元 9 成的題目，你都在兩個不同的日子答對過。會拿到<b>精熟徽章</b>！</td></tr>
+        <tr><td>⏰ 該複習了</td><td>精熟的單元超過 3 週沒練，波波會提醒你回去看看。精熟不會被拿走喔。</td></tr>
+      </table>
+      <p>在地圖上按「<b>精熟圖鑑</b>」，可以看到每個單元走到哪裡了。答錯也不會歸零，只要那一題再答對一次就好。</p>
+
+      <h3>👕 第 6 站：波波的衣櫃</h3>
+      <ul>
+        <li>用金幣幫波波買帽子、配件、換顏色，可以先試穿再決定。</li>
+        <li><b>花掉金幣不會讓老師少加點！</b>老師看的是你「累積賺到」的金幣總數，不是剩下的。</li>
+      </ul>
+
+      <h3>🧭 船長的小祕訣</h3>
+      <ul>
+        <li>每天玩一回合，比一天玩十回合更有用——精熟就是要「換一天」再答對。</li>
+        <li>先去錯題礁，把錯的題目救回來。</li>
+        <li>不會的題目，看完解析再想一次，下次就會了。</li>
+        <li>自己的密碼不要告訴別人，也不要用別人的座號登入。</li>
+      </ul>
+      <div class="actions" style="justify-content:center"><button class="btn" id="bGuideDone">我看完了，出航！</button></div>
     </div>
   </section>
 
@@ -288,7 +370,7 @@ async function api(fn, ...args){
   return j.ok;
 }
 const $ = id => document.getElementById(id);
-function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
+function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery','vGuide'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function store(k, v){ try{ v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
@@ -469,6 +551,10 @@ function renderQ(){
   const c = SC[q.subject] || SUBJ[0];
   $('qTag').style.background = c.d;
   $('qTag').textContent = q.subject + '・' + q.unit + '　' + (round.i + 1) + ' / ' + round.qs.length;
+  const prev = round.qs[round.i - 1];
+  $('qPassage').classList.toggle('hidden', !q.passage);
+  if (q.passage) $('qPassage').innerHTML = `<div class="ph">📖 閱讀情境${prev && prev.passage === q.passage ? '<span>（跟上一題同一篇）</span>' : ''}</div>` + esc(q.passage).replace(/\n/g, '<br>');
+  if (q.passage) $('qTag').textContent += '・素養題';
   $('qText').textContent = q.text;
   $('qFb').innerHTML = ''; $('bNext').classList.add('hidden');
   if (q.type === '選擇'){
@@ -623,6 +709,14 @@ function renderMastery(){
     }).join('') + '</div>';
   }).join('') || '<p>老師還沒開放單元喔。</p>';
 }
+/* ---------- 航海手冊 ---------- */
+function openGuide(){ $('gMascot').innerHTML = mascot('cheer'); show('vGuide'); }
+function closeGuide(){ if (state){ renderMap(); show('vMap'); } else show('vLogin'); }
+$('bGuide1').addEventListener('click', openGuide);
+$('bGuide2').addEventListener('click', openGuide);
+$('bGuideBack').addEventListener('click', closeGuide);
+$('bGuideDone').addEventListener('click', closeGuide);
+
 $('bMastery').addEventListener('click', () => { renderMastery(); show('vMastery'); });
 $('bMasteryBack').addEventListener('click', () => { renderMap(); show('vMap'); });
 
