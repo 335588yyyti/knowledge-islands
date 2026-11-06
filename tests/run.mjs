@@ -318,7 +318,7 @@ try {
     assert.ok(r.badges.some(b => b.id === 'exam'));
     const st = (await call('studentLogin', c4)).ok;
     assert.ok(st.badges.includes('comeback') && st.badges.includes('exam'));
-    assert.equal(st.badgeList.length, 25);
+    assert.equal(st.badgeList.length, 41);
     const d = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 3);
     assert.ok(d.badges.length >= 2);
   });
@@ -330,7 +330,8 @@ try {
     await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
     assert.ok(await p.locator('.bcard.got').count() >= 2);
-    assert.equal(await p.locator('.bcard').count(), 25);
+    assert.equal(await p.locator('.bcard').count(), 25);  // 41 個徽章，系列合成一張卡片後是 25 張
+    assert.ok(await p.locator('.bcard.series .pips i.on').count() >= 1);
   });
   await step('老師公告與指定任務：學生地圖最上方出現公告，任務島排第一', async () => {
     await t.click('[data-tab="tUnits"]');
@@ -377,7 +378,7 @@ try {
   });
   await step('徽章排行榜：只比徽章數，老師可以關掉', async () => {
     const r = (await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
-    assert.equal(r.total, 25);
+    assert.equal(r.total, 41);
     assert.ok(r.rows.some(x => x.me));
     assert.ok(r.rows.every((x, i) => i === 0 || r.rows[i - 1].n >= x.n));
     const p = await page('/?c=DEMO');
@@ -386,6 +387,49 @@ try {
     await call('tSaveSettings', PW, { showLeaderboard: false });
     assert.match((await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).err, /沒有開放/);
     await call('tSaveSettings', PW, { showLeaderboard: true });
+  });
+  await step('題目偵探：回報被老師確認（停用）後，學生拿到徽章', async () => {
+    const c3 = { code: 'DEMO', seat: 3, pin: '3333' };
+    const q = (await call('getRound', c3, '自然')).ok[0];
+    assert.ok((await call('reportQuestion', c3, q.id, '答案好像錯了', '')).ok.ok);
+    await t.reload(); await t.waitForSelector('#vApp:not(.hidden)');
+    await t.click('[data-tab="tBank"]'); await t.waitForSelector(`[data-rep-off="${q.id}"]`);
+    await t.click(`[data-rep-off="${q.id}"]`); await toastHas(t, '題目偵探');
+    const st = (await call('studentLogin', c3)).ok;
+    assert.ok(st.badges.includes('detective1'));
+    await call('tSetEnabled', PW, [q.id], true);
+  });
+  await step('老師頒發的徽章：建立、頒發、學生看到原因、收回', async () => {
+    await t.click('[data-tab="tOverview"]');
+    await t.fill('#cbName', '熱心助人'); await t.fill('#cbDesc', '主動幫助同學'); await t.click('#bCbNew'); await toastHas(t, '徽章建立好了');
+    await t.click('[data-cb-give]'); await t.check('#cbSeats input[value="3"]'); await t.fill('#cbNote', '幫忙整理圖書角');
+    await t.click('#bCbGive'); await toastHas(t, '已頒發給 1 位學生');
+    const st = (await call('studentLogin', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
+    const cid = st.badges.find(x => x.startsWith('c:'));
+    assert.ok(cid); assert.equal(st.badgeNotes[cid], '幫忙整理圖書角');
+    assert.equal(st.badgeList.length, 42);
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
+    assert.match(await p.textContent('#badgeWall'), /老師說：幫忙整理圖書角/);
+    await t.click('[data-cb-revoke="3"]'); await toastHas(t, '已收回');
+    assert.ok(!(await call('studentLogin', { code: 'DEMO', seat: 3, pin: '3333' })).ok.badges.includes(cid));
+    assert.match((await call('tRevokeBadge', PW, 'DEMO', 3, 'master1')).err, /不能收回/);
+  });
+  await step('新徽章：題組全對、燈塔全對', async () => {
+    const c1 = { code: 'DEMO', seat: 1, pin: '1234' };
+    const all = async isl => { const qs = (await call('getRound', c1, isl)).ok; return (await call('submitRound', c1, isl, qs.map(q => ({ id: q.id, answer: q.type === '選擇' ? q.options['ABCD'.indexOf(q.answer)] : q.answer.split('|')[0] })))).ok; };
+    let got = new Set((await call('studentLogin', c1)).ok.badges);
+    for (const isl of ['數學', '綜合', '錯題', '錯題']) { const r = await all(isl).catch(() => null); if (r && r.badges) r.badges.forEach(b => got.add(b.id)); }
+    got = new Set((await call('studentLogin', c1)).ok.badges);
+    assert.ok(got.has('groupall'), '題組全對');
+    assert.ok(got.has('lighthouse'), '燈塔全對');
+  });
+  await step('關於與版權：顯示老師設定的署名', async () => {
+    await call('tSaveSettings', PW, { credit: '測試國小 測試老師' });
+    const p = await page('/');
+    await p.click('#aboutLink'); await p.waitForFunction(() => document.querySelector('#aboutCredit').textContent.includes('測試國小'));
+    assert.match(await p.textContent('#vAbout'), /教科書內容的著作權屬各出版社所有/);
   });
   await step('題庫管理：查詢、編輯、停用、刪除', async () => {
     await t.click('[data-tab="tBank"]'); await t.waitForSelector('#bankTbl tbody tr');

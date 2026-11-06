@@ -224,6 +224,11 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .rank .rk{width:34px;text-align:center;font-size:20px}
 .rank .rn{flex:1;min-width:0}
 .rank .rc{font-variant-numeric:tabular-nums}
+.bcard .pips{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;margin:2px 0}
+.bcard .pips i{font-style:normal;font-size:11px;font-weight:800;border-radius:999px;padding:0 6px;background:#e6e1ee;color:#9a93ad}
+.bcard .pips i.on{background:var(--butter);color:#7a5a00}
+.bcard .bnext{color:var(--ink);opacity:.8}
+.bcard .bnote{color:#a0522d;background:#fff0e3;border-radius:10px;padding:2px 6px;margin-top:2px}
 .teacher-link{text-align:center;margin:4px 0 0;font-size:14px}
 .teacher-link a{color:var(--ink);opacity:.6;font-weight:600}
 .teacher-link a:hover{opacity:1}
@@ -260,7 +265,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <button class="btn" id="bLogin">出航！</button>
     </form>
     <button class="btn soft guide-btn" id="bGuide1" type="button">📘 波波的航海手冊</button>
-    <p class="teacher-link"><a href="/teacher" id="teacherLink">老師登入</a></p>
+    <p class="teacher-link"><a href="/teacher" id="teacherLink">老師登入</a>　·　<a href="#about" id="aboutLink">關於與版權</a></p>
   </section>
 
   <section id="vMap" class="hidden">
@@ -351,7 +356,9 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <ul>
         <li>徽章要做到一件<b>有意義的事</b>才拿得到，例如連續 7 天都練習、精熟 5 個單元、把 10 題錯題重新答對、沒過關之後再挑戰成功。</li>
         <li>按地圖上的「<b>徽章牆</b>」看全部徽章。灰色的還沒拿到，卡片上寫著要怎麼達成。</li>
-        <li>每個徽章只拿一次，拿到後會一直留著。</li>
+        <li>每個徽章只拿一次，拿到後會一直留著。同一系列的徽章（例如連續 3、7、14、30 天）會放在同一張卡片上，一階一階往上升。</li>
+        <li>發現 AI 出的題目有錯，按「這題怪怪的？」回報；老師確認真的有錯，你會拿到「題目偵探」徽章。</li>
+        <li>老師也會頒發特別的徽章給表現好的同學喔！</li>
         <li>徽章牆裡有「全班徽章排行榜」，比的是誰收集的徽章多。</li>
       </ul>
 
@@ -369,6 +376,24 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>自己的密碼不要告訴別人，也不要用別人的座號登入。</li>
       </ul>
       <div class="actions" style="justify-content:center"><button class="btn" id="bGuideDone">我看完了，出航！</button></div>
+    </div>
+  </section>
+
+  <section id="vAbout" class="shop hidden">
+    <div class="qtop"><h2 style="flex:1">關於與版權</h2><button class="btn soft small" id="bAboutBack">回去</button></div>
+    <div class="card guide">
+      <p id="aboutCredit" style="font-weight:800;font-size:18px">© 2026 知識群島</p>
+      <p>本網站僅供教學使用；如需轉載、改作或用於其他用途，請先取得設計者同意。</p>
+      <h3>題目</h3>
+      <p>題目、提示與解析由老師自行撰寫，或由老師使用 AI 工具協助產生並審核。教科書內容的著作權屬各出版社所有。</p>
+      <h3>角色與畫面</h3>
+      <p>船長波波、島嶼、燈塔、衣櫃與徽章插圖皆為本網站原創，以程式繪製。徽章圖示使用裝置內建的表情符號（Emoji）。</p>
+      <h3>字型</h3>
+      <p>Chiron GoRound TC（SIL Open Font License 1.1），由 Google Fonts 提供。</p>
+      <h3>程式與服務</h3>
+      <p>qrcode.js（MIT 授權）；網站與資料庫架設於 Cloudflare Workers 與 D1。</p>
+      <h3>隱私</h3>
+      <p>只記錄班級代碼、座號、暱稱、4 位數密碼與作答紀錄，不收集姓名、照片或聯絡方式。資料只有老師看得到。</p>
     </div>
   </section>
 
@@ -428,7 +453,7 @@ async function api(fn, ...args){
   return j.ok;
 }
 const $ = id => document.getElementById(id);
-function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery','vGuide','vBadges'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
+function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery','vGuide','vBadges','vAbout'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function store(k, v){ try{ v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
@@ -799,13 +824,33 @@ function renderMastery(){
   }).join('') || '<p>老師還沒開放單元喔。</p>';
 }
 /* ---------- 徽章牆 ---------- */
-const BADGE_GROUPS = [['好習慣', '每天都來練一點'], ['精熟', '真的把單元記住'], ['成長', '從錯誤裡學到東西'], ['挑戰', '挑戰更難的題目']];
+const BADGE_GROUPS = [['好習慣', '每天都來練一點'], ['精熟', '真的把單元記住'], ['成長', '從錯誤裡學到東西'], ['挑戰', '挑戰更難的題目'], ['AI 素養', '發現 AI 題目的錯誤'], ['老師頒發', '老師看見你的好表現']];
+const TIERS = ['銅', '銀', '金', '鑽石', '彩虹', '傳說'];
+function badgeCard(b, got, extra){
+  return `<div class="bcard${got ? ' got' : ''}"><span class="bi" aria-hidden="true">${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small>${extra || ''}${got ? '' : '<em>還沒拿到</em>'}</div>`;
+}
 function renderBadges(){
-  const have = new Set(state.badges || []), list = state.badgeList || [];
+  const have = new Set(state.badges || []), list = state.badgeList || [], notes = state.badgeNotes || {};
   $('bMascot').innerHTML = mascot(have.size ? 'cheer' : 'happy');
-  $('badgeSay').innerHTML = `已經收集 <b>${have.size}</b> / ${list.length} 個徽章！<br><small>灰色的還沒拿到，下面寫著要怎麼達成。每個徽章都要做到一件有意義的事喔。</small>`;
-  $('badgeWall').innerHTML = BADGE_GROUPS.map(([g, sub]) => `<h3>${g} <small class="gsub">${sub}</small></h3><div class="bwall">` +
-    list.filter(b => b.group === g).map(b => `<div class="bcard${have.has(b.id) ? ' got' : ''}"><span class="bi" aria-hidden="true">${b.icon}</span><b>${esc(b.name)}</b><small>${esc(b.desc)}</small>${have.has(b.id) ? '' : '<em>還沒拿到</em>'}</div>`).join('') + '</div>').join('');
+  $('badgeSay').innerHTML = `已經收集 <b>${have.size}</b> / ${list.length} 個徽章！<br><small>灰色的還沒拿到，下面寫著要怎麼達成。同一系列的徽章會放在同一張卡片，一階一階往上升。</small>`;
+  $('badgeWall').innerHTML = BADGE_GROUPS.map(([g, sub]) => {
+    const items = list.filter(b => b.group === g);
+    if (!items.length) return '';
+    const done = new Set(), cards = [];
+    items.forEach(b => {
+      if (done.has(b.id)) return;
+      if (!b.series){ cards.push(badgeCard(b, have.has(b.id), notes[b.id] ? `<small class="bnote">老師說：${esc(notes[b.id])}</small>` : '')); return; }
+      // 系列徽章：一張卡片顯示目前到第幾階、下一階要做什麼
+      const ser = items.filter(x => x.series === b.series).sort((x, y) => x.tier - y.tier);
+      ser.forEach(x => done.add(x.id));
+      const top = ser.filter(x => have.has(x.id)).pop(), next = ser.find(x => !have.has(x.id));
+      const show = top || ser[0];
+      const pips = '<span class="pips">' + ser.map(x => `<i class="${have.has(x.id) ? 'on' : ''}" title="${esc(x.name)}">${TIERS[x.tier - 1]}</i>`).join('') + '</span>';
+      const nextTxt = next ? `<small class="bnext">${top ? '下一階' : '目標'}：${esc(next.desc)}</small>` : '<small class="bnext">全部完成了！</small>';
+      cards.push(`<div class="bcard series${top ? ' got' : ''}"><span class="bi" aria-hidden="true">${show.icon}</span><b>${esc(show.name)}</b>${pips}${nextTxt}${top ? '' : '<em>還沒拿到</em>'}</div>`);
+    });
+    return `<h3>${g} <small class="gsub">${sub}</small></h3><div class="bwall">` + cards.join('') + '</div>';
+  }).join('');
 }
 $('bBadges').addEventListener('click', () => { renderBadges(); badgeTab('wall'); $('bTabs').classList.toggle('hidden', !state.showLeaderboard); show('vBadges'); });
 function badgeTab(t){
@@ -823,6 +868,13 @@ async function loadRank(){
   }catch(e){ $('badgeRank').innerHTML = '<p>' + esc(e.message) + '</p>'; }
 }
 $('bBadgesBack').addEventListener('click', () => { renderMap(); show('vMap'); });
+
+/* ---------- 關於與版權 ---------- */
+$('aboutLink').addEventListener('click', async e => {
+  e.preventDefault(); show('vAbout');
+  try{ const r = await api('about'); if (r.credit) $('aboutCredit').textContent = '© 2026 ' + r.credit + '　版權所有'; }catch(_){}
+});
+$('bAboutBack').addEventListener('click', () => show(state ? 'vMap' : 'vLogin'));
 
 /* ---------- 航海手冊 ---------- */
 function openGuide(){ $('gMascot').innerHTML = mascot('cheer'); show('vGuide'); }

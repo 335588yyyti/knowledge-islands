@@ -67,6 +67,13 @@ td.num,th.num{text-align:right}
 .copybox{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .copybox code{background:var(--foam);padding:6px 10px;border-radius:6px;word-break:break-all;min-width:0}
 .login{max-width:380px;margin:12vh auto}
+.cbwrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px}
+.cb{display:flex;gap:10px;align-items:center;border:2px solid var(--line);border-radius:12px;padding:8px 10px}
+.cbi{font-size:28px}
+.seats{display:flex;flex-wrap:wrap;gap:6px}
+.seat{display:flex;gap:4px;align-items:center;border:2px solid var(--line);border-radius:999px;padding:2px 10px;font-size:14px;background:#fff}
+.seat.got{opacity:.5}
+.pill .x{background:none;border:0;padding:0 0 0 4px;font-size:11px;color:inherit;cursor:pointer}
 .rep{border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
 nav .pill{margin-left:4px}
 .guide h3{font-size:17px;margin:22px 0 8px;color:var(--sea-deep)}
@@ -127,6 +134,18 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <p class="muted small" id="rateText"></p>
         <div class="panel hidden" id="lastRedeem" style="background:var(--foam);border-color:var(--sea)"></div>
         <div class="tbl"><table id="stuTbl"></table></div>
+      </div>
+      <div class="panel" id="cbPanel">
+        <h2>老師頒發的徽章</h2>
+        <p class="muted small">表揚系統算不到的好表現，例如熱心助人、進步最多、小老師。先建立徽章，再選學生頒發；可以寫一句原因，學生會在徽章牆看到。徽章是所有班級共用的。</p>
+        <div class="row"><select id="cbIcon" aria-label="圖示"></select><input id="cbName" maxlength="12" placeholder="徽章名稱（例如：熱心助人）" style="flex:1 1 160px"><input id="cbDesc" maxlength="40" placeholder="說明（例如：主動幫助同學）" style="flex:2 1 200px"><button class="btn2" id="bCbNew">建立徽章</button></div>
+        <div id="cbList" style="margin-top:12px"></div>
+        <div class="panel hidden" id="cbAward" style="margin-top:12px;background:var(--foam)">
+          <h3 style="margin-top:0" id="cbAwardTitle"></h3>
+          <div class="seats" id="cbSeats"></div>
+          <div class="row" style="margin-top:8px"><input id="cbNote" maxlength="60" placeholder="頒發原因（選填，學生看得到）" style="flex:1 1 220px"><button class="btn" id="bCbGive">頒發給勾選的學生</button><button class="btn2" id="bCbClose">關閉</button></div>
+          <div id="cbGot" class="small" style="margin-top:8px"></div>
+        </div>
       </div>
       <div class="grid2">
         <div class="panel"><h2>需要加強的觀念</h2><p class="muted small">依題庫的「觀念」欄統計。座號是目前這個觀念還有錯題的學生，可以找時間個別指導。</p><div id="weakC"></div></div>
@@ -212,7 +231,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <section id="tBank" class="hidden">
       <div class="panel" id="repPanel">
         <h2>待檢查題目 <span class="pill p-bad" id="repCount">0</span></h2>
-        <p class="muted small">學生答題後覺得「這題怪怪的」會回報到這裡（所有班級一起列）。檢查後可以修改、停用，或按「沒問題」關掉回報。</p>
+        <p class="muted small">學生答題後覺得「這題怪怪的」會回報到這裡（所有班級一起列）。「修改」或「停用」代表題目真的有問題，回報的學生會得到「題目偵探」徽章；「沒問題」只會關掉回報。</p>
         <div id="repList"></div>
       </div>
       <div class="panel">
@@ -287,6 +306,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row" style="margin-top:8px"><label class="small">1 個印章換 <input id="sStamp" type="number" min="0" style="width:60px"> 點</label>
             <label class="small">累積金幣每 <input id="sCoin" type="number" min="0" style="width:70px"> 枚換 1 點</label>
             <label class="small">每精熟 1 個單元換 <input id="sMastery" type="number" min="0" style="width:60px"> 點</label></div>
+          <div class="row" style="margin-top:8px"><label class="small" style="flex:1 1 100%">版權署名（顯示在學生端「關於與版權」）<input id="sCredit" maxlength="80" placeholder="例如：○○國小 ○○○老師" style="width:100%;margin-top:4px"></label></div>
           <div class="row" style="margin-top:8px"><label class="small"><input type="checkbox" id="sRank"> 學生可以看「全班徽章排行榜」（只比徽章數，顯示暱稱或座號）</label></div>
           <p class="muted small">換點比例填 0，代表那一項不換點。</p>
           <div class="row"><button class="btn2" id="bSaveSet">儲存設定</button></div>
@@ -360,7 +380,9 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
 
         <h3>六、徽章</h3>
         <ul>
-          <li>共 25 個徽章，分成四類：<b>好習慣</b>（連續或累積幾天拿到今日印章）、<b>精熟</b>（精熟幾個單元、某科島全部精熟、五科都精熟）、<b>成長</b>（把錯題重新答對、沒過關後再挑戰成功、回去複習該複習的單元）、<b>挑戰</b>（素養題答對、一回合全對、段考衝刺島過關）。</li>
+          <li>系統徽章共 41 個，分成五類：<b>好習慣</b>（連續或累積拿到今日印章、全勤一週、月月有你）、<b>精熟</b>（精熟單元數、島主、五島通航、長期記憶、一步一腳印）、<b>成長</b>（救回錯題、錯題清零、觀念突破、越挫越勇、溫故知新）、<b>挑戰</b>（素養題、題組全對、百發百中、燈塔全對、段考）、<b>AI 素養</b>（題目偵探：回報的題目被老師確認真的有錯）。</li>
+          <li>同一系列的徽章（例如連續 3、7、14、30 天）在學生的徽章牆會合成一張卡片，顯示銅、銀、金…幾階，以及下一階要做什麼。</li>
+          <li><b>老師頒發的徽章</b>：在「學生與加點」下方建立，例如「熱心助人」，選學生頒發並寫一句原因。頒錯了可以收回。</li>
           <li>刻意不做「答很多題」「賺很多金幣」這種只靠刷題就能拿的徽章。</li>
           <li>學生的徽章牆裡有「全班徽章排行榜」，只比收集到的徽章數。不想開放的話，可以在「系統設定」關掉。</li>
           <li>每個徽章只拿一次。學生在「徽章牆」看得到還沒拿到的徽章要怎麼達成；「學生與加點」的表格有每位學生的徽章數，滑鼠移上去可以看是哪些。</li>
@@ -460,7 +482,7 @@ async function loadClass(code){
   catch(e){ toast(e.message); }
 }
 
-function renderAll(){ setVersions(DASH.versions); renderOverview(); renderUnits(); renderExam(); renderClass(); renderNotice(); renderReportCount();
+function renderAll(){ setVersions(DASH.versions); renderOverview(); loadCB(); renderUnits(); renderExam(); renderClass(); renderNotice(); renderReportCount();
   setVer('aVer', CUR.version); setVer('iVer', CUR.version); }
 
 function renderOverview(){
@@ -730,6 +752,51 @@ async function loadMastery(){
   }catch(e){ toast(e.message); }
 }
 
+/* ---------- 老師頒發的徽章 ---------- */
+const CB_ICONS = ['⭐','🌟','🏅','🎖️','💖','🤝','🙌','👏','🧹','📣','🎨','🎵','⚽','🌻','🦉','🐬','🚀','🍀','🔆','🧑‍🏫'];
+let CBS = [], cbSel = null;
+$('cbIcon').innerHTML = CB_ICONS.map(x => `<option>${x}</option>`).join('');
+async function loadCB(){
+  try{
+    CBS = await api('tCustomBadges', PW, CUR.code);
+    $('cbList').innerHTML = CBS.length ? '<div class="cbwrap">' + CBS.map(b => `<div class="cb"><span class="cbi">${esc(b.icon)}</span><div style="flex:1;min-width:0"><b>${esc(b.name)}</b><br><span class="small muted">${esc(b.desc)}・這班已頒 ${b.awarded.length} 人</span></div>
+      <button class="btn2 sm" data-cb-give="${esc(b.id)}">頒發</button><button class="btn2 sm" data-cb-del="${esc(b.id)}">刪除</button></div>`).join('') + '</div>' : '<p class="muted small">還沒有建立徽章。</p>';
+    if (cbSel) openAward(cbSel);
+  }catch(e){ toast(e.message); }
+}
+function openAward(id){
+  const b = CBS.find(x => x.id === id); if (!b){ $('cbAward').classList.add('hidden'); return; }
+  cbSel = id;
+  const got = new Map(b.awarded.map(a => [a.seat, a]));
+  $('cbAwardTitle').textContent = '頒發「' + b.icon + ' ' + b.name + '」';
+  $('cbSeats').innerHTML = DASH.students.map(st => `<label class="seat${got.has(st.seat) ? ' got' : ''}"><input type="checkbox" value="${st.seat}" ${got.has(st.seat) ? 'disabled' : ''}>${st.seat}${st.nick ? ' ' + esc(st.nick) : ''}</label>`).join('');
+  $('cbGot').innerHTML = b.awarded.length ? '已頒發：' + b.awarded.map(a => `<span class="pill p-ok">${a.seat} 號${a.note ? '・' + esc(a.note) : ''} <button class="x" data-cb-revoke="${a.seat}" title="收回">✕</button></span>`).join(' ') : '';
+  $('cbAward').classList.remove('hidden');
+}
+$('bCbNew').addEventListener('click', async () => {
+  try{ await api('tSaveCustomBadge', PW, {icon:$('cbIcon').value, name:$('cbName').value.trim(), desc:$('cbDesc').value.trim()}); $('cbName').value = $('cbDesc').value = ''; toast('徽章建立好了，可以按「頒發」'); loadCB(); }
+  catch(e){ toast(e.message); }
+});
+$('cbList').addEventListener('click', async e => {
+  const g = e.target.closest('[data-cb-give]'), d = e.target.closest('[data-cb-del]');
+  if (g) openAward(g.dataset.cbGive);
+  if (d){
+    if (d.dataset.armed !== '1'){ d.dataset.armed = '1'; d.textContent = '再按一次確定'; setTimeout(() => { d.dataset.armed = ''; d.textContent = '刪除'; }, 3000); return; }
+    try{ await api('tDeleteCustomBadge', PW, d.dataset.cbDel); if (cbSel === d.dataset.cbDel) cbSel = null; toast('徽章已刪除，已頒發的也一起收回'); loadCB(); }catch(err){ toast(err.message); }
+  }
+});
+$('bCbGive').addEventListener('click', async () => {
+  const seats = [...document.querySelectorAll('#cbSeats input:checked')].map(c => Number(c.value));
+  if (!seats.length){ toast('先勾選學生'); return; }
+  try{ const n = await api('tAwardBadge', PW, CUR.code, seats, cbSel, $('cbNote').value.trim()); $('cbNote').value = ''; toast('已頒發給 ' + n + ' 位學生'); loadCB(); }
+  catch(e){ toast(e.message); }
+});
+$('cbGot').addEventListener('click', async e => {
+  const r = e.target.closest('[data-cb-revoke]'); if (!r) return;
+  try{ await api('tRevokeBadge', PW, CUR.code, Number(r.dataset.cbRevoke), cbSel); toast('已收回'); loadCB(); }catch(err){ toast(err.message); }
+});
+$('bCbClose').addEventListener('click', () => { cbSel = null; $('cbAward').classList.add('hidden'); });
+
 /* ---------- 待檢查題目（學生回報） ---------- */
 let REPORTS = [], fromReport = null;
 function renderReportCount(){
@@ -757,8 +824,8 @@ $('repList').addEventListener('click', async e => {
   const ed = e.target.closest('[data-rep-edit]'), off = e.target.closest('[data-rep-off]'), ok = e.target.closest('[data-rep-ok]');
   try{
     if (ed){ fromReport = ed.dataset.repEdit; openEditor(REPORTS.find(g => g.q.id === fromReport).q); return; }
-    if (off){ await api('tSetEnabled', PW, [off.dataset.repOff], false); await api('tResolveReports', PW, off.dataset.repOff); toast('已停用，回報已處理'); }
-    if (ok){ await api('tResolveReports', PW, ok.dataset.repOk); toast('已標記沒問題'); }
+    if (off){ await api('tSetEnabled', PW, [off.dataset.repOff], false); await api('tResolveReports', PW, off.dataset.repOff, true); toast('已停用，回報的學生會得到「題目偵探」徽章'); }
+    if (ok){ await api('tResolveReports', PW, ok.dataset.repOk, false); toast('已標記沒問題'); }
     if (off || ok){ loadReports(); refreshUnits(); }
   }catch(err){ toast(err.message); }
 });
@@ -866,7 +933,7 @@ $('bSaveQ').addEventListener('click', async () => {
   data.image = qImage;
   try{
     await api('tSaveQuestion', PW, data);
-    if (fromReport && fromReport === editing){ await api('tResolveReports', PW, fromReport); fromReport = null; loadReports(); }
+    if (fromReport && fromReport === editing){ await api('tResolveReports', PW, fromReport, true); fromReport = null; loadReports(); }
     toast(editing ? '題目已更新' : '已新增一題，記得到「教學進度」確認單元有勾選'); $('qEditor').classList.add('hidden'); await refreshUnits(); loadBank();
   }
   catch(e){ $('qErr').textContent = e.message; }
@@ -898,11 +965,11 @@ $('bExpQ').addEventListener('click', () => exportData('questions'));
 
 /* ---------- 系統設定 ---------- */
 async function loadSettings(){
-  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; $('sMastery').value = s.perMastery; $('sRank').checked = s.showLeaderboard; }catch(e){}
+  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; $('sMastery').value = s.perMastery; $('sRank').checked = s.showLeaderboard; $('sCredit').value = s.credit || ''; }catch(e){}
 }
 $('bSaveSet').addEventListener('click', async () => {
   $('setErr').textContent = '';
-  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value, perMastery:$('sMastery').value, showLeaderboard:$('sRank').checked}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
+  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value, perMastery:$('sMastery').value, showLeaderboard:$('sRank').checked, credit:$('sCredit').value.trim()}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
   catch(e){ $('setErr').textContent = e.message; }
 });
 $('bSavePw').addEventListener('click', async () => {
