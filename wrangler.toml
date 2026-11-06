@@ -1,8 +1,7 @@
 # 知識群島：Cloudflare Worker（後端程式）＋靜態網頁（public/）＋ D1 資料庫
 name = "knowledge-islands"
 main = "src/worker.js"
-# Cloudflare 帳戶 ID（不是密碼，可以公開）
-account_id = "0c533a848def48684eda248032bb894d"
+# Cloudflare 帳戶 ID 不寫在這裡（避免公開），部署時由權杖自動判斷，或讀取 GitHub 的 CLOUDFLARE_ACCOUNT_ID
 compatibility_date = "2026-10-01"
 
 [assets]
