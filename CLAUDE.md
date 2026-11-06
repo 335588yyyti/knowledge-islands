@@ -1,7 +1,8 @@
 # 給 Claude 的專案規則
 
 ## 隱私：不能露出擁有者的帳號（最重要）
-- 程式、網頁內容、網址、說明文件、範例、截圖、測試資料、commit 訊息裡，**都不能出現擁有者的 Email、帳號名稱、GitHub 使用者名稱、Cloudflare 帳戶 ID 或子網域名稱**。
+- 程式、網頁內容、網址、說明文件、範例、截圖、測試資料、commit 訊息裡，**都不能出現擁有者的 Email（或 Email 的帳號名稱）、Cloudflare 帳戶 ID**。
+- GitHub 使用者名稱可以出現（例如 GitHub 專案網址、github.io 網址），擁有者已經同意。
 - 網址一律用相對路徑（例如 `/teacher`、`location.origin`），不要寫死網站的完整網址。
 - 需要提到 GitHub 或 Cloudflare 的位置時，寫「這個專案在 GitHub 的頁面」這類說法。
 - 帳戶 ID、權杖、密碼只能放在 GitHub Secrets，不要寫進任何檔案。
