@@ -176,6 +176,15 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <div id="examBox"></div>
         <div class="row" style="margin-top:14px"><button class="btn" id="bSaveExam">儲存考試設定</button><span class="muted small" id="examCount"></span></div>
       </div>
+      <div class="panel" id="linkPanel">
+        <h2>延伸冒險連結</h2>
+        <p class="muted small">為單元加上島外面的好資源，例如教學影片、互動網站、其他老師做的教學遊戲。只會出現在已經勾選「已教過」的單元。我們只放連結，不複製別人的內容。請只放適合學生、沒有不當廣告的網站。</p>
+        <div class="row"><select id="lkUnit" style="flex:1 1 220px" aria-label="單元"></select><input id="lkTitle" maxlength="40" placeholder="名稱（例如：分數除法動畫）" style="flex:1 1 180px"></div>
+        <div class="row" style="margin-top:8px"><input id="lkUrl" placeholder="網址（https:// 開頭）" style="flex:2 1 260px"><input id="lkNote" maxlength="80" placeholder="給學生的一句話（選填）" style="flex:2 1 220px"></div>
+        <div class="row" style="margin-top:8px"><label class="small"><input type="checkbox" id="lkStar"> 學生按「我完成了」給 1 顆星星（每人每個連結一次）</label>
+          <button class="btn" id="bLkSave">新增連結</button><button class="btn2 hidden" id="bLkCancel">取消修改</button><span class="err small" id="lkErr"></span></div>
+        <div id="lkList" style="margin-top:12px"></div>
+      </div>
     </section>
 
     <section id="tImport" class="hidden">
@@ -335,6 +344,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <tr><th>什麼時候</th><th>做什麼</th><th>在哪裡</th></tr>
           <tr><td>上完一課</td><td>勾選新單元</td><td>教學進度</td></tr>
           <tr><td>想引導學生</td><td>寫一句公告、指定任務島（例如這週先練數學）</td><td>教學進度 → 給學生的公告與任務</td></tr>
+          <tr><td>想補充課外資源</td><td>為單元加上影片、互動網站等連結，學生在地圖的「延伸冒險」看得到</td><td>教學進度 → 延伸冒險連結</td></tr>
           <tr><td>看到紅色數字</td><td>檢查學生回報的題目</td><td>題庫管理 → 待檢查題目</td></tr>
           <tr><td>每天／每週</td><td>看誰完成了、換點數、複製清單貼到集點系統</td><td>學生與加點</td></tr>
           <tr><td>每週</td><td>看全班卡在哪個單元、哪個觀念，找時間全班講解或個別指導</td><td>精熟總覽、學生與加點下方</td></tr>
@@ -482,7 +492,7 @@ async function loadClass(code){
   catch(e){ toast(e.message); }
 }
 
-function renderAll(){ setVersions(DASH.versions); renderOverview(); loadCB(); renderUnits(); renderExam(); renderClass(); renderNotice(); renderReportCount();
+function renderAll(){ setVersions(DASH.versions); renderOverview(); loadCB(); renderUnits(); renderExam(); renderClass(); renderNotice(); renderReportCount(); loadLinks();
   setVer('aVer', CUR.version); setVer('iVer', CUR.version); }
 
 function renderOverview(){
@@ -588,6 +598,47 @@ function unitListHtml(cls, chosen, all){
       `<label><input type="checkbox" class="cU" data-sem="${esc(k)}" value="${esc(u.key)}" ${chosen.has(u.key) ? 'checked' : ''}>${esc(u.unit)} <span class="muted small">${u.count} 題</span></label>`).join('') + '</div>').join('') + '</div>').join('');
 }
 function checked(box){ return [...$(box).querySelectorAll('.cU:checked')].map(c => c.value); }
+/* ---------- 延伸冒險連結 ---------- */
+let LINKS = [], lkEdit = null;
+const unitName = k => { const p = k.split('｜'); return p[2] + '・' + p[3] + '（' + p[0] + ' ' + p[1] + '）'; };
+async function loadLinks(){
+  const taught = new Set(CUR.units);
+  const opts = DASH.units.filter(u => u.version === CUR.version || u.version === '通用' || taught.has(u.key));
+  const keep = $('lkUnit').value;
+  $('lkUnit').innerHTML = '<option value="">選擇單元</option>' + opts.map(u => `<option value="${esc(u.key)}">${esc(unitName(u.key))}${taught.has(u.key) ? '' : '（還沒勾選已教）'}</option>`).join('');
+  if (keep) $('lkUnit').value = keep;
+  try{
+    LINKS = await api('tLinks', PW, CUR.code);
+    const by = {};
+    LINKS.forEach(l => (by[l.unitKey] = by[l.unitKey] || []).push(l));
+    $('lkList').innerHTML = Object.keys(by).length ? Object.keys(by).map(k => `<h3>${esc(unitName(k))}${taught.has(k) ? '' : ' <span class="pill p-mute">學生看不到：單元還沒勾選已教</span>'}</h3>` + by[k].map(l => `<div class="rep">
+      <b>${esc(l.title)}</b>${l.star ? ' <span class="pill p-warn">⭐+1</span>' : ''} <span class="small muted">這班 ${l.doneN} 人完成</span><br>
+      <a class="small" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" style="word-break:break-all">${esc(l.url)}</a>${l.note ? '<div class="small">' + esc(l.note) + '</div>' : ''}
+      <div class="row" style="margin-top:6px"><button class="btn2 sm" data-lk-edit="${esc(l.id)}">修改</button><button class="btn2 sm" data-lk-del="${esc(l.id)}">刪除</button></div></div>`).join('')).join('') : '<p class="muted small">還沒有延伸冒險連結。</p>';
+  }catch(e){ toast(e.message); }
+}
+function lkReset(){ lkEdit = null; $('lkTitle').value = $('lkUrl').value = $('lkNote').value = ''; $('lkStar').checked = false; $('bLkSave').textContent = '新增連結'; $('bLkCancel').classList.add('hidden'); $('lkErr').textContent = ''; }
+$('bLkSave').addEventListener('click', async () => {
+  $('lkErr').textContent = '';
+  try{
+    await api('tSaveLink', PW, {id: lkEdit, unitKey:$('lkUnit').value, title:$('lkTitle').value.trim(), url:$('lkUrl').value.trim(), note:$('lkNote').value.trim(), star:$('lkStar').checked});
+    toast(lkEdit ? '連結已更新' : '已新增延伸冒險'); lkReset(); loadLinks();
+  }catch(e){ $('lkErr').textContent = e.message; }
+});
+$('bLkCancel').addEventListener('click', lkReset);
+$('lkList').addEventListener('click', async e => {
+  const ed = e.target.closest('[data-lk-edit]'), del = e.target.closest('[data-lk-del]');
+  if (ed){
+    const l = LINKS.find(x => x.id === ed.dataset.lkEdit); lkEdit = l.id;
+    $('lkUnit').value = l.unitKey; $('lkTitle').value = l.title; $('lkUrl').value = l.url; $('lkNote').value = l.note; $('lkStar').checked = l.star;
+    $('bLkSave').textContent = '儲存修改'; $('bLkCancel').classList.remove('hidden'); $('linkPanel').scrollIntoView({behavior:'smooth'});
+  }
+  if (del){
+    if (del.dataset.armed !== '1'){ del.dataset.armed = '1'; del.textContent = '再按一次確定'; setTimeout(() => { del.dataset.armed = ''; del.textContent = '刪除'; }, 3000); return; }
+    try{ await api('tDeleteLink', PW, del.dataset.lkDel); toast('已刪除'); loadLinks(); }catch(err){ toast(err.message); }
+  }
+});
+
 function renderNotice(){ $('nText').value = CUR.notice || ''; $('nMission').value = CUR.mission || ''; }
 $('bSaveNotice').addEventListener('click', async () => {
   try{ CUR = await api('tSaveClass', PW, CUR.code, {notice:$('nText').value.trim(), mission:$('nMission').value}); toast('公告與任務已儲存，學生重新整理就會看到'); }catch(e){ toast(e.message); }

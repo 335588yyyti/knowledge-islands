@@ -425,6 +425,30 @@ try {
     assert.ok(got.has('groupall'), '題組全對');
     assert.ok(got.has('lighthouse'), '燈塔全對');
   });
+  await step('延伸冒險：老師加連結，學生出發、完成得星星（只一次）', async () => {
+    await t.click('[data-tab="tUnits"]');
+    await t.waitForFunction(() => document.querySelectorAll('#lkUnit option').length > 1);
+    await t.selectOption('#lkUnit', '通用｜6上｜數學｜分數除法');
+    await t.fill('#lkTitle', '分數除法動畫'); await t.fill('#lkUrl', 'javascript:alert(1)'); await t.click('#bLkSave');
+    await t.waitForFunction(() => document.querySelector('#lkErr').textContent.includes('http'));
+    await t.fill('#lkUrl', 'https://example.org/fraction'); await t.fill('#lkNote', '看完想一想：為什麼要顛倒相乘？'); await t.check('#lkStar');
+    await t.click('#bLkSave'); await toastHas(t, '已新增延伸冒險');
+    const c = { code: 'DEMO', seat: 3, pin: '3333' };
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    assert.match(await p.textContent('[data-island="數學"]'), /1 個延伸冒險/);
+    await p.click('#bLinks'); await p.waitForSelector('.lcard');
+    assert.equal(await p.getAttribute('.lcard a', 'href'), 'https://example.org/fraction');
+    assert.equal(await p.getAttribute('.lcard a', 'target'), '_blank');
+    const before = (await call('studentLogin', c)).ok.stars;
+    await p.click('[data-ldone]'); await p.waitForSelector('.ldone');
+    const id = (await call('getLinks', c)).ok[0].id;
+    const r2 = (await call('completeLink', c, id)).ok;
+    assert.equal(r2.first, false);
+    assert.equal((await call('studentLogin', c)).ok.stars, before + 1, '星星只給一次');
+    const tl = (await call('tLinks', PW, 'DEMO')).ok;
+    assert.equal(tl[0].doneN, 1);
+  });
   await step('關於與版權：顯示老師設定的署名', async () => {
     await call('tSaveSettings', PW, { credit: '測試國小 測試老師' });
     const p = await page('/');

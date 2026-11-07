@@ -229,6 +229,15 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .bcard .pips i.on{background:var(--butter);color:#7a5a00}
 .bcard .bnext{color:var(--ink);opacity:.8}
 .bcard .bnote{color:#a0522d;background:#fff0e3;border-radius:10px;padding:2px 6px;margin-top:2px}
+.llist{display:grid;gap:10px}
+.lcard{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#fff;border:3px solid #f1e3c8;border-radius:18px;padding:10px 14px}
+.lcard.done{border-color:var(--mint);background:#f1fbf6}
+.lcard .lt{flex:1 1 220px;min-width:0}
+.lcard .lt small{display:block;color:var(--muted);font-weight:600;word-break:break-all}
+.lcard .lt p{margin:4px 0 0;font-size:15px}
+.lcard .la{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lcard a.btn{text-decoration:none}
+.ldone{font-weight:800;color:var(--ok)}
 .teacher-link{text-align:center;margin:4px 0 0;font-size:14px}
 .teacher-link a{color:var(--ink);opacity:.6;font-weight:600}
 .teacher-link a:hover{opacity:1}
@@ -277,6 +286,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <span class="chip" title="連續天數"><span class="ic-fire"></span><span><span id="cStreak">0</span> 天</span></span>
         <button class="wardrobe-btn" id="bGuide2"><span class="tree">📘</span>航海手冊</button>
         <button class="wardrobe-btn" id="bBadges"><span class="tree">🏅</span>徽章牆 <b id="badgeCount" class="bc"></b></button>
+        <button class="wardrobe-btn hidden" id="bLinks"><span class="tree">🧭</span>延伸冒險</button>
         <button class="wardrobe-btn" id="bMastery"><span class="tree">🌳</span>精熟圖鑑</button>
         <button class="wardrobe-btn" id="bShop"><span id="shopIcon"></span>波波的衣櫃</button>
       </div>
@@ -332,6 +342,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>答錯沒關係，波波會告訴你正確答案和原因。</li>
         <li>覺得題目怪怪的（答案好像錯了、看不懂）？答完後按「<b>這題怪怪的？</b>」告訴老師。</li>
         <li>島上標著「<b>老師的任務</b>」的，是老師希望你先去的島喔！</li>
+        <li>地圖上的「<b>🧭 延伸冒險</b>」是老師推薦的影片或網站，點「出發」會開新分頁，看完回來按「我完成了」。</li>
       </ul>
 
       <h3>🪙 第 4 站：寶物怎麼來</h3>
@@ -376,6 +387,14 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>自己的密碼不要告訴別人，也不要用別人的座號登入。</li>
       </ul>
       <div class="actions" style="justify-content:center"><button class="btn" id="bGuideDone">我看完了，出航！</button></div>
+    </div>
+  </section>
+
+  <section id="vLinks" class="shop hidden">
+    <div class="qtop"><h2 style="flex:1">延伸冒險</h2><button class="btn soft small" id="bLinksBack">回地圖</button></div>
+    <div class="card">
+      <div class="talk"><span class="bob" id="lMascot"></span><div class="say">老師幫你找了島外面的好地方！點「出發」會打開新的分頁，看完或玩完再回來按「我完成了」。</div></div>
+      <div id="linkList"></div>
     </div>
   </section>
 
@@ -453,7 +472,7 @@ async function api(fn, ...args){
   return j.ok;
 }
 const $ = id => document.getElementById(id);
-function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery','vGuide','vBadges','vAbout'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
+function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery','vGuide','vBadges','vAbout','vLinks'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function store(k, v){ try{ v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
@@ -583,6 +602,7 @@ function renderMap(){
   $('todaySeal').textContent = s.todayDone ? '已蓋章' : '今日';
   $('mapMascot').innerHTML = mascot(s.todayDone ? 'cheer' : 'happy');
   $('shopIcon').innerHTML = mascot('happy');
+  $('bLinks').classList.toggle('hidden', !SUBJ.some(sj => (s.islands[sj.k] || {}).links));
   $('badgeCount').textContent = (s.badges || []).length + '/' + (s.badgeList || []).length;
   const ex = s.exam;
   $('exam').classList.toggle('hidden', !ex);
@@ -605,6 +625,7 @@ function renderMap(){
       ${islandSvg(sj, i, locked)}<div class="name">${sj.k}島</div>
       <div class="meta">${locked ? '還在睡覺，等老師開放' : '已掌握 ' + it.mastered + ' / ' + it.total + ' 題'}</div>
       ${locked ? '' : '<div class="meta">🌳 精熟 ' + (it.masteredUnits || 0) + ' / ' + (it.units || 0) + ' 單元</div>'}
+      ${!locked && it.links ? '<div class="meta">🧭 ' + it.links + ' 個延伸冒險</div>' : ''}
       <div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></button>`);
   });
   cards.push(`<button class="island${s.wrong?'':' locked'}" data-island="錯題">${reefSvg(!s.wrong)}<div class="name">錯題礁</div><div class="meta">${s.wrong ? '有 ' + s.wrong + ' 題等你救援' : '沒有錯題，太厲害了'}</div></button>`);
@@ -868,6 +889,31 @@ async function loadRank(){
   }catch(e){ $('badgeRank').innerHTML = '<p>' + esc(e.message) + '</p>'; }
 }
 $('bBadgesBack').addEventListener('click', () => { renderMap(); show('vMap'); });
+
+/* ---------- 延伸冒險 ---------- */
+async function openLinks(){
+  $('lMascot').innerHTML = mascot('happy'); show('vLinks');
+  $('linkList').innerHTML = '<p>載入中…</p>';
+  try{
+    const links = await api('getLinks', cred);
+    $('linkList').innerHTML = SUBJ.map(sj => {
+      const ls = links.filter(l => l.subject === sj.k);
+      if (!ls.length) return '';
+      return `<h3 style="color:${sj.d}">${sj.k}島</h3><div class="llist">` + ls.map(l => `<div class="lcard${l.done ? ' done' : ''}">
+        <div class="lt"><b>${esc(l.title)}</b><small>${esc(l.unit)}・${esc(l.host)}</small>${l.note ? '<p>' + esc(l.note) + '</p>' : ''}</div>
+        <div class="la"><a class="btn small" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">出發 ↗</a>
+        ${l.done ? '<span class="ldone">✓ 完成了</span>' : `<button class="btn soft small" data-ldone="${esc(l.id)}">我完成了${l.star ? '（⭐+1）' : ''}</button>`}</div></div>`).join('') + '</div>';
+    }).join('') || '<p>目前沒有延伸冒險。</p>';
+  }catch(e){ $('linkList').innerHTML = '<p>' + esc(e.message) + '</p>'; }
+}
+$('bLinks').addEventListener('click', openLinks);
+$('bLinksBack').addEventListener('click', () => { renderMap(); show('vMap'); });
+$('linkList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-ldone]'); if (!b) return;
+  b.disabled = true;
+  try{ const r = await api('completeLink', cred, b.dataset.ldone); state = r.state; if (r.star) sparkle(b); openLinks(); }
+  catch(err){ b.disabled = false; b.textContent = err.message; }
+});
 
 /* ---------- 關於與版權 ---------- */
 $('aboutLink').addEventListener('click', async e => {

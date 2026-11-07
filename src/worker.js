@@ -317,7 +317,9 @@ async function state(ctx, cls, s) {
   }
   const set = await ctx.settings();
   const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right }));
+  const linkRows = await ctx.all('SELECT unit_key FROM links WHERE unit_key IN (SELECT value FROM json_each(?))', cls.units || '[]');
   SUBJECTS.forEach(sj => {
+    islands[sj].links = linkRows.filter(r => r.unit_key.split('｜')[2] === sj).length;
     const us = units.filter(u => u.subject === sj);
     islands[sj].units = us.length; islands[sj].masteredUnits = us.filter(u => u.level === 3).length;
   });
@@ -1030,6 +1032,68 @@ API.tRevokeBadge = async (ctx, pw, code, seat, badgeId) => {
   const id = str(badgeId, 40);
   if (!id.startsWith('c:')) fail('系統徽章是學生自己達成的，不能收回。');
   await ctx.run('DELETE FROM badges WHERE class_code = ? AND seat = ? AND badge = ?', up(code), Math.floor(num(seat)), id);
+  return true;
+};
+
+/* ---------- 延伸冒險（外部資源連結） ---------- */
+
+function cleanUrl(u) {
+  u = str(u, 500);
+  let x;
+  try { x = new URL(u); } catch (e) { fail('網址格式不對，請貼完整的網址（https:// 開頭）。'); }
+  if (x.protocol !== 'https:' && x.protocol !== 'http:') fail('只能放 http 或 https 開頭的網址。');
+  return x.toString();
+}
+
+API.getLinks = async (ctx, cred) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const rows = await ctx.all(`SELECT l.*, (SELECT 1 FROM link_done d WHERE d.class_code = ? AND d.seat = ? AND d.link_id = l.id) AS done
+    FROM links l WHERE l.unit_key IN (SELECT value FROM json_each(?)) ORDER BY l.created`, cls.code, s.seat, cls.units || '[]');
+  return rows.map(r => {
+    const [, , subject, unit] = r.unit_key.split('｜');
+    let host = ''; try { host = new URL(r.url).hostname.replace(/^www\./, ''); } catch (e) {}
+    return { id: r.id, subject, unit, title: r.title, url: r.url, host, note: r.note, star: !!r.star, done: !!r.done };
+  });
+};
+
+API.completeLink = async (ctx, cred, id) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const l = await ctx.first('SELECT * FROM links WHERE id = ? AND unit_key IN (SELECT value FROM json_each(?))', str(id, 40), cls.units || '[]');
+  if (!l) fail('找不到這個延伸冒險。');
+  const r = await ctx.run('INSERT OR IGNORE INTO link_done (class_code, seat, link_id, day) VALUES (?,?,?,?)', cls.code, s.seat, l.id, today());
+  const first = r.meta.changes > 0;
+  if (first && l.star) { await ctx.run('UPDATE students SET stars = stars + 1 WHERE class_code = ? AND seat = ?', cls.code, s.seat); s.stars += 1; }
+  return { first, star: first && !!l.star, state: await state(ctx, cls, s) };
+};
+
+API.tLinks = async (ctx, pw, code) => {
+  await checkPw(ctx, pw);
+  const cls = await findClass(ctx, code);
+  const rows = await ctx.all(`SELECT l.*, (SELECT COUNT(*) FROM link_done d WHERE d.class_code = ? AND d.link_id = l.id) AS doneN
+    FROM links l ORDER BY l.unit_key, l.created`, cls.code);
+  return rows.map(r => ({ id: r.id, unitKey: r.unit_key, title: r.title, url: r.url, note: r.note, star: !!r.star, doneN: r.doneN }));
+};
+
+API.tSaveLink = async (ctx, pw, data) => {
+  await checkPw(ctx, pw);
+  data = data || {};
+  const unitKey = str(data.unitKey, 200), title = str(data.title, 40), note = str(data.note, 80);
+  if (!unitKey || !(await ctx.first('SELECT id FROM questions WHERE unit_key = ? LIMIT 1', unitKey))) fail('請選一個單元。');
+  if (!title) fail('請幫連結取個名稱。');
+  const url = cleanUrl(data.url);
+  const id = str(data.id, 40);
+  if (id) await ctx.run('UPDATE links SET unit_key = ?, title = ?, url = ?, note = ?, star = ? WHERE id = ?', unitKey, title, url, note, data.star ? 1 : 0, id);
+  else {
+    if ((await ctx.first('SELECT COUNT(*) AS n FROM links')).n >= 1000) fail('連結太多了，請先刪掉一些。');
+    await ctx.run('INSERT INTO links (id, unit_key, title, url, note, star, created) VALUES (?,?,?,?,?,?,?)', 'L' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(), unitKey, title, url, note, data.star ? 1 : 0, stampNow());
+  }
+  return true;
+};
+
+API.tDeleteLink = async (ctx, pw, id) => {
+  await checkPw(ctx, pw);
+  id = str(id, 40);
+  await ctx.db.batch([ctx.stmt('DELETE FROM link_done WHERE link_id = ?', id), ctx.stmt('DELETE FROM links WHERE id = ?', id)]);
   return true;
 };
 
