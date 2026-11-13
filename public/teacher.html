@@ -641,9 +641,9 @@ $('bUImport').addEventListener('click', async () => {
   const text = $('uImport').value; if (!text.trim()){ toast('先貼上單元表'); return; }
   try{
     const r = await api('tImportUnits', PW, text, CUR.versions);
+    await afterUnitsChanged();
     $('uImportMsg').innerHTML = `新增 ${r.added} 個單元${r.skipped ? '，' + r.skipped + ' 個已經有了' : ''}。` + (r.errors.length ? '<span class="err">' + r.errors.map(esc).join('；') + '</span>' : '');
     if (r.added && !r.errors.length) $('uImport').value = '';
-    await afterUnitsChanged();
   }catch(e){ $('uImportMsg').innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
 });
 function uAddHint(){ $('uAddHint').textContent = CUR ? '會加到：' + verOf(CUR, $('uSubj').value) + '版・' + CUR.grade + '年級' + CUR.sem + '學期・' + $('uSubj').value : ''; }
@@ -654,7 +654,7 @@ $('bUAdd').addEventListener('click', async () => {
   const sj = $('uSubj').value;
   try{
     const r = await api('tImportUnits', PW, [verOf(CUR, sj), CUR.grade, CUR.sem, sj, name].join('\t'), CUR.versions);
-    toast(r.added ? '已新增單元' : '這個單元已經有了'); $('uName').value = ''; await afterUnitsChanged();
+    $('uName').value = ''; await afterUnitsChanged(); toast(r.added ? '已新增單元' : '這個單元已經有了');
   }catch(e){ toast(e.message); }
 });
 $('unitBox').addEventListener('click', async e => {
@@ -664,10 +664,11 @@ $('unitBox').addEventListener('click', async e => {
   const v = window.prompt(`「${u.unit}」改成什麼名稱？\n（${u.count ? '有 ' + u.count + ' 題，題目會跟著改名' : '還沒有題目；輸入「刪除」可以刪掉這個單元'}）`, u.unit);
   if (v === null) return;
   try{
-    if (v.trim() === '刪除'){ await api('tDeleteUnit', PW, u.key); toast('已刪除單元'); }
-    else if (v.trim() && v.trim() !== u.unit){ await api('tRenameUnit', PW, u.key, v.trim()); toast('已改名'); }
+    let msg;
+    if (v.trim() === '刪除'){ await api('tDeleteUnit', PW, u.key); msg = '已刪除單元'; }
+    else if (v.trim() && v.trim() !== u.unit){ await api('tRenameUnit', PW, u.key, v.trim()); msg = '已改名'; }
     else return;
-    await afterUnitsChanged();
+    await afterUnitsChanged(); toast(msg);
   }catch(err){ toast(err.message); }
 });
 
