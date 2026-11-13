@@ -484,6 +484,39 @@ try {
     await t.selectOption('#uSubj', '自然'); await t.fill('#uName', '第四單元 電磁作用'); await t.click('#bUAdd'); await toastHas(t, '已新增單元');
     assert.match(await t.textContent('#unitBox'), /第四單元 電磁作用/);
   });
+  await step('上傳檔案：Word 課文放進課本重點、Excel 匯入題目與單元', async () => {
+    await t.click('[data-tab="tImport"]');
+    // 在瀏覽器裡產生測試用的 Word 與 Excel 檔
+    const files = await t.evaluate(async () => {
+      await loadLib('jszip', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+      await loadLib('xlsx', 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+      const z = new JSZip();
+      z.file('word/document.xml', '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>五、測試課文</w:t></w:r></w:p><w:p><w:r><w:t>小島上住著一隻愛讀書的海豹。</w:t></w:r></w:p></w:body></w:document>');
+      const docx = await z.generateAsync({type:'base64'});
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['年級','學期','科目','單元'],['6','上','社會','上傳的單元']]), '單元表');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['版本','年級','學期','科目','單元','觀念','題型','題目','選項A','選項B','選項C','選項D','答案','解析','情境'],['通用','6','上','社會','上傳的單元','','是非','Excel 上傳的題目','','','','','O','','']]), '題目一');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['版本','年級','學期','科目','單元','觀念','題型','題目','選項A','選項B','選項C','選項D','答案','解析','情境'],['通用','6','上','社會','上傳的單元','','是非','第二個分頁的題目','','','','','X','','']]), '題目二');
+      return { docx, xlsx: XLSX.write(wb, {type:'base64', bookType:'xlsx'}) };
+    });
+    await t.fill('#aUnit', ''); await t.fill('#aNotes', '');
+    await t.setInputFiles('#aFile', { name: '課文.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.from(files.docx, 'base64') });
+    await t.waitForFunction(() => document.querySelector('#aFileMsg').textContent.includes('讀到'));
+    assert.match(await t.inputValue('#aNotes'), /愛讀書的海豹/);
+    assert.equal(await t.inputValue('#aUnit'), '第五課 測試課文');
+    const xbuf = Buffer.from(files.xlsx, 'base64');
+    await t.setInputFiles('#iFile', { name: '題目.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: xbuf });
+    await t.waitForFunction(() => document.querySelector('#iFileMsg').textContent.includes('已讀入'));
+    assert.match(await t.textContent('#iFileMsg'), /題目一、題目二/);
+    await t.click('#bImport'); await t.waitForFunction(() => document.querySelector('#importMsg').textContent.includes('成功'));
+    assert.match(await t.textContent('#importMsg'), /成功匯入 2 題/);
+    await t.click('[data-tab="tUnits"]'); await t.click('#uMgr summary');
+    await t.setInputFiles('#uFile', { name: '單元.xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', buffer: xbuf });
+    await t.waitForFunction(() => document.querySelector('#uFileMsg').textContent.includes('已讀入'));
+    assert.match(await t.inputValue('#uImport'), /上傳的單元/);
+    assert.doesNotMatch(await t.inputValue('#uImport'), /題目/);
+    await t.setInputFiles('#aFile', { name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('x') });
+  });
   await step('關於與版權：顯示老師設定的署名', async () => {
     await call('tSaveSettings', PW, { credit: '測試國小 測試老師' });
     const p = await page('/');

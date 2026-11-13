@@ -74,6 +74,8 @@ td.num,th.num{text-align:right}
 .seat{display:flex;gap:4px;align-items:center;border:2px solid var(--line);border-radius:999px;padding:2px 10px;font-size:14px;background:#fff}
 .seat.got{opacity:.5}
 .pill .x{background:none;border:0;padding:0 0 0 4px;font-size:11px;color:inherit;cursor:pointer}
+.dropzone{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:6px 0}
+textarea.drag,.dropzone.drag{outline:3px dashed var(--coral);outline-offset:2px;background:#fff6f0}
 .umgr{margin-top:16px;border-top:2px dashed var(--line);padding-top:10px}
 .umgr summary{cursor:pointer;font-weight:700;color:var(--sea-deep)}
 .umgr h4{margin:14px 0 4px}
@@ -180,6 +182,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <p class="muted small">先把課本的單元目錄放進來，還沒有題目的單元也會列出來，照課本順序排列。單元旁邊的「✎」可以改名或刪除：改名時，題目、進度、段考範圍和延伸冒險都會跟著改；刪除只能刪還沒有題目的單元。</p>
           <h4>匯入單元表</h4>
           <p class="muted small">從 Excel 或課本目錄複製貼上，每行一個單元，欄位順序：<b>年級、學期、科目、單元</b>（最前面可以多一欄「版本」）。有標題列的話欄位順序可以不同。</p>
+          <div class="dropzone"><label class="btn2 sm" for="uFile" style="cursor:pointer">📎 選擇檔案</label><input type="file" id="uFile" class="hidden" accept=".xlsx,.xls,.csv,.tsv,.txt">
+            <span class="small muted">Excel、CSV 或文字檔都可以，也可以拖進下面的框。</span><span class="small" id="uFileMsg"></span></div>
           <textarea id="uImport" placeholder="6	上	數學	第一單元 最大公因數與最小公倍數&#10;6	上	數學	第二單元 分數的除法&#10;6	上	國語	第一課 我的志願" style="min-height:110px"></textarea>
           <div class="row" style="margin-top:8px"><span class="small muted">版本空白時，依這班各科的版本。</span><button class="btn" id="bUImport">匯入單元</button><span class="small" id="uImportMsg"></span></div>
           <h4>新增一個單元</h4>
@@ -218,12 +222,17 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
             <label class="small"><input id="aCount" type="number" value="10" min="1" max="30" style="width:64px" aria-label="題數"> 題</label></div>
           <p class="small muted" id="aModeHint" style="margin:6px 0 0">一般題：一題一題獨立出題。</p>
           <p><input id="aUnit" placeholder="單元名稱，例如：第三課 分數除法" style="width:100%"></p>
+          <div class="dropzone" id="aDrop"><label class="btn2 sm" for="aFile" style="cursor:pointer">📎 上傳課程內容</label><input type="file" id="aFile" class="hidden" accept=".docx,.pdf,.txt,.md,image/*" multiple>
+            <span class="small muted">課文、講義（Word、PDF、文字檔），也可以直接把檔案拖進下面的框。內容會自動放進「課本重點」。</span></div>
+          <p class="small" id="aFileMsg"></p>
           <textarea id="aNotes" placeholder="（選填）貼上課本重點、生字詞、老師筆記，AI 會依這些內容出題" style="min-height:120px;font-family:var(--f-body)"></textarea>
           <div class="row" style="margin-top:10px"><button class="btn2" id="bPrompt">複製提示詞</button><span class="small muted" id="promptMsg"></span></div>
         </div>
         <div class="panel">
           <h2>2. 貼上題目匯入</h2>
           <p class="muted small">可以直接從 Excel／Google 試算表複製貼上，也可以貼 CSV。沒有標題列時，欄位順序是：<br>版本、年級、學期、科目、單元、觀念、題型、題目、選項A、選項B、選項C、選項D、答案、解析、情境（素養題才需要）<br>有標題列的話，欄位順序可以不同。版本空白時，會用下面選的版本。</p>
+          <div class="dropzone"><label class="btn2 sm" for="iFile" style="cursor:pointer">📎 選擇檔案</label><input type="file" id="iFile" class="hidden" accept=".xlsx,.xls,.csv,.tsv,.txt">
+            <span class="small muted">Excel、CSV 或文字檔都可以，也可以拖進下面的框。</span><span class="small" id="iFileMsg"></span></div>
           <textarea id="iImport" placeholder="南一	6	上	數學	分數除法	分數除以分數	選擇	3/4 ÷ 1/4 = ?	1	2	3	4	C	3/4 × 4 = 3"></textarea>
           <div class="row" style="margin-top:10px">
             <label class="small"><input type="checkbox" id="iVerAuto" checked> 版本空白時，依這班各科的版本</label>
@@ -381,6 +390,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <li><b>用 AI 出素養題</b>：在科目旁邊的選單選「素養題」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。</li>
           <li><b>圖片題</b>：在「題庫管理」編輯題目時按「上傳圖片」，手機拍照或截圖都可以，系統會自動縮小。圖片會顯示在題目上方。</li>
           <li><b>學生回報</b>：學生答題後可以按「這題怪怪的？」回報。「題庫管理」上方的「待檢查題目」會列出來，分頁名稱旁的紅色數字是待檢查的題數。</li>
+          <li><b>上傳檔案</b>：「用 AI 出題」可以上傳課文、講義（Word、PDF、文字檔），內容會自動放進「課本重點」；「貼上題目匯入」和「匯入單元表」可以直接選 Excel、CSV 檔。檔案只在你的瀏覽器裡讀取，不會上傳到伺服器。照片沒辦法讀成文字，請直接附加到 AI 工具。</li>
           <li><b>AI 出的題目一定要先看過</b>，特別是答案和數字。錯的題目可以在「題庫管理」修改或停用。</li>
           <li><b>觀念</b>欄很重要：同一個觀念用一樣的寫法（例如都寫「通分」），後台才能統計出學生的弱點觀念。</li>
           <li>題庫依「版本＋年級＋學期＋科目＋單元」分類，所有班級共用，下一屆同版本直接勾選就能用。</li>
@@ -635,6 +645,105 @@ function unitListHtml(cls, chosen, all, editable){
     <div class="units">` + Object.keys(bySem[k]).map(sj => `<div class="ugroup"><h4>${esc(sj)}</h4>` + bySem[k][sj].map(u =>
       `<label><input type="checkbox" class="cU" data-sem="${esc(k)}" value="${esc(u.key)}" ${chosen.has(u.key) ? 'checked' : ''}>${esc(u.unit)} <span class="muted small">${u.count ? u.count + ' 題' : '還沒有題目'}</span>${editable ? `<button class="ued" type="button" data-ued="${esc(u.key)}" title="改名或刪除">✎</button>` : ''}</label>`).join('') + '</div>').join('') + '</div>').join('');
 }
+/* ---------- 讀取檔案（Word、PDF、Excel、文字檔），都在瀏覽器裡處理，不會上傳到伺服器 ---------- */
+const libs = {};
+function loadLib(key, src){
+  if (!libs[key]) libs[key] = new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = src; sc.onload = res; sc.onerror = () => rej(new Error('讀取工具載入失敗，請檢查網路')); document.head.appendChild(sc); });
+  return libs[key];
+}
+const extOf = f => (f.name.split('.').pop() || '').toLowerCase();
+async function docxText(file){
+  await loadLib('jszip', 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+  const zip = await JSZip.loadAsync(file);
+  const xml = await zip.file('word/document.xml').async('string');
+  const doc = new DOMParser().parseFromString(xml, 'application/xml');
+  const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  const out = [];
+  for (const p of doc.getElementsByTagNameNS(W, 'p')){
+    let t = '';
+    for (const n of p.getElementsByTagNameNS(W, '*')){ if (n.localName === 't') t += n.textContent; else if (n.localName === 'tab') t += ' '; }
+    if (t.trim()) out.push(t);
+  }
+  return out.join('\n');
+}
+async function pdfText(file){
+  await loadLib('pdfjs', 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({data: await file.arrayBuffer()}).promise;
+  const out = [];
+  for (let i = 1; i <= Math.min(pdf.numPages, 60); i++){
+    const c = await (await pdf.getPage(i)).getTextContent();
+    out.push(c.items.map(it => it.str + (it.hasEOL ? '\n' : '')).join(''));
+  }
+  return out.join('\n');
+}
+async function fileText(file){
+  const e = extOf(file);
+  if (e === 'docx') return docxText(file);
+  if (e === 'pdf') return pdfText(file);
+  if (e === 'doc') throw new Error('舊版 Word（.doc）讀不到，請在 Word 另存成 .docx');
+  if (/^image\//.test(file.type)) throw new Error('圖片沒辦法直接讀成文字，請把圖片直接附加到 AI 工具裡');
+  return (await file.text()).replace(/^\uFEFF/, '');
+}
+/** 表格檔轉成 Tab 分隔文字；Excel 有好幾個分頁時，挑標題列含 must、不含 not 的分頁合併 */
+async function tableText(file, must, not){
+  const e = extOf(file);
+  if (e !== 'xlsx' && e !== 'xls') return (await file.text()).replace(/^\uFEFF/, '');
+  await loadLib('xlsx', 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  const wb = XLSX.read(await file.arrayBuffer(), {type:'array'});
+  let header = null, rows = [], used = [];
+  for (const name of wb.SheetNames){
+    const data = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, defval:'', raw:false}).filter(r => r.join('').trim());
+    if (!data.length) continue;
+    const h = data[0].map(x => String(x).trim());
+    const isHead = h.includes(must) && !(not && h.includes(not));
+    if (!isHead && wb.SheetNames.length > 1) continue;
+    used.push(name);
+    if (!isHead){ rows = rows.concat(data); continue; }
+    if (!header){ header = h; rows.push(h); }
+    data.slice(1).forEach(r => rows.push(header.map(col => { const k = h.indexOf(col); return k < 0 ? '' : r[k]; })));
+  }
+  if (!rows.length) throw new Error('這個 Excel 檔裡找不到有「' + must + '」欄位的分頁');
+  return { text: rows.map(r => r.map(x => String(x).replace(/[\t\r\n]+/g, ' ')).join('\t')).join('\n'), sheets: used };
+}
+function dropTo(area, handler){
+  area.addEventListener('dragover', e => { e.preventDefault(); area.classList.add('drag'); });
+  area.addEventListener('dragleave', () => area.classList.remove('drag'));
+  area.addEventListener('drop', e => { e.preventDefault(); area.classList.remove('drag'); if (e.dataTransfer.files.length) handler([...e.dataTransfer.files]); });
+}
+async function loadCourseFiles(files){
+  const msgs = [];
+  for (const f of files){
+    try{
+      const t = (await fileText(f)).trim();
+      if (!t){ msgs.push(f.name + '：讀不到文字'); continue; }
+      $('aNotes').value = ($('aNotes').value.trim() ? $('aNotes').value.trim() + '\n\n' : '') + t;
+      if (!$('aUnit').value.trim()){
+        const first = t.split('\n').map(x => x.trim()).find(Boolean) || '';
+        const m = /^([一二三四五六七八九十]+)、\s*(\S+)/.exec(first);
+        $('aUnit').value = m ? '第' + m[1] + '課 ' + m[2] : first.slice(0, 30);
+      }
+      msgs.push(f.name + '：讀到 ' + t.length + ' 個字');
+    }catch(e){ msgs.push(f.name + '：' + e.message); }
+  }
+  $('aFileMsg').textContent = msgs.join('；');
+}
+$('aFile').addEventListener('change', e => { loadCourseFiles([...e.target.files]); e.target.value = ''; });
+dropTo($('aNotes'), loadCourseFiles); dropTo($('aDrop'), loadCourseFiles);
+async function loadTableFile(file, box, msg, must, not){
+  try{
+    const r = await tableText(file, must, not);
+    const text = typeof r === 'string' ? r : r.text;
+    $(box).value = text;
+    const n = text.split('\n').filter(x => x.trim()).length;
+    $(msg).textContent = `已讀入「${file.name}」${r.sheets && r.sheets.length ? '（分頁：' + r.sheets.join('、') + '）' : ''}，共 ${n} 行。確認後按匯入。`;
+  }catch(e){ $(msg).innerHTML = '<span class="err">' + esc(e.message) + '</span>'; }
+}
+$('iFile').addEventListener('change', e => { if (e.target.files[0]) loadTableFile(e.target.files[0], 'iImport', 'iFileMsg', '題目'); e.target.value = ''; });
+$('uFile').addEventListener('change', e => { if (e.target.files[0]) loadTableFile(e.target.files[0], 'uImport', 'uFileMsg', '單元', '題目'); e.target.value = ''; });
+dropTo($('iImport'), fs => loadTableFile(fs[0], 'iImport', 'iFileMsg', '題目'));
+dropTo($('uImport'), fs => loadTableFile(fs[0], 'uImport', 'uFileMsg', '單元', '題目'));
+
 /* ---------- 單元管理 ---------- */
 async function afterUnitsChanged(){ const d = await api('tDashboard', PW, CUR.code); DASH = d; CUR = d.cls; renderUnits(); renderExam(); loadLinks(); fillBankFilters(); }
 $('bUImport').addEventListener('click', async () => {
