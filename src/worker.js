@@ -597,25 +597,49 @@ API.setOutfit = async (ctx, cred, want) => {
 
 /* ---------- 老師 ---------- */
 
+/** 每一科的課本版本（沒設定的科目沿用班級的 version） */
+function subjectVersions(c) {
+  const m = jsonp(c.versions, {}), out = {};
+  SUBJECTS.forEach(sj => out[sj] = str(m[sj], 20) || c.version || COMMON);
+  return out;
+}
+function cleanVersions(v) {
+  const out = {};
+  SUBJECTS.forEach(sj => { const x = str(v && v[sj], 20); if (x) out[sj] = x; });
+  return JSON.stringify(out);
+}
+
 function classOut(c) {
-  return { code: c.code, name: c.name, grade: c.grade, sem: c.sem, version: c.version || COMMON, status: c.status, units: jsonp(c.units, []), exam: { name: c.exam_name, date: c.exam_date, units: jsonp(c.exam_units, []) }, notice: c.notice || '', mission: c.mission || '' };
+  return { code: c.code, name: c.name, grade: c.grade, sem: c.sem, version: c.version || COMMON, versions: subjectVersions(c), status: c.status, units: jsonp(c.units, []), exam: { name: c.exam_name, date: c.exam_date, units: jsonp(c.exam_units, []) }, notice: c.notice || '', mission: c.mission || '' };
 }
 
 async function versions(ctx) {
   const v = new Set([COMMON, '南一', '康軒', '翰林']);
   (await ctx.all('SELECT DISTINCT version FROM questions UNION SELECT DISTINCT version FROM classes')).forEach(r => r.version && v.add(r.version));
+  (await ctx.all('SELECT versions FROM classes')).forEach(r => Object.values(jsonp(r.versions, {})).forEach(x => x && v.add(x)));
   return [...v];
 }
 
+/** 單元清單：老師管理的單元表 ＋ 題庫裡有題目的單元，照課本順序排列 */
 async function unitCatalog(ctx) {
-  const rows = await ctx.all('SELECT unit_key AS key, version, grade, sem, subject, unit, COUNT(*) AS count, SUM(enabled) AS enabled FROM questions GROUP BY unit_key');
-  return rows.filter(r => r.enabled > 0).map(r => ({ key: r.key, version: r.version, grade: r.grade, sem: r.sem, subject: r.subject, unit: r.unit, count: r.enabled }))
-    .sort((a, b) => a.version.localeCompare(b.version) || a.grade - b.grade || a.sem.localeCompare(b.sem) || SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject) || a.unit.localeCompare(b.unit));
+  const [rows, own] = await Promise.all([
+    ctx.all('SELECT unit_key AS key, version, grade, sem, subject, unit, SUM(enabled) AS enabled FROM questions GROUP BY unit_key'),
+    ctx.all('SELECT * FROM units')
+  ]);
+  const m = {};
+  own.forEach(u => m[u.unit_key] = { key: u.unit_key, version: u.version, grade: u.grade, sem: u.sem, subject: u.subject, unit: u.unit, count: 0, sort: u.sort, own: true });
+  rows.forEach(r => {
+    if (m[r.key]) m[r.key].count = r.enabled || 0;
+    else if (r.enabled > 0) m[r.key] = { key: r.key, version: r.version, grade: r.grade, sem: r.sem, subject: r.subject, unit: r.unit, count: r.enabled, sort: 100000, own: false };
+  });
+  return Object.values(m).sort((a, b) => a.version.localeCompare(b.version) || a.grade - b.grade || a.sem.localeCompare(b.sem)
+    || SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject) || a.sort - b.sort || a.unit.localeCompare(b.unit, 'zh-Hant'));
 }
 
 API.tLogin = async (ctx, pw) => {
   await checkPw(ctx, pw);
-  const classes = await ctx.all('SELECT code, name, grade, sem, version, status FROM classes ORDER BY created, code');
+  const classes = (await ctx.all('SELECT code, name, grade, sem, version, versions, status FROM classes ORDER BY created, code'))
+    .map(c => ({ code: c.code, name: c.name, grade: c.grade, sem: c.sem, version: c.version, versions: subjectVersions(c), status: c.status }));
   return { classes, versions: await versions(ctx) };
 };
 
@@ -691,6 +715,7 @@ API.tSaveClass = async (ctx, pw, code, data) => {
   if (data.grade) c.grade = Math.min(6, Math.max(1, Math.floor(num(data.grade)))) || c.grade;
   if (data.sem === '上' || data.sem === '下') c.sem = data.sem;
   if (data.version) c.version = str(data.version, 20);
+  if (data.versions) c.versions = cleanVersions(data.versions);
   if (data.status === '進行中' || data.status === '封存') c.status = data.status;
   if (data.exam) {
     const d = str(data.exam.date, 10);
@@ -701,8 +726,8 @@ API.tSaveClass = async (ctx, pw, code, data) => {
   }
   if (data.notice !== undefined) c.notice = str(data.notice, 120);
   if (data.mission !== undefined) c.mission = SUBJECTS.concat(['錯題', '綜合', '段考']).includes(data.mission) ? data.mission : '';
-  await ctx.run('UPDATE classes SET name=?, grade=?, sem=?, version=?, units=?, status=?, exam_name=?, exam_date=?, exam_units=?, notice=?, mission=? WHERE code=?',
-    c.name, c.grade, c.sem, c.version, c.units, c.status, c.exam_name, c.exam_date, c.exam_units, c.notice || '', c.mission || '', c.code);
+  await ctx.run('UPDATE classes SET name=?, grade=?, sem=?, version=?, versions=?, units=?, status=?, exam_name=?, exam_date=?, exam_units=?, notice=?, mission=? WHERE code=?',
+    c.name, c.grade, c.sem, c.version, c.versions || '{}', c.units, c.status, c.exam_name, c.exam_date, c.exam_units, c.notice || '', c.mission || '', c.code);
   return classOut(c);
 };
 
@@ -713,8 +738,8 @@ API.tCreateClass = async (ctx, pw, data) => {
   if (!/^[A-Z0-9]{3,12}$/.test(code)) fail('班級代碼請用 3 到 12 個英文字母或數字，例如 115A601。');
   if (await ctx.first('SELECT code FROM classes WHERE code = ?', code)) fail('這個班級代碼已經有人用了。');
   const count = Math.min(Math.max(Math.floor(num(data.count)), 1), 60);
-  const stmts = [ctx.stmt('INSERT INTO classes (code, name, grade, sem, version, created) VALUES (?,?,?,?,?,?)',
-    code, str(data.name, 40) || code, Math.min(6, Math.max(1, Math.floor(num(data.grade)) || 6)), data.sem === '下' ? '下' : '上', str(data.version, 20) || COMMON, today())];
+  const stmts = [ctx.stmt('INSERT INTO classes (code, name, grade, sem, version, versions, created) VALUES (?,?,?,?,?,?,?)',
+    code, str(data.name, 40) || code, Math.min(6, Math.max(1, Math.floor(num(data.grade)) || 6)), data.sem === '下' ? '下' : '上', str(data.version, 20) || COMMON, cleanVersions(data.versions), today())];
   for (let i = 1; i <= count; i++) stmts.push(ctx.stmt('INSERT INTO students (class_code, seat) VALUES (?, ?)', code, i));
   await ctx.batch(stmts);
   return API.tLogin(ctx, pw);
@@ -803,6 +828,95 @@ API.tMastery = async (ctx, pw, code) => {
   };
 };
 
+/* ---------- 單元管理（課程進度表） ---------- */
+
+const UNIT_COLS = ['版本', '年級', '學期', '科目', '單元'];
+
+/** 匯入單元表：可以貼上課本目錄（Tab 或逗號分隔）。版本空白時依班級各科的版本 */
+API.tImportUnits = async (ctx, pw, text, defaultVersion) => {
+  await checkPw(ctx, pw);
+  const lines = parseTable(String(text || '').replace(/^\uFEFF/, ''));
+  if (lines.length > 1001) fail('一次最多 1000 個單元。');
+  let cols = UNIT_COLS, start = 0;
+  if (lines.length && lines[0].some(c => String(c).trim() === '單元')) { cols = lines[0].map(c => String(c).trim()); start = 1; }
+  else if (lines.length && lines[0].length === 4) cols = ['年級', '學期', '科目', '單元'];  // 沒有版本欄
+  const existing = new Set((await ctx.all('SELECT unit_key FROM units')).map(r => r.unit_key));
+  const maxSort = {};
+  (await ctx.all('SELECT version, grade, sem, subject, MAX(sort) AS m FROM units GROUP BY version, grade, sem, subject')).forEach(r => maxSort[[r.version, r.grade, r.sem, r.subject].join('|')] = r.m);
+  const stmts = [], errors = [];
+  let added = 0, skipped = 0;
+  for (let i = start; i < lines.length; i++) {
+    if (!lines[i].join('').trim()) continue;
+    const v = {};
+    cols.forEach((c, j) => v[c] = String(lines[i][j] == null ? '' : lines[i][j]).trim());
+    v['學期'] = (v['學期'] || '').replace('學期', '');
+    v['版本'] = v['版本'] || (defaultVersion && typeof defaultVersion === 'object' ? str(defaultVersion[v['科目']], 20) : str(defaultVersion, 20)) || COMMON;
+    if (!/^[1-6]$/.test(v['年級'])) { errors.push('第 ' + (i + 1) + ' 行：年級要填 1 到 6'); continue; }
+    if (!/^[上下]$/.test(v['學期'])) { errors.push('第 ' + (i + 1) + ' 行：學期要填「上」或「下」'); continue; }
+    if (!SUBJECTS.includes(v['科目'])) { errors.push('第 ' + (i + 1) + ' 行：科目要是 ' + SUBJECTS.join('、') + ' 其中之一'); continue; }
+    if (!v['單元']) { errors.push('第 ' + (i + 1) + ' 行：缺少單元名稱'); continue; }
+    const u = { version: str(v['版本'], 20), grade: Number(v['年級']), sem: v['學期'], subject: v['科目'], unit: str(v['單元'], 60) };
+    const key = unitKey(u);
+    if (existing.has(key)) { skipped++; continue; }
+    existing.add(key);
+    const g = [u.version, u.grade, u.sem, u.subject].join('|');
+    maxSort[g] = (maxSort[g] || 0) + 1;
+    stmts.push(ctx.stmt('INSERT INTO units (unit_key, version, grade, sem, subject, unit, sort, created) VALUES (?,?,?,?,?,?,?,?)', key, u.version, u.grade, u.sem, u.subject, u.unit, maxSort[g], today()));
+    added++;
+  }
+  await ctx.batch(stmts);
+  return { added, skipped, errors: errors.slice(0, 30) };
+};
+
+/** 單元改名：題目、班級進度、段考範圍、延伸冒險、精熟紀錄都跟著改 */
+API.tRenameUnit = async (ctx, pw, key, name) => {
+  await checkPw(ctx, pw);
+  key = str(key, 200); name = str(name, 60);
+  if (!name) fail('請輸入新的單元名稱。');
+  const p = key.split('｜');
+  if (p.length !== 4) fail('找不到這個單元。');
+  const m = /^(\d)(上|下)$/.exec(p[1]);
+  if (!m) fail('找不到這個單元。');
+  const nk = [p[0], p[1], p[2], name].join('｜');
+  if (nk === key) return true;
+  if (await ctx.first('SELECT unit_key FROM units WHERE unit_key = ? UNION SELECT unit_key FROM questions WHERE unit_key = ? LIMIT 1', nk, nk)) fail('已經有同名的單元了。');
+  const own = await ctx.first('SELECT * FROM units WHERE unit_key = ?', key);
+  const stmts = [
+    ctx.stmt('UPDATE questions SET unit = ?, unit_key = ? WHERE unit_key = ?', name, nk, key),
+    ctx.stmt('UPDATE links SET unit_key = ? WHERE unit_key = ?', nk, key),
+    ctx.stmt('UPDATE mastery SET unit_key = ? WHERE unit_key = ?', nk, key)
+  ];
+  if (own) stmts.push(ctx.stmt('UPDATE units SET unit = ?, unit_key = ? WHERE unit_key = ?', name, nk, key));
+  else stmts.push(ctx.stmt('INSERT INTO units (unit_key, version, grade, sem, subject, unit, sort, created) VALUES (?,?,?,?,?,?,?,?)', nk, p[0], Number(m[1]), m[2], p[2], name, 100000, today()));
+  (await ctx.all('SELECT code, units, exam_units FROM classes')).forEach(c => {
+    const u = jsonp(c.units, []), e = jsonp(c.exam_units, []);
+    if (u.includes(key) || e.includes(key)) stmts.push(ctx.stmt('UPDATE classes SET units = ?, exam_units = ? WHERE code = ?',
+      JSON.stringify(u.map(x => x === key ? nk : x)), JSON.stringify(e.map(x => x === key ? nk : x)), c.code));
+  });
+  await ctx.batch(stmts);
+  return true;
+};
+
+/** 刪除單元：只能刪沒有題目的單元 */
+API.tDeleteUnit = async (ctx, pw, key) => {
+  await checkPw(ctx, pw);
+  key = str(key, 200);
+  const n = (await ctx.first('SELECT COUNT(*) AS n FROM questions WHERE unit_key = ?', key)).n;
+  if (n) fail('這個單元還有 ' + n + ' 題，請先到「題庫管理」刪除或停用這些題目。');
+  const stmts = [
+    ctx.stmt('DELETE FROM units WHERE unit_key = ?', key),
+    ctx.stmt('DELETE FROM link_done WHERE link_id IN (SELECT id FROM links WHERE unit_key = ?)', key),
+    ctx.stmt('DELETE FROM links WHERE unit_key = ?', key)
+  ];
+  (await ctx.all('SELECT code, units, exam_units FROM classes')).forEach(c => {
+    const u = jsonp(c.units, []), e = jsonp(c.exam_units, []);
+    if (u.includes(key) || e.includes(key)) stmts.push(ctx.stmt('UPDATE classes SET units = ?, exam_units = ? WHERE code = ?',
+      JSON.stringify(u.filter(x => x !== key)), JSON.stringify(e.filter(x => x !== key)), c.code));
+  });
+  await ctx.batch(stmts);
+  return true;
+};
+
 /* ---------- 題庫 ---------- */
 
 // 「情境」放在最後一欄，舊的 14 欄格式照樣可以匯入
@@ -870,7 +984,8 @@ API.tImport = async (ctx, pw, text, source, defaultVersion) => {
     if (!lines[i].join('').trim()) continue;
     const v = {};
     cols.forEach((c, j) => v[c] = String(lines[i][j] == null ? '' : lines[i][j]).trim());
-    v['版本'] = v['版本'] || str(defaultVersion, 20) || COMMON;
+    // 版本空白時：可以給單一版本，或給 {科目: 版本} 依科目決定
+    v['版本'] = v['版本'] || (defaultVersion && typeof defaultVersion === 'object' ? str(defaultVersion[v['科目']], 20) : str(defaultVersion, 20)) || COMMON;
     v['學期'] = (v['學期'] || '').replace('學期', '');
     const msg = validateQ(v);
     if (msg) { errors.push('第 ' + (i + 1) + ' 行：' + msg); continue; }
@@ -1078,7 +1193,7 @@ API.tSaveLink = async (ctx, pw, data) => {
   await checkPw(ctx, pw);
   data = data || {};
   const unitKey = str(data.unitKey, 200), title = str(data.title, 40), note = str(data.note, 80);
-  if (!unitKey || !(await ctx.first('SELECT id FROM questions WHERE unit_key = ? LIMIT 1', unitKey))) fail('請選一個單元。');
+  if (!unitKey || !(await ctx.first('SELECT unit_key FROM questions WHERE unit_key = ? UNION SELECT unit_key FROM units WHERE unit_key = ? LIMIT 1', unitKey, unitKey))) fail('請選一個單元。');
   if (!title) fail('請幫連結取個名稱。');
   const url = cleanUrl(data.url);
   const id = str(data.id, 40);

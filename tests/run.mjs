@@ -167,20 +167,21 @@ try {
   });
   await step('匯入題目（有標題列、欄位順序不同、含錯誤行）', async () => {
     await t.click('[data-tab="tImport"]');
-    // 版本是下拉式選單，可以新增其他版本
+    // 版本是下拉式選單，可以新增其他版本（先取消「依這班各科的版本」才會出現）
+    await t.uncheck('#iVerAuto');
     assert.deepEqual(await t.$$eval('#iVer option', o => o.map(x => x.textContent)), ['南一', '康軒', '翰林', '通用', '＋ 其他版本…']);
     t.once('dialog', d => d.accept('部編'));
     await t.selectOption('#iVer', '__new__');
     assert.equal(await t.inputValue('#iVer'), '部編');
-    assert.ok((await t.$$eval('#nVer option', o => o.map(x => x.value))).includes('部編'));
-    await t.selectOption('#iVer', '南一');
+    assert.ok((await t.$$eval('#nV0 option', o => o.map(x => x.value))).includes('部編'));
+    await t.selectOption('#iVer', '南一'); await t.check('#iVerAuto');
     await t.fill('#iImport', '題目\t題型\t答案\t年級\t學期\t科目\t單元\t觀念\t選項A\t選項B\t選項C\t選項D\t版本\n1/2 + 1/3 = ?\t選擇\tB\t6\t上\t數學\t分數加減\t通分\t2/5\t5/6\t1/6\t2/6\t南一\n2/3 + 1/4 = ?\t填空\t11/12\t6\t上\t數學\t分數加減\t通分\t\t\t\t\t南一\n5 公尺 = ? 公分\t填空\t500\t6\t上\t數學\t長度\t單位換算\t\t\t\t\t康軒\n壞掉的\t選擇\tE\t6\t上\t數學\tX\t\t1\t2\t\t\t南一');
     await t.click('#bImport'); await t.waitForFunction(() => document.querySelector('#importMsg').textContent.includes('成功'));
     const m = await t.textContent('#importMsg');
     assert.match(m, /成功匯入 3 題/); assert.match(m, /第 5 行/);
   });
   await step('班級改成南一版，只看得到南一和通用單元', async () => {
-    await t.click('[data-tab="tClass"]'); await t.selectOption('#eVer', '南一'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
+    await t.click('[data-tab="tClass"]'); await t.selectOption('#eVAll', '南一'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
     await t.click('[data-tab="tUnits"]');
     const groups = await t.$$eval('#unitBox .semhead h3', e => e.map(x => x.textContent));
     assert.deepEqual(groups, ['南一版・6年級上學期', '通用・6年級上學期']);
@@ -449,6 +450,40 @@ try {
     const tl = (await call('tLinks', PW, 'DEMO')).ok;
     assert.equal(tl[0].doneN, 1);
   });
+  await step('各科不同版本：國語南一、數學翰林，只列出對應版本的單元', async () => {
+    await call('tImport', PW, '翰林\t6\t上\t數學\t翰林單元\t\t是非\t翰林題\t\t\t\t\tO\t', '老師', '通用');
+    await t.click('[data-tab="tClass"]');
+    await t.selectOption('#eV0', '南一'); await t.selectOption('#eV1', '翰林'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
+    const d = (await call('tDashboard', PW, 'DEMO')).ok.cls;
+    assert.equal(d.versions['國語'], '南一'); assert.equal(d.versions['數學'], '翰林');
+    await t.click('[data-tab="tUnits"]');
+    const txt = await t.textContent('#unitBox');
+    assert.match(txt, /翰林單元/);
+    assert.doesNotMatch(txt, /康軒/);
+    await t.click('[data-tab="tClass"]'); await t.selectOption('#eVAll', '南一'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
+  });
+  await step('教學進度：匯入單元表、改名（題目跟著改）、只能刪沒有題目的單元', async () => {
+    await t.click('[data-tab="tUnits"]');
+    await t.click('#uMgr summary');
+    await t.fill('#uImport', '年級\t學期\t科目\t單元\n6\t上\t國語\t第一課 我的志願\n6\t上\t國語\t第二課 夢想起飛\n6\t上\t理化\tX');
+    await t.click('#bUImport'); await t.waitForFunction(() => document.querySelector('#uImportMsg').textContent.includes('新增'));
+    assert.match(await t.textContent('#uImportMsg'), /新增 2 個單元/);
+    assert.match(await t.textContent('#unitBox'), /第一課 我的志願[\s\S]*還沒有題目/);
+    const cat = (await call('tDashboard', PW, 'DEMO')).ok.units;
+    const k1 = cat.find(u => u.unit === '第一課 我的志願').key;
+    // 有題目的單元改名：題目跟著改
+    const qk = cat.find(u => u.unit === '分數加減').key;
+    assert.ok((await call('tRenameUnit', PW, qk, '第三單元 分數加減')).ok);
+    const qs = (await call('tQuestions', PW, { q: '1/2 + 1/3' })).ok.rows;
+    assert.equal(qs[0].unit, '第三單元 分數加減');
+    assert.ok((await call('tDashboard', PW, 'DEMO')).ok.cls.units.some(u => u.endsWith('第三單元 分數加減')), '班級進度也跟著改');
+    assert.match((await call('tDeleteUnit', PW, qs[0].unit_key)).err, /還有/);
+    assert.ok((await call('tDeleteUnit', PW, k1)).ok);
+    // 介面：新增一個單元
+    await t.reload(); await t.waitForSelector('#vApp:not(.hidden)'); await t.click('[data-tab="tUnits"]'); await t.click('#uMgr summary');
+    await t.selectOption('#uSubj', '自然'); await t.fill('#uName', '第四單元 電磁作用'); await t.click('#bUAdd'); await toastHas(t, '已新增單元');
+    assert.match(await t.textContent('#unitBox'), /第四單元 電磁作用/);
+  });
   await step('關於與版權：顯示老師設定的署名', async () => {
     await call('tSaveSettings', PW, { credit: '測試國小 測試老師' });
     const p = await page('/');
@@ -485,7 +520,7 @@ try {
     assert.ok(await p.isVisible('#fLogin'));
   });
   await step('建立新的一屆', async () => {
-    await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.selectOption('#nVer', '康軒'); await t.fill('#nCount', '25');
+    await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.selectOption('#nVAll', '康軒'); await t.fill('#nCount', '25');
     await t.click('#bNewCls'); await toastHas(t, '建立好了');
     assert.equal(await t.inputValue('#selClass'), '115A601');
     assert.equal((await call('tDashboard', 'new-pass-1', '115A601')).ok.students.length, 25);
