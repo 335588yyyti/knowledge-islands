@@ -926,7 +926,7 @@ $('bImport').addEventListener('click', async () => {
   $('bImport').disabled = true;
   try{
     const r = await api('tImport', PW, text, $('iSource').value, $('iVerAuto').checked ? CUR.versions : ($('iVer').value.trim() || CUR.version));
-    $('importMsg').innerHTML = `<p><b>成功匯入 ${r.added} 題。</b>${r.added ? '記得到「教學進度」勾選新單元。' : ''}</p>` +
+    $('importMsg').innerHTML = `<p><b>成功匯入 ${r.added} 題。</b>${r.skipped ? '（' + r.skipped + ' 題已經有了，略過）' : ''}${r.added ? '記得到「教學進度」勾選新單元。' : ''}</p>` +
       (r.errors.length ? '<p class="err">以下幾行沒有匯入：</p><ul>' + r.errors.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' : '');
     if (r.added && !r.errors.length) $('iImport').value = '';
     loadClass(CUR.code);

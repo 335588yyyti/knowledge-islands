@@ -117,6 +117,7 @@ export default {
     try {
       const ctx = new Ctx(env);
       ctx.ip = request.headers.get('cf-connecting-ip') || 'local';
+      ctx.importToken = request.headers.get('x-import-token') || '';
       return json({ ok: (await fn(ctx, ...args)) ?? null });
     } catch (e) {
       if (e instanceof UserError) return json({ err: e.message }, 200);
@@ -835,6 +836,9 @@ const UNIT_COLS = ['版本', '年級', '學期', '科目', '單元'];
 /** 匯入單元表：可以貼上課本目錄（Tab 或逗號分隔）。版本空白時依班級各科的版本 */
 API.tImportUnits = async (ctx, pw, text, defaultVersion) => {
   await checkPw(ctx, pw);
+  return importUnits(ctx, text, defaultVersion);
+};
+async function importUnits(ctx, text, defaultVersion) {
   const lines = parseTable(String(text || '').replace(/^\uFEFF/, ''));
   if (lines.length > 1001) fail('一次最多 1000 個單元。');
   let cols = UNIT_COLS, start = 0;
@@ -973,13 +977,18 @@ function parseTable(text) {
 
 API.tImport = async (ctx, pw, text, source, defaultVersion) => {
   await checkPw(ctx, pw);
+  return importQuestions(ctx, text, source, defaultVersion);
+};
+async function importQuestions(ctx, text, source, defaultVersion) {
   const lines = parseTable(String(text || '').replace(/^﻿/, ''));
   if (lines.length > 2001) fail('一次最多匯入 2000 題，請分批貼上。');
   let cols = IMPORT_COLS, start = 0;
   if (lines.length && lines[0].some(c => String(c).trim() === '題目')) { cols = lines[0].map(c => String(c).trim()); start = 1; }
   const errors = [], stmts = [];
   const base = Date.now().toString(36).toUpperCase();
-  let added = 0;
+  // 同一個單元裡題目文字完全一樣的，視為重複，不再匯入（避免同一份檔案匯入兩次）
+  const seen = new Set((await ctx.all('SELECT unit_key, text, passage FROM questions')).map(r => r.unit_key + '\u0001' + r.text + '\u0001' + r.passage));
+  let added = 0, skipped = 0;
   for (let i = start; i < lines.length; i++) {
     if (!lines[i].join('').trim()) continue;
     const v = {};
@@ -990,13 +999,34 @@ API.tImport = async (ctx, pw, text, source, defaultVersion) => {
     const msg = validateQ(v);
     if (msg) { errors.push('第 ' + (i + 1) + ' 行：' + msg); continue; }
     const q = qFromRow(v, 'Q' + base + String(added).padStart(4, '0'), source);
+    const sig = q.unit_key + '\u0001' + q.text + '\u0001' + q.passage;
+    if (seen.has(sig)) { skipped++; continue; }
+    seen.add(sig);
     q.enabled = 1; q.created = today();
     stmts.push(ctx.stmt(`INSERT INTO questions (${Q_COLS.join(',')}) VALUES (${Q_COLS.map(() => '?').join(',')})`, ...Q_COLS.map(k => q[k])));
     added++;
   }
   await ctx.batch(stmts);
-  return { added, errors: errors.slice(0, 30), moreErrors: Math.max(0, errors.length - 30) };
+  return { added, skipped, errors: errors.slice(0, 30), moreErrors: Math.max(0, errors.length - 30) };
 };
+
+/* ---------- 匯入專用入口（給 Claude 對話直接匯入用） ----------
+ * 要帶 X-Import-Token 標頭，值必須等於 Cloudflare 上的 IMPORT_TOKEN。
+ * 只能「看班級版本與單元清單」和「新增單元、新增題目」，看不到學生資料，也不能刪改任何東西。
+ */
+function checkImport(ctx) {
+  const real = String(ctx.env.IMPORT_TOKEN || '');
+  if (real.length < 20) fail('網站還沒有設定匯入鑰匙（IMPORT_TOKEN）。');
+  if (!safeEqual(ctx.importToken, real)) fail('匯入鑰匙不正確。');
+}
+API.xClasses = async ctx => {
+  checkImport(ctx);
+  return (await ctx.all("SELECT code, name, grade, sem, version, versions, status FROM classes WHERE status = '進行中' ORDER BY created"))
+    .map(c => ({ code: c.code, name: c.name, grade: c.grade, sem: c.sem, versions: subjectVersions(c) }));
+};
+API.xUnits = async ctx => { checkImport(ctx); return unitCatalog(ctx); };
+API.xImportUnits = async (ctx, text, versions) => { checkImport(ctx); return importUnits(ctx, text, versions); };
+API.xImportQuestions = async (ctx, text, versions) => { checkImport(ctx); return importQuestions(ctx, text, 'AI', versions); };
 
 API.tQuestions = async (ctx, pw, filter) => {
   await checkPw(ctx, pw);

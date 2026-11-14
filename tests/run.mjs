@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
-const PORT = 8788, BASE = `http://127.0.0.1:${PORT}`, PW = 'test-pass-123';
+const PORT = 8788, BASE = `http://127.0.0.1:${PORT}`, PW = 'test-pass-123', IMPORT_TOKEN = 'test-import-token-0123456789';
 const dir = mkdtempSync(join(tmpdir(), 'ki-'));
 let current = '啟動';
 // 保險：整個測試超過 4 分鐘就印出卡在哪裡並結束，不會一直卡住
@@ -15,7 +15,7 @@ const watchdog = setTimeout(() => { console.error('\n測試超時，卡在：' +
 console.log('套用資料表…');
 execSync(`npx wrangler d1 migrations apply DB --local --persist-to ${dir}`, { stdio: ['ignore', 'ignore', 'inherit'], timeout: 120e3 });
 console.log('啟動 wrangler dev…');
-const dev = spawn('npx', ['wrangler', 'dev', '--port', String(PORT), '--ip', '127.0.0.1', '--persist-to', dir, '--var', 'TEACHER_PASSWORD:' + PW], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const dev = spawn('npx', ['wrangler', 'dev', '--port', String(PORT), '--ip', '127.0.0.1', '--persist-to', dir, '--var', 'TEACHER_PASSWORD:' + PW, '--var', 'IMPORT_TOKEN:' + IMPORT_TOKEN], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; dev.stdout.on('data', d => log += d); dev.stderr.on('data', d => log += d);
 const stop = () => { try { process.kill(-dev.pid); } catch (e) {} rmSync(dir, { recursive: true, force: true }); };
 
@@ -516,6 +516,23 @@ try {
     assert.match(await t.inputValue('#uImport'), /上傳的單元/);
     assert.doesNotMatch(await t.inputValue('#uImport'), /題目/);
     await t.setInputFiles('#aFile', { name: 'photo.png', mimeType: 'image/png', buffer: Buffer.from('x') });
+  });
+  await step('匯入專用鑰匙：只能新增單元與題目，重複的題目會略過', async () => {
+    const x = async (fn, token, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', headers: token ? { 'x-import-token': token } : {}, body: JSON.stringify({ args }) })).json());
+    assert.match((await x('xClasses', '')).err, /鑰匙不正確/);
+    assert.match((await x('xClasses', 'wrong-token-wrong-token')).err, /鑰匙不正確/);
+    const cls = (await x('xClasses', IMPORT_TOKEN)).ok;
+    assert.ok(cls.some(c => c.code === 'DEMO') && cls[0].versions['國語']);
+    assert.ok(!('students' in cls[0]), '看不到學生資料');
+    assert.match((await x('tDashboard', IMPORT_TOKEN, 'DEMO')).err, /老師密碼/, '鑰匙不能當老師密碼用');
+    const u = (await x('xImportUnits', IMPORT_TOKEN, '6\t上\t英文\tUnit 9 鑰匙測試', { 英文: '通用' })).ok;
+    assert.equal(u.added, 1);
+    const tsv = '版本\t年級\t學期\t科目\t單元\t觀念\t題型\t題目\t選項A\t選項B\t選項C\t選項D\t答案\t解析\t情境\n\t6\t上\t英文\tUnit 9 鑰匙測試\t\t是非\tKey test question\t\t\t\t\tO\t\t';
+    let r = (await x('xImportQuestions', IMPORT_TOKEN, tsv, { 英文: '通用' })).ok;
+    assert.equal(r.added, 1);
+    r = (await x('xImportQuestions', IMPORT_TOKEN, tsv, { 英文: '通用' })).ok;
+    assert.equal(r.added, 0); assert.equal(r.skipped, 1);
+    assert.ok((await x('xUnits', IMPORT_TOKEN)).ok.some(v => v.unit === 'Unit 9 鑰匙測試' && v.count === 1));
   });
   await step('關於與版權：顯示老師設定的署名', async () => {
     await call('tSaveSettings', PW, { credit: '測試國小 測試老師' });

@@ -18,3 +18,8 @@ npx wrangler deploy
 if [ -n "${TEACHER_PASSWORD:-}" ]; then
   printf '%s' "$TEACHER_PASSWORD" | npx wrangler secret put TEACHER_PASSWORD
 fi
+
+# 匯入專用鑰匙（選用）：讓 Claude 在對話裡直接匯入單元與題目，只能新增，不能看學生資料
+if [ -n "${IMPORT_TOKEN:-}" ]; then
+  printf '%s' "$IMPORT_TOKEN" | npx wrangler secret put IMPORT_TOKEN
+fi
