@@ -183,6 +183,7 @@ try {
   await step('班級改成南一版，只看得到南一和通用單元', async () => {
     await t.click('[data-tab="tClass"]'); await t.selectOption('#eVAll', '南一'); await t.click('#bSaveCls'); await toastHas(t, '已儲存');
     await t.click('[data-tab="tUnits"]');
+    await t.waitForSelector('#unitBox .semhead h3:text-is("南一版・6年級上學期")', { timeout: 5000 });
     const groups = await t.$$eval('#unitBox .semhead h3', e => e.map(x => x.textContent));
     assert.deepEqual(groups, ['南一版・6年級上學期', '通用・6年級上學期']);
     await t.click('#unitBox [data-all="南一版・6年級上學期"]'); await t.click('#bSaveUnits'); await toastHas(t, '進度已儲存');
