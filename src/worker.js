@@ -323,7 +323,8 @@ async function state(ctx, cls, s) {
     ex = { name: ex.name, date: ex.date, days: ex.days, total: ep.length, mastered: ep.filter(q => hist[q.id] && hist[q.id].last).length };
   }
   const set = await ctx.settings();
-  const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right }));
+  const practice = {}; pool.forEach(q => { if (!q.passage) practice[q.unit_key] = (practice[q.unit_key] || 0) + 1; });
+  const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right, practice: practice[u.key] || 0 }));
   const linkRows = await ctx.all('SELECT unit_key FROM links WHERE unit_key IN (SELECT value FROM json_each(?))', cls.units || '[]');
   SUBJECTS.forEach(sj => {
     islands[sj].links = linkRows.filter(r => r.unit_key.split('｜')[2] === sj).length;
@@ -470,6 +471,11 @@ API.getRound = async (ctx, cred, island) => {
   const lit = /^素養(?::(.+))?$/.exec(String(island || ''));
   if (SUBJECTS.includes(island)) {
     picked = prioritized((await poolFor(ctx, jsonp(cls.units, []))).filter(q => q.subject === island && !q.passage));
+  } else if (String(island || '').startsWith('單元:')) {
+    // 單課練習：只出這一個已教單元的一般題（素養題組在素養島）
+    const key = String(island).slice(3);
+    if (!jsonp(cls.units, []).includes(key)) fail('這個單元還沒開放。');
+    picked = prioritized((await poolFor(ctx, [key])).filter(q => !q.passage));
   } else if (lit) {
     if (lit[1] && !SUBJECTS.includes(lit[1])) fail('沒有這座島。');
     picked = byGroups((await poolFor(ctx, jsonp(cls.units, []))).filter(q => q.passage && (!lit[1] || q.subject === lit[1])));

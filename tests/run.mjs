@@ -57,6 +57,7 @@ try {
   // 答題輔助：wrongAt 裡的題目故意答錯
   async function play(p, island, wrongAt = []) {
     await p.click(`[data-island="${island}"]`);
+    if (await p.$('#pick')) await p.click('#pick [data-go]');  // 科目島先選「全部單元混合」
     await p.waitForSelector('#vQuiz:not(.hidden)');
     for (let i = 0; ; i++) {
       const q = await p.evaluate(() => round.qs[round.i]);
@@ -256,7 +257,7 @@ try {
     assert.equal(idx[idx.length - 1] - idx[0], idx.length - 1, '同一段情境要連在一起');
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
-    await p.click('[data-island="素養"]'); await p.click('#litPick [data-lit="素養:數學"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
+    await p.click('[data-island="素養"]'); await p.click('#pick [data-go="素養:數學"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
     let seen = false;
     for (let i = 0; i < 10 && !seen; i++) {
       const q = await p.evaluate(() => round.qs[round.i]);
@@ -278,6 +279,20 @@ try {
       await p.click('#bNext');
     }
     assert.ok(seen);
+  });
+  await step('單課練習：科目島可以選全部混合或只練一課', async () => {
+    const c3 = { code: 'DEMO', seat: 3, pin: '3333' };
+    const st = (await call('studentLogin', c3)).ok;
+    const u = st.units.find(x => x.subject === '數學' && x.practice);
+    const qs = (await call('getRound', c3, '單元:' + u.key)).ok;
+    assert.ok(qs.length && qs.every(q => q.unit === u.unit && !q.passage), '只出這一課');
+    assert.match((await call('getRound', c3, '單元:通用｜6上｜數學｜沒教過')).err, /還沒開放/);
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.click('[data-island="數學"]'); await p.waitForSelector('#pick');
+    assert.match(await p.textContent('#pick'), /全部單元混合/);
+    await p.click(`#pick [data-go="單元:${u.key}"]`); await p.waitForSelector('#vQuiz:not(.hidden)');
+    assert.match(await p.textContent('#qTag'), new RegExp(u.unit));
   });
   await step('AI 出題：選單可以選素養題，複製出素養題提示詞', async () => {
     await t.click('[data-tab="tImport"]');
@@ -352,7 +367,7 @@ try {
   await step('學生回報題目，老師在待檢查題目處理', async () => {
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
-    await p.click('[data-island="社會"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
+    await p.click('[data-island="社會"]'); await p.click('#pick [data-go="社會"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
     const q = await p.evaluate(() => round.qs[round.i]);
     if (q.type === '填空') { await p.fill('#iFill', 'x'); await p.click('#fFill button'); } else await p.click('#qBody .opt >> nth=0');
     await p.click('#bReport'); await p.click('.rchip[data-r="答案好像錯了"]');
