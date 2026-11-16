@@ -45,6 +45,11 @@ h3{font-size:16px;margin:18px 0 8px}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .row > .row{min-width:0}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.stack{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.clsWrap{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-start}
+.clsMain{flex:1 1 280px;min-width:0}
+.clsLink{flex:0 1 300px;min-width:0}
+.clsLink .copybox code{word-break:break-all}
 .tbl{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
 th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
@@ -308,30 +313,24 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     </section>
 
     <section id="tClass" class="hidden">
-      <div class="grid2">
+      <div class="stack">
         <div class="panel">
-          <h2>學生登入連結</h2>
-          <p class="muted small">把這個連結做成 QR code 或貼在班網，學生打開後輸入座號和自己設的 4 位數密碼。</p>
-          <div class="copybox"><code id="stuUrl"></code><button class="btn2 sm" id="bCopyUrl">複製</button></div>
+          <h2>這個班級</h2>
+          <div class="clsWrap">
+            <div class="clsMain">
+              <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select></div>
+              <h3 style="margin:12px 0 4px">各科課本版本</h3><div class="vgrid" id="eVGrid"><label class="small">全部設成 <select id="eVAll" class="verAll"></select></label><label class="small">國語 <select id="eV0" class="verSel" data-subj="國語"></select></label><label class="small">數學 <select id="eV1" class="verSel" data-subj="數學"></select></label><label class="small">自然 <select id="eV2" class="verSel" data-subj="自然"></select></label><label class="small">社會 <select id="eV3" class="verSel" data-subj="社會"></select></label><label class="small">英文 <select id="eV4" class="verSel" data-subj="英文"></select></label></div>
+              <div class="row" style="margin-top:12px"><button class="btn2" id="bSaveCls">儲存</button><button class="btn2" id="bAddStu">加 1 位學生</button><button class="btn2" id="bArchive"></button></div>
+              <p class="muted small">學期或課本版本換了，改這裡就好。畢業或結業時按「封存」，學生就不能再登入，資料仍會保留。</p>
+            </div>
+            <div class="clsLink">
+              <h3 style="margin:0 0 4px">學生登入連結</h3>
+              <p class="muted small">學生打開後輸入座號和自己設的 4 位數密碼。</p>
+              <div class="copybox"><code id="stuUrl"></code><button class="btn2 sm" id="bCopyUrl">複製</button></div>
           <div id="qr" style="margin-top:10px;width:160px;height:160px;overflow:hidden"></div>
           <p class="muted small">教師後台：學生登入頁最下面的「老師登入」，或直接打開 <code id="tUrl"></code></p>
-          <h3>這個班級</h3>
-          <div class="row"><input id="eName" placeholder="班級名稱"><select id="eGrade"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select><select id="eSem"><option>上</option><option>下</option></select></div>
-          <h3 style="margin:10px 0 4px">各科課本版本</h3><div class="vgrid" id="eVGrid"><label class="small">全部設成 <select id="eVAll" class="verAll"></select></label><label class="small">國語 <select id="eV0" class="verSel" data-subj="國語"></select></label><label class="small">數學 <select id="eV1" class="verSel" data-subj="數學"></select></label><label class="small">自然 <select id="eV2" class="verSel" data-subj="自然"></select></label><label class="small">社會 <select id="eV3" class="verSel" data-subj="社會"></select></label><label class="small">英文 <select id="eV4" class="verSel" data-subj="英文"></select></label></div>
-          <div class="row" style="margin-top:10px"><button class="btn2" id="bSaveCls">儲存</button><button class="btn2" id="bAddStu">加 1 位學生</button><button class="btn2" id="bArchive"></button></div>
-          <p class="muted small">學期或課本版本換了，改這裡就好。畢業或結業時按「封存」，學生就不能再登入，資料仍會保留。</p>
-        </div>
-        <div class="panel">
-          <h2>新的一屆</h2>
-          <p class="muted small">新增一個班級代碼，題庫會自動沿用。建議代碼包含學年度，例如 <b>115A601</b>。</p>
-          <div class="row"><input id="nCode" placeholder="班級代碼" style="width:140px"><input id="nName" placeholder="名稱，例如 115 學年 六年一班" style="flex:1;min-width:180px"></div>
-          <div class="row" style="margin-top:10px"><label class="small">年級 <select id="nGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
-            <label class="small">學期 <select id="nSem"><option>上</option><option>下</option></select></label>
-            <label class="small">人數 <input id="nCount" type="number" value="28" min="1" max="60" style="width:80px"></label>
-            <label class="small" title="老師自己試玩用，座號是最後一號的下一個整十（例如 26 號 → 30 號）；不算進全班統計、精熟人數、排行榜和加點"><input type="checkbox" id="nTest" checked> 加一個測試帳號（下一個整十號）</label>
-            <button class="btn" id="bNewCls">建立</button></div>
-          <h3 style="margin:10px 0 4px">各科課本版本</h3><div class="vgrid" id="nVGrid"><label class="small">全部設成 <select id="nVAll" class="verAll"></select></label><label class="small">國語 <select id="nV0" class="verSel" data-subj="國語"></select></label><label class="small">數學 <select id="nV1" class="verSel" data-subj="數學"></select></label><label class="small">自然 <select id="nV2" class="verSel" data-subj="自然"></select></label><label class="small">社會 <select id="nV3" class="verSel" data-subj="社會"></select></label><label class="small">英文 <select id="nV4" class="verSel" data-subj="英文"></select></label></div>
-          <p class="err small" id="newErr"></p>
+            </div>
+          </div>
         </div>
         <div class="panel">
           <h2>匯出（Excel）</h2>
@@ -353,6 +352,20 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <h3>修改老師密碼</h3>
           <div class="row"><input id="sPw1" type="password" placeholder="新密碼（至少 6 個字）"><input id="sPw2" type="password" placeholder="再輸入一次"><button class="btn2" id="bSavePw">修改</button></div>
           <p class="err small" id="setErr"></p>
+        </div>
+        <div class="panel">
+          <details class="umgr" id="newClsBox" style="border:0;margin:0;padding:0">
+            <summary>新的一屆（建立新班級，每學年開學用一次）</summary>
+            <p class="muted small">新增一個班級代碼，題庫會自動沿用。建議代碼包含學年度，例如 <b>115A601</b>。</p>
+            <div class="row"><input id="nCode" placeholder="班級代碼" style="width:140px"><input id="nName" placeholder="名稱，例如 115 學年 六年一班" style="flex:1;min-width:180px"></div>
+            <div class="row" style="margin-top:10px"><label class="small">年級 <select id="nGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
+            <label class="small">學期 <select id="nSem"><option>上</option><option>下</option></select></label>
+            <label class="small">人數 <input id="nCount" type="number" value="28" min="1" max="60" style="width:80px"></label>
+            <label class="small" title="老師自己試玩用，座號是最後一號的下一個整十（例如 26 號 → 30 號）；不算進全班統計、精熟人數、排行榜和加點"><input type="checkbox" id="nTest" checked> 加一個測試帳號（下一個整十號）</label>
+            <button class="btn" id="bNewCls">建立</button></div>
+            <h3 style="margin:10px 0 4px">各科課本版本</h3><div class="vgrid" id="nVGrid"><label class="small">全部設成 <select id="nVAll" class="verAll"></select></label><label class="small">國語 <select id="nV0" class="verSel" data-subj="國語"></select></label><label class="small">數學 <select id="nV1" class="verSel" data-subj="數學"></select></label><label class="small">自然 <select id="nV2" class="verSel" data-subj="自然"></select></label><label class="small">社會 <select id="nV3" class="verSel" data-subj="社會"></select></label><label class="small">英文 <select id="nV4" class="verSel" data-subj="英文"></select></label></div>
+            <p class="err small" id="newErr"></p>
+          </details>
         </div>
       </div>
     </section>
@@ -528,7 +541,7 @@ function afterLogin(r){
   let pick = null; try{ pick = localStorage.getItem('kq_tc'); }catch(_){}
   if (!CLASSES.some(c => c.code === pick)) pick = (active[active.length - 1] || CLASSES[0] || {}).code;
   if (pick){ $('selClass').value = pick; loadClass(pick); }
-  else { switchTab('tClass'); toast('先建立第一個班級'); }
+  else { switchTab('tClass'); $('newClsBox').open = true; toast('先建立第一個班級'); }
 }
 
 $('selClass').addEventListener('change', e => loadClass(e.target.value));

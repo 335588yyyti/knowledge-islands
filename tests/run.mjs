@@ -603,6 +603,7 @@ try {
     await t.click('[data-tab="tClass"]');
   });
   await step('建立新的一屆', async () => {
+    await t.click('#newClsBox summary');
     await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.selectOption('#nVAll', '康軒'); await t.fill('#nCount', '25');
     await t.click('#bNewCls'); await toastHas(t, '建立好了');
     assert.equal(await t.inputValue('#selClass'), '115A601');
@@ -624,7 +625,7 @@ try {
     await mt.fill('#iPw', 'new-pass-1'); await mt.click('#fLogin button'); await mt.waitForSelector('#vApp:not(.hidden)');
     for (const tab of ['tOverview', 'tUnits', 'tImport', 'tMastery', 'tBank', 'tClass', 'tGuide']) {
       await mt.click(`[data-tab="${tab}"]`); await mt.waitForTimeout(300);
-      assert.equal(await mt.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, tab + ' 太寬');
+      assert.equal(await mt.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, tab + ' 太寬：' + await mt.evaluate(() => [...document.querySelectorAll('body *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1 && e.offsetParent).slice(0, 4).map(e => e.tagName + '#' + e.id + '.' + e.className + ' ' + Math.round(e.getBoundingClientRect().right)).join(' / ')));
     }
   });
   assert.deepEqual(errors, []);
