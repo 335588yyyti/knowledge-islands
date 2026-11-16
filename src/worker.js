@@ -652,12 +652,12 @@ API.tDashboard = async (ctx, pw, code) => {
   const [students, days, units, qs, cs, wrongNow, mPend] = await Promise.all([
     ctx.all('SELECT * FROM students WHERE class_code = ? ORDER BY seat', cls.code),
     ctx.all('SELECT seat, COUNT(DISTINCT day) AS n FROM logs WHERE class_code = ? AND day >= ? GROUP BY seat', cls.code, week),
-    ctx.all('SELECT subject, unit, SUM(ok) AS right, COUNT(*) AS total FROM logs WHERE class_code = ? GROUP BY subject, unit', cls.code),
+    ctx.all('SELECT subject, unit, SUM(ok) AS right, COUNT(*) AS total FROM logs l WHERE class_code = ? AND NOT EXISTS (SELECT 1 FROM students t WHERE t.class_code = l.class_code AND t.seat = l.seat AND t.is_test = 1) GROUP BY subject, unit', cls.code),
     ctx.all(`SELECT l.qid AS id, q.text, q.subject, q.unit, q.answer, COUNT(*) - SUM(l.ok) AS wrong, COUNT(*) AS total
-      FROM logs l JOIN questions q ON q.id = l.qid WHERE l.class_code = ? GROUP BY l.qid
+      FROM logs l JOIN questions q ON q.id = l.qid WHERE l.class_code = ? AND NOT EXISTS (SELECT 1 FROM students t WHERE t.class_code = l.class_code AND t.seat = l.seat AND t.is_test = 1) GROUP BY l.qid
       HAVING total >= 3 AND wrong > 0 ORDER BY wrong * 1.0 / total DESC LIMIT 8`, cls.code),
     ctx.all(`SELECT q.subject, q.concept, SUM(l.ok) AS right, COUNT(*) AS total FROM logs l JOIN questions q ON q.id = l.qid
-      WHERE l.class_code = ? AND q.concept <> '' GROUP BY q.subject, q.concept`, cls.code),
+      WHERE l.class_code = ? AND q.concept <> '' AND NOT EXISTS (SELECT 1 FROM students t WHERE t.class_code = l.class_code AND t.seat = l.seat AND t.is_test = 1) GROUP BY q.subject, q.concept`, cls.code),
     ctx.all(`SELECT p.seat, q.subject, q.concept FROM progress p JOIN questions q ON q.id = p.qid
       WHERE p.class_code = ? AND p.last_ok = 0`, cls.code),
     ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code)
@@ -666,12 +666,13 @@ API.tDashboard = async (ctx, pw, code) => {
   const bMap = {}, cMap = Object.fromEntries((await customBadges(ctx)).map(b => [b.id, b]));
   (await ctx.all('SELECT seat, badge FROM badges WHERE class_code = ?', cls.code)).forEach(r => (bMap[r.seat] = bMap[r.seat] || []).push(r.badge));
   const dayMap = {}; days.forEach(r => dayMap[r.seat] = r.n);
+  const testSeats = new Set(students.filter(s => s.is_test).map(s => s.seat));
   const weakBy = {}, wrongCount = {}, cPeople = {};
   wrongNow.forEach(r => {
     wrongCount[r.seat] = (wrongCount[r.seat] || 0) + 1;
     concepts(r.concept).forEach(c => {
       const w = weakBy[r.seat] = weakBy[r.seat] || {}; w[c] = (w[c] || 0) + 1;
-      const k = r.subject + '｜' + c; (cPeople[k] = cPeople[k] || new Set()).add(r.seat);
+      const k = r.subject + '｜' + c; if (!testSeats.has(r.seat)) (cPeople[k] = cPeople[k] || new Set()).add(r.seat);
     });
   });
   const cStat = {};
@@ -688,8 +689,8 @@ API.tDashboard = async (ctx, pw, code) => {
       const coinPts = rt.coinsPerPoint > 0 ? Math.floor(coinsPending / rt.coinsPerPoint) : 0;
       const w = weakBy[s.seat] || {};
       return {
-        seat: s.seat, nick: s.nick, hasPin: !!s.pin, coins: s.coins, earned: s.earned, stars: s.stars,
-        stamps, coinsPending, masteryPending: mMap[s.seat] || 0, points: stamps * rt.perStamp + coinPts + (mMap[s.seat] || 0) * rt.perMastery,
+        seat: s.seat, nick: s.nick, isTest: !!s.is_test, hasPin: !!s.pin, coins: s.coins, earned: s.earned, stars: s.stars,
+        stamps, coinsPending, masteryPending: mMap[s.seat] || 0, points: s.is_test ? 0 : stamps * rt.perStamp + coinPts + (mMap[s.seat] || 0) * rt.perMastery,
         streak: liveStreak(s), last: s.last_day, weekDays: dayMap[s.seat] || 0,
         total: s.total, right: s.right_count, wrongNow: wrongCount[s.seat] || 0,
         weak: Object.keys(w).sort((a, b) => w[b] - w[a]).slice(0, 2),
@@ -742,6 +743,7 @@ API.tCreateClass = async (ctx, pw, data) => {
   const stmts = [ctx.stmt('INSERT INTO classes (code, name, grade, sem, version, versions, created) VALUES (?,?,?,?,?,?,?)',
     code, str(data.name, 40) || code, Math.min(6, Math.max(1, Math.floor(num(data.grade)) || 6)), data.sem === '下' ? '下' : '上', str(data.version, 20) || COMMON, cleanVersions(data.versions), today())];
   for (let i = 1; i <= count; i++) stmts.push(ctx.stmt('INSERT INTO students (class_code, seat) VALUES (?, ?)', code, i));
+  if (data.testSeat !== false) stmts.push(ctx.stmt("INSERT INTO students (class_code, seat, nick, is_test) VALUES (?, 0, '老師測試', 1)", code));
   await ctx.batch(stmts);
   return API.tLogin(ctx, pw);
 };
@@ -764,6 +766,14 @@ API.tResetPin = async (ctx, pw, code, seat) => {
   return true;
 };
 
+/** 測試帳號：老師自己試玩用，不算進全班統計、精熟人數、排行榜和加點 */
+API.tSetTest = async (ctx, pw, code, seat, on) => {
+  await checkPw(ctx, pw);
+  const r = await ctx.run('UPDATE students SET is_test = ? WHERE class_code = ? AND seat = ?', on ? 1 : 0, up(code), Math.floor(num(seat)));
+  if (!r.meta.changes) fail('找不到這位學生。');
+  return true;
+};
+
 API.tSetNick = async (ctx, pw, code, seat, nick) => {
   await checkPw(ctx, pw);
   await ctx.run('UPDATE students SET nick = ? WHERE class_code = ? AND seat = ?', str(nick, 10), up(code), Math.floor(num(seat)));
@@ -781,7 +791,7 @@ API.tRedeem = async (ctx, pw, code, seats, note) => {
   const mMap = {};
   (await ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code)).forEach(r => mMap[r.seat] = r.n);
   (await ctx.all('SELECT * FROM students WHERE class_code = ?', cls.code)).forEach(s => {
-    if (!want.has(s.seat)) return;
+    if (!want.has(s.seat) || s.is_test) return;
     const stamps = s.stamps - s.stamps_redeemed, coinsPending = s.earned - s.coins_redeemed;
     const coinPts = rt.coinsPerPoint > 0 ? Math.floor(coinsPending / rt.coinsPerPoint) : 0;
     const masteryN = rt.perMastery > 0 ? (mMap[s.seat] || 0) : 0;
@@ -808,7 +818,7 @@ API.tMastery = async (ctx, pw, code) => {
   const cls = await findClass(ctx, code);
   const pool = await poolFor(ctx, jsonp(cls.units, []));
   const [students, prog] = await Promise.all([
-    ctx.all('SELECT seat, nick FROM students WHERE class_code = ? ORDER BY seat', cls.code),
+    ctx.all('SELECT seat, nick, is_test FROM students WHERE class_code = ? ORDER BY is_test, seat', cls.code),
     ctx.all('SELECT seat, qid, last_ok, right_days, last_right_day, last_day FROM progress WHERE class_code = ?', cls.code)
   ]);
   const hBy = {};
@@ -821,10 +831,10 @@ API.tMastery = async (ctx, pw, code) => {
   const rows = students.map(st => {
     const lv = {}, review = [];
     unitLevels(pool, hBy[st.seat] || {}).forEach(u => { lv[u.key] = u.level; if (u.review) review.push(u.key); });
-    return { seat: st.seat, nick: st.nick, levels: lv, review };
+    return { seat: st.seat, nick: st.nick, isTest: !!st.is_test, levels: lv, review };
   });
   return {
-    units: order.map(k => { const u = base.find(x => x.key === k); return { key: k, subject: u.subject, unit: u.unit, total: u.total, mastered: rows.filter(r => r.levels[k] === 3).length }; }),
+    units: order.map(k => { const u = base.find(x => x.key === k); return { key: k, subject: u.subject, unit: u.unit, total: u.total, mastered: rows.filter(r => !r.isTest && r.levels[k] === 3).length }; }),
     students: rows
   };
 };
@@ -1250,7 +1260,7 @@ API.leaderboard = async (ctx, cred) => {
   if (set.show_leaderboard === '0') fail('老師目前沒有開放排行榜。');
   const rows = await ctx.all(`SELECT st.seat, st.nick, COUNT(b.badge) AS n, MAX(b.day) AS last FROM students st
     LEFT JOIN badges b ON b.class_code = st.class_code AND b.seat = st.seat
-    WHERE st.class_code = ? AND st.pin <> '' GROUP BY st.seat ORDER BY n DESC, last ASC, st.seat`, cls.code);
+    WHERE st.class_code = ? AND st.pin <> '' AND st.is_test = 0 GROUP BY st.seat ORDER BY n DESC, last ASC, st.seat`, cls.code);
   let rank = 0, prev = -1;
   return { total: BADGES.length + (await customBadges(ctx)).length, rows: rows.map((r, i) => { if (r.n !== prev) { rank = i + 1; prev = r.n; } return { rank, name: r.nick || (r.seat + ' 號'), n: r.n, me: r.seat === s.seat }; }) };
 };
@@ -1294,7 +1304,7 @@ API.tExport = async (ctx, pw, what, code) => {
   if (what === 'students') {
     const rt = await rate(ctx);
     return (await ctx.all('SELECT * FROM students WHERE class_code = ? ORDER BY seat', cls.code)).map(s => ({
-      座號: s.seat, 暱稱: s.nick, 金幣餘額: s.coins, 累積金幣: s.earned, 未換金幣: s.earned - s.coins_redeemed, 星星: s.stars, 印章: s.stamps, 未換印章: s.stamps - s.stamps_redeemed,
+      座號: s.seat, 暱稱: s.nick, 測試帳號: s.is_test ? '是' : '', 金幣餘額: s.coins, 累積金幣: s.earned, 未換金幣: s.earned - s.coins_redeemed, 星星: s.stars, 印章: s.stamps, 未換印章: s.stamps - s.stamps_redeemed,
       可加點數: (s.stamps - s.stamps_redeemed) * rt.perStamp + (rt.coinsPerPoint > 0 ? Math.floor((s.earned - s.coins_redeemed) / rt.coinsPerPoint) : 0),
       連續天數: liveStreak(s), 最後完成日: s.last_day, 總答題: s.total, 答對題: s.right_count, 正確率: s.total ? Math.round(s.right_count / s.total * 100) + '%' : ''
     }));

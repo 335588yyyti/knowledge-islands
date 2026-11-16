@@ -328,6 +328,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row" style="margin-top:10px"><label class="small">年級 <select id="nGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
             <label class="small">學期 <select id="nSem"><option>上</option><option>下</option></select></label>
             <label class="small">人數 <input id="nCount" type="number" value="28" min="1" max="60" style="width:80px"></label>
+            <label class="small" title="老師自己試玩用，登入時座號填 0；不算進全班統計、精熟人數、排行榜和加點"><input type="checkbox" id="nTest" checked> 加一個測試帳號（0 號）</label>
             <button class="btn" id="bNewCls">建立</button></div>
           <h3 style="margin:10px 0 4px">各科課本版本</h3><div class="vgrid" id="nVGrid"><label class="small">全部設成 <select id="nVAll" class="verAll"></select></label><label class="small">國語 <select id="nV0" class="verSel" data-subj="國語"></select></label><label class="small">數學 <select id="nV1" class="verSel" data-subj="數學"></select></label><label class="small">自然 <select id="nV2" class="verSel" data-subj="自然"></select></label><label class="small">社會 <select id="nV3" class="verSel" data-subj="社會"></select></label><label class="small">英文 <select id="nV4" class="verSel" data-subj="英文"></select></label></div>
           <p class="err small" id="newErr"></p>
@@ -440,6 +441,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <h3>八、常見問題</h3>
         <ul>
           <li><b>學生忘記密碼</b>：在「學生與加點」那一列按「重設密碼」，學生下次登入重新設定。</li>
+          <li><b>測試帳號</b>：老師自己試玩用。新的一屆會自動有一個 0 號測試帳號（登入時座號填 0）；也可以在「學生與加點」任何一列按「設為測試」。測試帳號的作答不算進全班統計、弱點、精熟人數、排行榜，也不能換點。</li>
           <li><b>學生說被鎖住了</b>：密碼連續錯 5 次會鎖 10 分鐘；按「重設密碼」可以馬上解鎖。</li>
           <li><b>老師密碼輸錯被鎖</b>：同一台裝置錯 10 次會鎖那台 10 分鐘；換一台裝置或改用手機網路就能登入。</li>
           <li><b>學生可以作弊嗎</b>：計分都在伺服器上，改網頁拿不到金幣；選擇題選項每次順序不同，背答案位置也沒用。</li>
@@ -544,7 +546,8 @@ $('iVerAuto').addEventListener('change', () => $('iVerWrap').classList.toggle('h
 $('iVerWrap').classList.add('hidden');
 
 function renderOverview(){
-  const S = DASH.students;
+  const ALL = DASH.students.slice().sort((a, b) => a.isTest - b.isTest || a.seat - b.seat);
+  const S = ALL.filter(s => !s.isTest);
   const today = S.filter(s => s.last === todayStr()).length;
   const pending = S.reduce((a, s) => a + s.points, 0);
   const rt = DASH.rate;
@@ -558,19 +561,20 @@ function renderOverview(){
   ].map(k => `<div class="kpi"><span class="small muted">${k[0]}</span><b>${k[1]}</b></div>`).join('');
 
   $('stuTbl').innerHTML = `<thead><tr><th><input type="checkbox" id="cAll" aria-label="全選"></th><th>座號</th><th>暱稱</th><th class="num">可加點數</th><th class="num">未換印章</th><th class="num">未換金幣</th><th class="num">連續天數</th><th class="num">本週練習天數</th><th>最近完成</th><th class="num">正確率</th><th class="num">錯題</th><th>弱點觀念</th><th class="num">徽章</th><th class="num" title="學生目前可以在商店花的金幣">金幣餘額</th><th></th></tr></thead><tbody>` +
-    S.map(s => {
+    ALL.map(s => {
       const pct = s.total ? Math.round(s.right / s.total * 100) : null;
       const pill = s.locked ? '<span class="pill p-bad">密碼錯太多次，鎖住中</span>' : !s.hasPin ? '<span class="pill p-mute">未登入</span>'
         : s.last === todayStr() ? '<span class="pill p-ok">今天完成</span>'
         : s.last ? '<span class="pill p-warn">' + esc(s.last.slice(5).replace('-', '/')) + '</span>'
         : s.weekDays ? '<span class="pill p-warn">練習中，還沒過關</span>' : '<span class="pill p-bad">本週沒練習</span>';
+      const tag = s.isTest ? ' <span class="pill p-mute" title="老師試玩用，不算進全班統計、精熟人數、排行榜和加點">測試帳號</span>' : '';
       return `<tr><td><input type="checkbox" class="cStu" value="${s.seat}" ${s.points ? '' : 'disabled'} aria-label="${s.seat} 號"></td>
-        <td>${s.seat}</td><td><button class="btn2 sm" data-nick="${s.seat}" title="修改暱稱">${esc(s.nick) || '—'}</button></td>
+        <td>${s.seat}</td><td><button class="btn2 sm" data-nick="${s.seat}" title="修改暱稱">${esc(s.nick) || '—'}</button>${tag}</td>
         <td class="num">${s.points ? '<span class="stamp">' + s.points + '</span>' : '<span class="muted">0</span>'}</td>
         <td class="num">${s.stamps}</td><td class="num" title="累積 ${s.earned} 枚，已換 ${s.earned - s.coinsPending} 枚">${s.coinsPending}</td>
         <td class="num">${s.streak}</td><td class="num">${s.weekDays}</td><td>${pill}</td>
         <td class="num">${pct === null ? '<span class="muted">—</span>' : pct + '%'}</td><td class="num">${s.wrongNow}</td><td>${s.weak.length ? s.weak.map(w => '<span class="pill p-warn">' + esc(w) + '</span>').join(' ') : '<span class="muted">—</span>'}</td><td class="num" title="${esc(s.badges.join('、'))}">${s.badges.length}</td><td class="num">${s.coins}</td>
-        <td><button class="btn2 sm" data-redeem="${s.seat}" ${s.points ? '' : 'disabled'}>換點</button> <button class="btn2 sm" data-reset="${s.seat}">重設密碼</button></td></tr>`;
+        <td><button class="btn2 sm" data-redeem="${s.seat}" ${s.points ? '' : 'disabled'}>換點</button> <button class="btn2 sm" data-reset="${s.seat}">重設密碼</button> <button class="btn2 sm" data-test="${s.seat}" data-on="${s.isTest ? 0 : 1}">${s.isTest ? '改回學生' : '設為測試'}</button></td></tr>`;
     }).join('') + '</tbody>';
   $('cAll').onchange = e => document.querySelectorAll('.cStu:not(:disabled)').forEach(c => c.checked = e.target.checked);
 
@@ -591,7 +595,12 @@ function renderOverview(){
 function todayStr(){ const d = new Date(Date.now() + (8 * 60 + new Date().getTimezoneOffset()) * 60000); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
 $('stuTbl').addEventListener('click', async e => {
-  const r = e.target.closest('[data-redeem]'), z = e.target.closest('[data-reset]'), nk = e.target.closest('[data-nick]');
+  const r = e.target.closest('[data-redeem]'), z = e.target.closest('[data-reset]'), nk = e.target.closest('[data-nick]'), tt = e.target.closest('[data-test]');
+  if (tt){
+    const on = tt.dataset.on === '1';
+    try{ await api('tSetTest', PW, CUR.code, Number(tt.dataset.test), on); toast(tt.dataset.test + ' 號' + (on ? '設為測試帳號，不算進全班統計和加點' : '改回一般學生')); loadClass(CUR.code); }catch(err){ toast(err.message); }
+    return;
+  }
   if (nk){
     const cur = (DASH.students.find(x => x.seat === Number(nk.dataset.nick)) || {}).nick || '';
     const v = window.prompt(nk.dataset.nick + ' 號的暱稱（最多 10 個字，不要用全名）', cur);
@@ -974,7 +983,7 @@ $('bNewCls').addEventListener('click', async () => {
   $('newErr').textContent = '';
   const code = $('nCode').value.trim().toUpperCase();
   try{
-    const r = await api('tCreateClass', PW, {code, name:$('nName').value.trim(), grade:$('nGrade').value, sem:$('nSem').value, versions:readVers('nV'), version:readVers('nV')['國語'], count:$('nCount').value});
+    const r = await api('tCreateClass', PW, {code, name:$('nName').value.trim(), grade:$('nGrade').value, sem:$('nSem').value, versions:readVers('nV'), version:readVers('nV')['國語'], count:$('nCount').value, testSeat:$('nTest').checked});
     try{ localStorage.setItem('kq_tc', code); }catch(_){}
     afterLogin(r); toast('班級 ' + code + ' 建立好了，接著到「教學進度」勾選單元'); switchTab('tUnits');
   }catch(e){ $('newErr').textContent = e.message; }
@@ -987,11 +996,11 @@ async function loadMastery(){
     if (!m.units.length){ $('mTbl').innerHTML = '<tbody><tr><td class="muted">還沒有勾選任何已教單元。</td></tr></tbody>'; return; }
     const label = ['－', '初學', '熟練', '精熟'], name = ['未練習', '初學', '熟練', '精熟'];
     $('mTbl').innerHTML = '<thead><tr><th>座號</th><th>暱稱</th>' + m.units.map(u => `<th class="uh" title="${esc(u.subject + '・' + u.unit)}"><span>${esc(u.subject)}</span>${esc(u.unit)}</th>`).join('') + '<th class="num">精熟數</th></tr></thead><tbody>' +
-      m.students.map(st => '<tr><td>' + st.seat + '</td><td>' + (esc(st.nick) || '—') + '</td>' + m.units.map(u => {
+      m.students.map(st => '<tr><td>' + st.seat + '</td><td>' + (esc(st.nick) || '—') + (st.isTest ? ' <span class="pill p-mute">測試</span>' : '') + '</td>' + m.units.map(u => {
         const lv = st.levels[u.key] || 0, rv = st.review.includes(u.key);
         return `<td class="lvc l${rv ? 4 : lv}" title="${esc(u.unit)}：${name[lv]}${rv ? '，該複習了' : ''}">${rv ? '該複習' : label[lv]}</td>`;
       }).join('') + '<td class="num"><b>' + m.units.filter(u => st.levels[u.key] === 3).length + '</b></td></tr>').join('') +
-      '<tr class="sum"><td colspan="2">全班精熟人數</td>' + m.units.map(u => `<td class="num">${u.mastered}</td>`).join('') + '<td></td></tr></tbody>';
+      '<tr class="sum"><td colspan="2">全班精熟人數<br><span class="small muted">不含測試帳號</span></td>' + m.units.map(u => `<td class="num">${u.mastered}</td>`).join('') + '<td></td></tr></tbody>';
   }catch(e){ toast(e.message); }
 }
 

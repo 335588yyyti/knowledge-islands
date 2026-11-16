@@ -575,11 +575,43 @@ try {
     await p.goto(BASE + '/teacher'); await p.waitForTimeout(500);
     assert.ok(await p.isVisible('#fLogin'));
   });
+  await step('測試帳號：不算進全班統計、精熟人數、排行榜和加點', async () => {
+    const pw = 'new-pass-1', c2 = { code: 'DEMO', seat: 2, pin: '2222' };
+    for (let i = 0; i < 3; i++) {  // 2 號故意答錯幾回，讓英文單元出現在「需要加強的單元」
+      const qs = (await call('getRound', c2, '英文')).ok;
+      await call('submitRound', c2, '英文', qs.map(q => ({ id: q.id, answer: 'zzz' })));
+    }
+    const before = (await call('tDashboard', pw, 'DEMO')).ok;
+    const m0 = (await call('tMastery', pw, 'DEMO')).ok;
+    const lb = async () => (await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).ok.rows.length;
+    const n0 = await lb();
+    await t.click('[data-tab="tOverview"]'); await t.click('#stuTbl [data-test="2"]'); await toastHas(t, '設為測試帳號');
+    await t.waitForSelector('#stuTbl tr:last-child .pill:text-is("測試帳號")');
+    const d = (await call('tDashboard', pw, 'DEMO')).ok, s2 = d.students.find(x => x.seat === 2);
+    assert.ok(s2.isTest); assert.equal(s2.points, 0);
+    const en = before.weakUnits.filter(u => u.unit.startsWith('英文'));
+    assert.ok(en.length, '2 號答錯後英文單元變弱');
+    assert.ok(en.every(u => { const a = d.weakUnits.find(v => v.unit === u.unit); return !a || a.total < u.total; }), '測試帳號的作答不算進單元統計');
+    assert.ok(d.weakConcepts.every(c => !c.people.includes(2)));
+    const m1 = (await call('tMastery', pw, 'DEMO')).ok;
+    assert.ok(m1.students.find(x => x.seat === 2).isTest);
+    assert.ok(m1.units.every(u => u.mastered <= m0.units.find(v => v.key === u.key).mastered));
+    assert.equal(await lb(), n0 - 1, '排行榜不列出測試帳號');
+    assert.equal((await call('tRedeem', pw, 'DEMO', [2], '')).ok.length, 0, '測試帳號不能換點');
+    await call('tSetTest', pw, 'DEMO', 2, false);
+    assert.ok(!(await call('tDashboard', pw, 'DEMO')).ok.students.find(x => x.seat === 2).isTest);
+    await t.click('[data-tab="tClass"]');
+  });
   await step('建立新的一屆', async () => {
     await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.selectOption('#nVAll', '康軒'); await t.fill('#nCount', '25');
     await t.click('#bNewCls'); await toastHas(t, '建立好了');
     assert.equal(await t.inputValue('#selClass'), '115A601');
-    assert.equal((await call('tDashboard', 'new-pass-1', '115A601')).ok.students.length, 25);
+    const st = (await call('tDashboard', 'new-pass-1', '115A601')).ok.students;
+    assert.equal(st.length, 26);
+    assert.ok(st.find(x => x.seat === 0).isTest, '新的一屆自動有 0 號測試帳號');
+    await t.waitForSelector('#stuTbl tr:last-child .pill:text-is("測試帳號")', { state: 'attached' });
+    const c0 = { code: '115A601', seat: 0, pin: '0000' };
+    assert.ok((await call('studentLogin', c0)).ok, '0 號可以登入');
   });
   await step('手機寬度不會左右捲動（學生端與後台每個分頁）', async () => {
     const m = await page('/?c=DEMO', 390);
