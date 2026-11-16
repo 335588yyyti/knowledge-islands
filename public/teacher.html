@@ -184,7 +184,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <p class="muted small">從 Excel 或課本目錄複製貼上，每行一個單元，欄位順序：<b>年級、學期、科目、單元</b>（最前面可以多一欄「版本」）。有標題列的話欄位順序可以不同。</p>
           <div class="dropzone"><label class="btn2 sm" for="uFile" style="cursor:pointer">📎 選擇檔案</label><input type="file" id="uFile" class="hidden" accept=".xlsx,.xls,.csv,.tsv,.txt">
             <span class="small muted">Excel、CSV 或文字檔都可以，也可以拖進下面的框。</span><span class="small" id="uFileMsg"></span></div>
-          <textarea id="uImport" placeholder="6	上	數學	第一單元 最大公因數與最小公倍數&#10;6	上	數學	第二單元 分數的除法&#10;6	上	國語	第一課 我的志願" style="min-height:110px"></textarea>
+          <textarea id="uImport" placeholder="（灰色字是格式範例，請貼上你的單元表）&#10;6	上	數學	第一單元 ○○○○&#10;6	上	國語	第一課 ○○○○" style="min-height:110px"></textarea>
           <div class="row" style="margin-top:8px"><span class="small muted">版本空白時，依這班各科的版本。</span><button class="btn" id="bUImport">匯入單元</button><span class="small" id="uImportMsg"></span></div>
           <h4>新增一個單元</h4>
           <div class="row"><select id="uSubj"><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option></select>
@@ -745,6 +745,14 @@ dropTo($('iImport'), fs => loadTableFile(fs[0], 'iImport', 'iFileMsg', '題目')
 dropTo($('uImport'), fs => loadTableFile(fs[0], 'uImport', 'uFileMsg', '單元', '題目'));
 
 /* ---------- 單元管理 ---------- */
+// 從別的地方（例如 Claude 匯入）新增的單元和題目，切換到這個分頁時自動載入；畫面上還沒儲存的勾選會保留。
+async function refreshUnits(){
+  if (!CUR) return;
+  const u = checked('unitBox'), e = checked('examBox'), exName = $('exName').value, exDate = $('exDate').value;
+  try{ const d = await api('tDashboard', PW, CUR.code); if (d.cls.code !== CUR.code) return; DASH = d; CUR = d.cls; }catch(_){ return; }
+  CUR.units = u; CUR.exam = Object.assign({}, CUR.exam, {units:e});
+  renderUnits(); renderExam(); $('exName').value = exName; $('exDate').value = exDate; fillBankFilters();
+}
 async function afterUnitsChanged(){ const d = await api('tDashboard', PW, CUR.code); DASH = d; CUR = d.cls; renderUnits(); renderExam(); loadLinks(); fillBankFilters(); }
 $('bUImport').addEventListener('click', async () => {
   const text = $('uImport').value; if (!text.trim()){ toast('先貼上單元表'); return; }
@@ -1222,7 +1230,8 @@ $('bLogout').addEventListener('click', () => {
 function switchTab(id){
   if (id === 'tMastery' && CUR) loadMastery();
   if (id === 'tBank') loadReports();
-  if (id === 'tBank' && DASH){ fillBankFilters(); if (!BANK.length) loadBank(); }
+  if (id === 'tUnits') refreshUnits();
+  if (id === 'tBank' && DASH){ fillBankFilters(); loadBank(); }
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
   ['tOverview','tUnits','tImport','tMastery','tBank','tClass','tGuide'].forEach(t => $(t).classList.toggle('hidden', t !== id));
 }

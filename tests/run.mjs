@@ -534,6 +534,11 @@ try {
     r = (await x('xImportQuestions', IMPORT_TOKEN, tsv, { 英文: '通用' })).ok;
     assert.equal(r.added, 0); assert.equal(r.skipped, 1);
     assert.ok((await x('xUnits', IMPORT_TOKEN)).ok.some(v => v.unit === 'Unit 9 鑰匙測試' && v.count === 1));
+    // 後台已經開著：切到「教學進度」就看得到新單元，切到「題庫管理」就看得到新題目
+    await t.click('[data-tab="tBank"]'); await t.click('[data-tab="tUnits"]');
+    await t.waitForSelector('#unitBox label:has-text("Unit 9 鑰匙測試")', { timeout: 5000 });
+    await t.click('[data-tab="tBank"]');
+    await t.waitForSelector('#bankTbl td:has-text("Key test question")', { timeout: 5000 });
   });
   await step('關於與版權：顯示老師設定的署名', async () => {
     await call('tSaveSettings', PW, { credit: '測試國小 測試老師' });
