@@ -484,6 +484,20 @@ try {
     await t.reload(); await t.waitForSelector('#vApp:not(.hidden)'); await t.click('[data-tab="tUnits"]'); await t.click('#uMgr summary');
     await t.selectOption('#uSubj', '自然'); await t.fill('#uName', '第四單元 電磁作用'); await t.click('#bUAdd'); await toastHas(t, '已新增單元');
     assert.match(await t.textContent('#unitBox'), /第四單元 電磁作用/);
+    // 介面：按 ✎ 直接改名、刪除（不用打字輸入「刪除」）
+    const key4 = (await call('tDashboard', PW, 'DEMO')).ok.units.find(u => u.unit === '第四單元 電磁作用').key;
+    await t.click(`#unitBox [data-ued="${key4}"]`);
+    await t.fill('.uedit input', '第四單元 電與磁'); await t.click('.uedit [data-uact="rename"]'); await toastHas(t, '已改名');
+    assert.match(await t.textContent('#unitBox'), /第四單元 電與磁/);
+    const key5 = (await call('tDashboard', PW, 'DEMO')).ok.units.find(u => u.unit === '第四單元 電與磁').key;
+    await t.click(`#unitBox [data-ued="${key5}"]`);
+    await t.click('.uedit [data-uact="del"]'); assert.match(await t.textContent('.uedit [data-uact="del"]'), /確定刪除/);
+    await t.click('.uedit [data-uact="del"]'); await toastHas(t, '已刪除單元');
+    assert.doesNotMatch(await t.textContent('#unitBox'), /第四單元 電與磁/);
+    // 有題目的單元沒有刪除按鈕
+    await t.click(`#unitBox [data-ued="${qk.replace('分數加減', '第三單元 分數加減')}"]`);
+    assert.equal(await t.$('.uedit [data-uact="del"]'), null);
+    await t.click('.uedit [data-uact="cancel"]');
   });
   await step('上傳檔案：Word 課文放進課本重點、Excel 匯入題目與單元', async () => {
     await t.click('[data-tab="tImport"]');

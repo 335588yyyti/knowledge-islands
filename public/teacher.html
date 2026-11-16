@@ -92,6 +92,9 @@ textarea.drag,.dropzone.drag{outline:3px dashed var(--coral);outline-offset:2px;
 .umgr h4{margin:14px 0 4px}
 .ued{background:none;border:0;padding:0 4px;color:var(--muted);cursor:pointer;font-size:14px}
 .ued:hover{color:var(--coral)}
+.uedit{display:grid;gap:6px;margin:4px 0 10px 24px;padding:8px 10px;border:2px dashed var(--line);border-radius:12px;background:var(--foam)}
+.uedit input{width:100%;min-width:0}
+.btn2.danger{color:var(--coral);border-color:var(--coral)}
 .vgrid{display:flex;flex-wrap:wrap;gap:8px 14px}
 .vgrid .verAll{background:var(--foam)}
 .rep{border:2px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
@@ -802,19 +805,40 @@ $('bUAdd').addEventListener('click', async () => {
     $('uName').value = ''; await afterUnitsChanged(); toast(r.added ? '已新增單元' : '這個單元已經有了');
   }catch(e){ toast(e.message); }
 });
+// 單元旁的 ✎：在單元下方打開小小的編輯列，可以改名；沒有題目的單元可以直接刪除
 $('unitBox').addEventListener('click', async e => {
+  const ed = e.target.closest('.uedit');
+  if (ed){
+    const u = DASH.units.find(x => x.key === ed.dataset.key); if (!u) return;
+    const act = e.target.closest('[data-uact]'); if (!act) return;
+    const a = act.dataset.uact;
+    if (a === 'cancel'){ ed.remove(); return; }
+    if (a === 'del' && act.dataset.armed !== '1'){ act.dataset.armed = '1'; act.textContent = '確定刪除？'; setTimeout(() => { act.dataset.armed = ''; act.textContent = '刪除'; }, 3000); return; }
+    try{
+      let msg;
+      if (a === 'del'){ await api('tDeleteUnit', PW, u.key); msg = '已刪除單元'; }
+      else {
+        const v = ed.querySelector('input').value.trim();
+        if (!v || v === u.unit){ ed.remove(); return; }
+        await api('tRenameUnit', PW, u.key, v); msg = '已改名';
+      }
+      await afterUnitsChanged(); toast(msg);
+    }catch(err){ toast(err.message); }
+    return;
+  }
   const b = e.target.closest('[data-ued]'); if (!b) return;
   e.preventDefault();
   const u = DASH.units.find(x => x.key === b.dataset.ued); if (!u) return;
-  const v = window.prompt(`「${u.unit}」改成什麼名稱？\n（${u.count ? '有 ' + u.count + ' 題，題目會跟著改名' : '還沒有題目；輸入「刪除」可以刪掉這個單元'}）`, u.unit);
-  if (v === null) return;
-  try{
-    let msg;
-    if (v.trim() === '刪除'){ await api('tDeleteUnit', PW, u.key); msg = '已刪除單元'; }
-    else if (v.trim() && v.trim() !== u.unit){ await api('tRenameUnit', PW, u.key, v.trim()); msg = '已改名'; }
-    else return;
-    await afterUnitsChanged(); toast(msg);
-  }catch(err){ toast(err.message); }
+  const old = $('unitBox').querySelector('.uedit'); const same = old && old.dataset.key === u.key;
+  if (old) old.remove();
+  if (same) return;
+  const d = document.createElement('div'); d.className = 'uedit'; d.dataset.key = u.key;
+  d.innerHTML = `<input aria-label="單元名稱" maxlength="60" value="${esc(u.unit)}">
+    <div class="row"><button type="button" class="btn2 sm" data-uact="rename">改名</button>${u.count ? '' : '<button type="button" class="btn2 sm danger" data-uact="del">刪除</button>'}<button type="button" class="btn2 sm" data-uact="cancel">取消</button></div>
+    <span class="small muted">${u.count ? '有 ' + u.count + ' 題，改名時題目會跟著改；有題目的單元不能刪除。' : '還沒有題目，可以直接刪除。'}</span>`;
+  b.closest('label').after(d);
+  const inp = d.querySelector('input'); inp.focus(); inp.select();
+  inp.addEventListener('keydown', ev => { if (ev.key === 'Enter'){ ev.preventDefault(); d.querySelector('[data-uact="rename"]').click(); } if (ev.key === 'Escape') d.remove(); });
 });
 
 function checked(box){ return [...$(box).querySelectorAll('.cU:checked')].map(c => c.value); }
