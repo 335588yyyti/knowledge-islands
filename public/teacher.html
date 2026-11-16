@@ -182,7 +182,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <h2>給學生的公告與任務</h2>
         <p class="muted small">公告會顯示在學生地圖的最上方。指定任務的島會排到第一個，並標上「老師的任務」。不需要時清空、選「沒有任務」就好。</p>
         <textarea id="nText" maxlength="120" placeholder="例如：本週重點是分數除法，先去錯題礁把錯題救回來！（最多 120 字）" style="min-height:70px;font-family:var(--f-body)"></textarea>
-        <div class="row" style="margin-top:8px"><label class="small">指定任務島 <select id="nMission"><option value="">沒有任務</option><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option><option value="錯題">錯題礁</option><option value="綜合">燈塔挑戰</option><option value="段考">段考衝刺島</option></select></label>
+        <div class="row" style="margin-top:8px"><label class="small">指定任務島 <select id="nMission"><option value="">沒有任務</option><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option><option value="素養">素養島</option><option value="錯題">錯題礁</option><option value="綜合">燈塔挑戰</option><option value="段考">段考衝刺島</option></select></label>
           <button class="btn" id="bSaveNotice">儲存公告與任務</button></div>
       </div>
       <div class="panel">
@@ -410,7 +410,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <ul>
           <li><b>自己出、從 Excel 貼</b>：「題庫匯入」右邊直接貼上，有標題列的話欄位順序可以不同。格式有錯的那一行會告訴你錯在哪。</li>
           <li><b>用 AI 出一般題</b>：左邊選版本、年級、科目、單元，可以貼上課本重點，按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼回右邊，來源選「AI」。</li>
-          <li><b>用 AI 出素養題</b>：在科目旁邊的選單選「素養題」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。</li>
+          <li><b>用 AI 出素養題</b>：在科目旁邊的選單選「素養題」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。素養題組不會出現在各科島和燈塔挑戰，而是集中在<b>素養島</b>，學生進去再選科目。</li>
           <li><b>圖片題</b>：在「題庫管理」編輯題目時按「上傳圖片」，手機拍照或截圖都可以，系統會自動縮小。圖片會顯示在題目上方。</li>
           <li><b>學生回報</b>：學生答題後可以按「這題怪怪的？」回報。「題庫管理」上方的「待檢查題目」會列出來，分頁名稱旁的紅色數字是待檢查的題數。</li>
           <li><b>上傳檔案</b>：「用 AI 出題」可以上傳課文、講義（Word、PDF、文字檔），內容會自動放進「課本重點」；「貼上題目匯入」和「匯入單元表」可以直接選 Excel、CSV 檔。檔案只在你的瀏覽器裡讀取，不會上傳到伺服器。照片沒辦法讀成文字，請直接附加到 AI 工具。</li>

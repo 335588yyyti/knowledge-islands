@@ -305,12 +305,18 @@ async function state(ctx, cls, s) {
   const hist = await history(ctx, cls.code, s.seat);
   const islands = {};
   SUBJECTS.forEach(sj => islands[sj] = { total: 0, mastered: 0 });
+  // 素養島：有閱讀情境的題組集中在這裡，依科目分開
+  const literacy = {}, litSets = {};
+  SUBJECTS.forEach(sj => { literacy[sj] = { groups: 0, total: 0, mastered: 0 }; litSets[sj] = new Set(); });
   let wrong = 0;
   pool.forEach(q => {
-    const it = islands[q.subject], h = hist[q.id];
+    const h = hist[q.id];
+    const it = q.passage ? literacy[q.subject] : islands[q.subject];
     if (it) { it.total++; if (h && h.last) it.mastered++; }
+    if (q.passage && litSets[q.subject]) litSets[q.subject].add(q.passage);
     if (h && !h.last) wrong++;
   });
+  SUBJECTS.forEach(sj => literacy[sj].groups = litSets[sj].size);
   let ex = exam(cls);
   if (ex) {
     const ep = await poolFor(ctx, ex.units);
@@ -335,7 +341,7 @@ async function state(ctx, cls, s) {
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(),
-    islands, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
+    islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
     owned: owned(s), outfit: outfit(s), shop: SHOP
   };
 }
@@ -447,13 +453,30 @@ API.getRound = async (ctx, cred, island) => {
     [wrong.slice(0, 3), second, fresh, wrong.slice(3), rest].forEach(g => g.forEach(q => { if (!seen.has(q.id)) { seen.add(q.id); out.push(q); } }));
     return out.slice(0, n);
   };
+  // 素養島：照優先順序挑題組，一次拿整組，湊到大約一回合的題數
+  const byGroups = list => {
+    const ranked = shuffle(list).sort((a, b) => rank(a) - rank(b));
+    const out = [], taken = new Set();
+    for (const q of ranked) {
+      if (out.length >= n) break;
+      if (taken.has(q.passage)) continue;
+      taken.add(q.passage);
+      out.push(...list.filter(x => x.passage === q.passage).slice(0, 6));
+    }
+    return out.slice(0, 30);
+  };
+  const rank = q => { const h = hist[q.id]; return !h ? 1 : !h.last ? 0 : (h.days < 2 && h.rday !== td) ? 1 : 2; };
   let picked;
+  const lit = /^素養(?::(.+))?$/.exec(String(island || ''));
   if (SUBJECTS.includes(island)) {
-    picked = prioritized((await poolFor(ctx, jsonp(cls.units, []))).filter(q => q.subject === island));
+    picked = prioritized((await poolFor(ctx, jsonp(cls.units, []))).filter(q => q.subject === island && !q.passage));
+  } else if (lit) {
+    if (lit[1] && !SUBJECTS.includes(lit[1])) fail('沒有這座島。');
+    picked = byGroups((await poolFor(ctx, jsonp(cls.units, []))).filter(q => q.passage && (!lit[1] || q.subject === lit[1])));
   } else if (island === '錯題') {
     picked = shuffle((await poolFor(ctx, jsonp(cls.units, []))).filter(isWrong)).slice(0, n);
   } else if (island === '綜合') {
-    const pool = await poolFor(ctx, jsonp(cls.units, []));
+    const pool = (await poolFor(ctx, jsonp(cls.units, []))).filter(q => !q.passage);
     const by = SUBJECTS.map(sj => shuffle(pool.filter(q => q.subject === sj)));
     picked = [];
     for (let i = 0; picked.length < n && by.some(b => b.length); i = (i + 1) % by.length) if (by[i].length) picked.push(by[i].shift());
@@ -462,8 +485,8 @@ API.getRound = async (ctx, cred, island) => {
     if (!ex) fail('目前沒有要準備的考試。');
     picked = prioritized(await poolFor(ctx, ex.units));
   } else fail('沒有這座島。');
-  if (!picked.length) fail(island === '錯題' ? '錯題本是空的，太厲害了！' : '這座島還沒有開放的題目，等老師上完課再來。');
-  return groupPassages(shuffle(picked)).map(publicQ);
+  if (!picked.length) fail(island === '錯題' ? '錯題本是空的，太厲害了！' : lit ? '這裡還沒有開放的素養題組，等老師上完課再來。' : '這座島還沒有開放的題目，等老師上完課再來。');
+  return groupPassages(lit ? picked : shuffle(picked)).map(publicQ);
 };
 
 /** 同一段情境的題目排在一起（題組），其他題目順序不變 */
@@ -727,7 +750,7 @@ API.tSaveClass = async (ctx, pw, code, data) => {
     c.exam_units = JSON.stringify((data.exam.units || []).map(x => str(x, 200)).slice(0, 500));
   }
   if (data.notice !== undefined) c.notice = str(data.notice, 120);
-  if (data.mission !== undefined) c.mission = SUBJECTS.concat(['錯題', '綜合', '段考']).includes(data.mission) ? data.mission : '';
+  if (data.mission !== undefined) c.mission = SUBJECTS.concat(['素養', '錯題', '綜合', '段考']).includes(data.mission) ? data.mission : '';
   await ctx.run('UPDATE classes SET name=?, grade=?, sem=?, version=?, versions=?, units=?, status=?, exam_name=?, exam_date=?, exam_units=?, notice=?, mission=? WHERE code=?',
     c.name, c.grade, c.sem, c.version, c.versions || '{}', c.units, c.status, c.exam_name, c.exam_date, c.exam_units, c.notice || '', c.mission || '', c.code);
   return classOut(c);

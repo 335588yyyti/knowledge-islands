@@ -246,13 +246,17 @@ try {
   await step('素養題：情境題組排在一起，畫面顯示閱讀情境', async () => {
     const c3 = { code: 'DEMO', seat: 3, pin: '3333' };
     await call('studentLogin', c3);
-    const qs = (await call('getRound', c3, '數學')).ok;
+    assert.ok((await call('getRound', c3, '數學')).ok.every(q => !q.passage), '素養題不出現在科目島');
+    const st3 = (await call('studentLogin', c3)).ok;
+    assert.ok(st3.literacy['數學'].groups >= 1, '素養島列出數學題組');
+    const qs = (await call('getRound', c3, '素養:數學')).ok;
+    assert.ok(qs.length && qs.every(q => q.passage && q.subject === '數學'), '素養島只出所選科目的題組');
     const idx = qs.map((q, i) => q.passage ? i : -1).filter(i => i >= 0);
     assert.ok(idx.length >= 2, '應該有素養題');
     assert.equal(idx[idx.length - 1] - idx[0], idx.length - 1, '同一段情境要連在一起');
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
-    await p.click('[data-island="數學"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
+    await p.click('[data-island="素養"]'); await p.click('#litPick [data-lit="素養:數學"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
     let seen = false;
     for (let i = 0; i < 10 && !seen; i++) {
       const q = await p.evaluate(() => round.qs[round.i]);
@@ -422,7 +426,7 @@ try {
     const c1 = { code: 'DEMO', seat: 1, pin: '1234' };
     const all = async isl => { const qs = (await call('getRound', c1, isl)).ok; return (await call('submitRound', c1, isl, qs.map(q => ({ id: q.id, answer: q.type === '選擇' ? q.options['ABCD'.indexOf(q.answer)] : q.answer.split('|')[0] })))).ok; };
     let got = new Set((await call('studentLogin', c1)).ok.badges);
-    for (const isl of ['數學', '綜合', '錯題', '錯題']) { const r = await all(isl).catch(() => null); if (r && r.badges) r.badges.forEach(b => got.add(b.id)); }
+    for (const isl of ['素養:數學', '素養', '綜合', '錯題', '錯題']) { const r = await all(isl).catch(() => null); if (r && r.badges) r.badges.forEach(b => got.add(b.id)); }
     got = new Set((await call('studentLogin', c1)).ok.badges);
     assert.ok(got.has('groupall'), '題組全對');
     assert.ok(got.has('lighthouse'), '燈塔全對');
