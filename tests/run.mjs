@@ -602,6 +602,12 @@ try {
     assert.ok(!(await call('tDashboard', pw, 'DEMO')).ok.students.find(x => x.seat === 2).isTest);
     await t.click('[data-tab="tClass"]');
   });
+  await step('QR code 可以放大全螢幕，關閉後回到班級管理', async () => {
+    await t.click('[data-tab="tClass"]'); await t.waitForSelector('#qr img, #qr canvas', { state: 'attached' });
+    await t.click('#bQrBig'); await t.waitForSelector('#qrBig .big img, #qrBig .big canvas', { state: 'attached' });
+    assert.match(await t.textContent('#qrBig'), /\?c=DEMO/);
+    await t.click('#qrClose'); assert.equal(await t.$('#qrBig'), null);
+  });
   await step('建立新的一屆', async () => {
     await t.click('#newClsBox summary');
     await t.fill('#nCode', '115a601'); await t.fill('#nName', '115 學年 六年一班'); await t.selectOption('#nVAll', '康軒'); await t.fill('#nCount', '25');

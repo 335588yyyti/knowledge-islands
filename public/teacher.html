@@ -45,6 +45,12 @@ h3{font-size:16px;margin:18px 0 8px}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .row > .row{min-width:0}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.qrbox{background:#fff;padding:16px;border-radius:12px;line-height:0;cursor:zoom-in}
+.qrbox img,.qrbox canvas{display:block;width:160px;height:160px}
+#qrBig{position:fixed;inset:0;z-index:50;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;text-align:center}
+#qrBig .big{line-height:0;padding:24px;background:#fff}
+#qrBig .big img,#qrBig .big canvas{width:min(78vw,70vh);height:min(78vw,70vh)}
+@media print{body>*:not(#qrBig){display:none!important}#qrBig .noprint{display:none}}
 .stack{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .clsWrap{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-start}
 .clsMain{flex:1 1 280px;min-width:0}
@@ -327,7 +333,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
               <h3 style="margin:0 0 4px">學生登入連結</h3>
               <p class="muted small">學生打開後輸入座號和自己設的 4 位數密碼。</p>
               <div class="copybox"><code id="stuUrl"></code><button class="btn2 sm" id="bCopyUrl">複製</button></div>
-          <div id="qr" style="margin-top:10px;width:160px;height:160px;overflow:hidden"></div>
+          <div class="row" style="margin-top:10px;align-items:flex-end"><div id="qr" class="qrbox" title="點一下放大"></div><button class="btn2 sm" id="bQrBig">放大 QR code</button></div>
           <p class="muted small">教師後台：學生登入頁最下面的「老師登入」，或直接打開 <code id="tUrl"></code></p>
             </div>
           </div>
@@ -972,11 +978,27 @@ function renderClass(){
   $('bArchive').textContent = CUR.status === '進行中' ? '封存（結業）' : '恢復使用';
 }
 $('bCopyUrl').addEventListener('click', () => copy(stuUrl(), '連結已複製'));
+// 放大 QR code：全螢幕顯示，方便投影給全班掃，也可以列印貼在教室
+function showBigQR(){
+  if (!window.QRCode) return;
+  const d = document.createElement('div'); d.id = 'qrBig';
+  d.innerHTML = `<h2 style="margin:0">${esc(CUR.name)}・知識群島</h2><div class="big"></div>
+    <p style="margin:0">掃描後輸入<b>座號</b>和自己的 <b>4 位數密碼</b></p><code class="small" style="word-break:break-all">${esc(stuUrl())}</code>
+    <div class="row noprint" style="justify-content:center"><button class="btn2" id="qrPrint">列印</button><button class="btn" id="qrClose">關閉</button></div>`;
+  document.body.appendChild(d);
+  new QRCode(d.querySelector('.big'), {text: stuUrl(), width: 800, height: 800, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M});
+  const close = () => { d.remove(); document.removeEventListener('keydown', esc_); };
+  const esc_ = e => { if (e.key === 'Escape') close(); };
+  d.querySelector('#qrClose').onclick = close; d.querySelector('#qrPrint').onclick = () => print();
+  document.addEventListener('keydown', esc_);
+}
+$('bQrBig').addEventListener('click', showBigQR);
+$('qr').addEventListener('click', showBigQR);
 function stuUrl(){ return location.origin + '/?c=' + encodeURIComponent(CUR.code); }
 let qrLib = null;
 function drawQR(text){
   const box = $('qr'); box.innerHTML = '';
-  const go = () => { try{ new QRCode(box, {text, width:160, height:160, colorDark:'#4a4566', colorLight:'#ffffff'}); }catch(e){} };
+  const go = () => { try{ new QRCode(box, {text, width:320, height:320, colorDark:'#000000', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M}); }catch(e){} };
   if (window.QRCode) return go();
   if (!qrLib){ qrLib = document.createElement('script'); qrLib.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'; document.head.appendChild(qrLib); }
   qrLib.addEventListener('load', go, {once:true});
