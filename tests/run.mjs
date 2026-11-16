@@ -608,10 +608,13 @@ try {
     assert.equal(await t.inputValue('#selClass'), '115A601');
     const st = (await call('tDashboard', 'new-pass-1', '115A601')).ok.students;
     assert.equal(st.length, 26);
-    assert.ok(st.find(x => x.seat === 0).isTest, '新的一屆自動有 0 號測試帳號');
+    assert.ok(st.find(x => x.seat === 30).isTest, '25 人的班，測試帳號是 30 號');
+    assert.match((await call('tAddStudents', 'new-pass-1', '115A601', 6)).err, /30 號目前是測試帳號/);
+    assert.equal((await call('tAddStudents', 'new-pass-1', '115A601', 2)).ok, 2);
+    assert.ok((await call('tDashboard', 'new-pass-1', '115A601')).ok.students.some(x => x.seat === 27 && !x.isTest), '新增的學生接在 25 號後面');
     await t.waitForSelector('#stuTbl tr:last-child .pill:text-is("測試帳號")', { state: 'attached' });
-    const c0 = { code: '115A601', seat: 0, pin: '0000' };
-    assert.ok((await call('studentLogin', c0)).ok, '0 號可以登入');
+    const c0 = { code: '115A601', seat: 30, pin: '0000' };
+    assert.ok((await call('studentLogin', c0)).ok, '測試帳號可以登入');
   });
   await step('手機寬度不會左右捲動（學生端與後台每個分頁）', async () => {
     const m = await page('/?c=DEMO', 390);

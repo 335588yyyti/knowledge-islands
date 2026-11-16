@@ -328,7 +328,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <div class="row" style="margin-top:10px"><label class="small">年級 <select id="nGrade"><option>6</option><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
             <label class="small">學期 <select id="nSem"><option>上</option><option>下</option></select></label>
             <label class="small">人數 <input id="nCount" type="number" value="28" min="1" max="60" style="width:80px"></label>
-            <label class="small" title="老師自己試玩用，登入時座號填 0；不算進全班統計、精熟人數、排行榜和加點"><input type="checkbox" id="nTest" checked> 加一個測試帳號（0 號）</label>
+            <label class="small" title="老師自己試玩用，座號是最後一號的下一個整十（例如 26 號 → 30 號）；不算進全班統計、精熟人數、排行榜和加點"><input type="checkbox" id="nTest" checked> 加一個測試帳號（下一個整十號）</label>
             <button class="btn" id="bNewCls">建立</button></div>
           <h3 style="margin:10px 0 4px">各科課本版本</h3><div class="vgrid" id="nVGrid"><label class="small">全部設成 <select id="nVAll" class="verAll"></select></label><label class="small">國語 <select id="nV0" class="verSel" data-subj="國語"></select></label><label class="small">數學 <select id="nV1" class="verSel" data-subj="數學"></select></label><label class="small">自然 <select id="nV2" class="verSel" data-subj="自然"></select></label><label class="small">社會 <select id="nV3" class="verSel" data-subj="社會"></select></label><label class="small">英文 <select id="nV4" class="verSel" data-subj="英文"></select></label></div>
           <p class="err small" id="newErr"></p>
@@ -441,7 +441,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <h3>八、常見問題</h3>
         <ul>
           <li><b>學生忘記密碼</b>：在「學生與加點」那一列按「重設密碼」，學生下次登入重新設定。</li>
-          <li><b>測試帳號</b>：老師自己試玩用。新的一屆會自動有一個 0 號測試帳號（登入時座號填 0）；也可以在「學生與加點」任何一列按「設為測試」。測試帳號的作答不算進全班統計、弱點、精熟人數、排行榜，也不能換點。</li>
+          <li><b>測試帳號</b>：老師自己試玩用。新的一屆會自動有一個測試帳號，座號是最後一號的下一個整十（例如最後是 26 號，測試帳號就是 30 號；36 號就是 40 號）；也可以在「學生與加點」任何一列按「設為測試」。測試帳號的作答不算進全班統計、弱點、精熟人數、排行榜，也不能換點。</li>
           <li><b>學生說被鎖住了</b>：密碼連續錯 5 次會鎖 10 分鐘；按「重設密碼」可以馬上解鎖。</li>
           <li><b>老師密碼輸錯被鎖</b>：同一台裝置錯 10 次會鎖那台 10 分鐘；換一台裝置或改用手機網路就能登入。</li>
           <li><b>學生可以作弊嗎</b>：計分都在伺服器上，改網頁拿不到金幣；選擇題選項每次順序不同，背答案位置也沒用。</li>

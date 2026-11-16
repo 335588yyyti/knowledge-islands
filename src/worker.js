@@ -743,16 +743,21 @@ API.tCreateClass = async (ctx, pw, data) => {
   const stmts = [ctx.stmt('INSERT INTO classes (code, name, grade, sem, version, versions, created) VALUES (?,?,?,?,?,?,?)',
     code, str(data.name, 40) || code, Math.min(6, Math.max(1, Math.floor(num(data.grade)) || 6)), data.sem === '下' ? '下' : '上', str(data.version, 20) || COMMON, cleanVersions(data.versions), today())];
   for (let i = 1; i <= count; i++) stmts.push(ctx.stmt('INSERT INTO students (class_code, seat) VALUES (?, ?)', code, i));
-  if (data.testSeat !== false) stmts.push(ctx.stmt("INSERT INTO students (class_code, seat, nick, is_test) VALUES (?, 0, '老師測試', 1)", code));
+  // 測試帳號放在最後一號的下一個整十：26 號 → 30 號、36 號 → 40 號
+  if (data.testSeat !== false) stmts.push(ctx.stmt("INSERT INTO students (class_code, seat, nick, is_test) VALUES (?, ?, '老師測試', 1)", code, testSeatAfter(count)));
   await ctx.batch(stmts);
   return API.tLogin(ctx, pw);
 };
 
+function testSeatAfter(last) { return Math.floor(last / 10) * 10 + 10; }
+
 API.tAddStudents = async (ctx, pw, code, count) => {
   await checkPw(ctx, pw);
   const cls = await findClass(ctx, code);
-  const r = await ctx.first('SELECT MAX(seat) AS m FROM students WHERE class_code = ?', cls.code);
+  const r = await ctx.first('SELECT MAX(seat) AS m FROM students WHERE class_code = ? AND is_test = 0', cls.code);
   const start = (r && r.m || 0) + 1, n = Math.min(Math.max(Math.floor(num(count)), 1), 20);
+  const taken = await ctx.first('SELECT seat FROM students WHERE class_code = ? AND seat BETWEEN ? AND ? ORDER BY seat LIMIT 1', cls.code, start, start + n - 1);
+  if (taken) fail(taken.seat + ' 號目前是測試帳號。請先在那一列按「改回學生」，或把人數改少一點。');
   const stmts = [];
   for (let i = 0; i < n; i++) stmts.push(ctx.stmt('INSERT INTO students (class_code, seat) VALUES (?, ?)', cls.code, start + i));
   await ctx.batch(stmts);
