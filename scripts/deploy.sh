@@ -3,6 +3,11 @@
 set -euo pipefail
 DB_NAME="knowledge-islands"
 
+# 遮住 Cloudflare 帳戶 ID：wrangler 出錯時會把它印在錯誤訊息裡，而公開專案的 Actions 紀錄大家都看得到
+ACC="${CLOUDFLARE_ACCOUNT_ID:-}"
+if [ -z "$ACC" ]; then ACC=$(npx wrangler whoami 2>/dev/null | grep -oE '[0-9a-f]{32}' | head -1 || true); fi
+if [ -n "$ACC" ]; then echo "::add-mask::$ACC"; fi
+
 ID=$(npx wrangler d1 list --json | jq -r ".[] | select(.name==\"$DB_NAME\") | .uuid")
 if [ -z "$ID" ]; then
   echo "第一次部署：建立 D1 資料庫 $DB_NAME"

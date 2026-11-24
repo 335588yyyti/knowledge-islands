@@ -780,8 +780,11 @@ dropTo($('uImport'), fs => loadTableFile(fs[0], 'uImport', 'uFileMsg', '單元',
 // 從別的地方（例如 Claude 匯入）新增的單元和題目，切換到這個分頁時自動載入；畫面上還沒儲存的勾選會保留。
 async function refreshUnits(){
   if (!CUR) return;
+  let d; try{ d = await api('tUnits', PW, CUR.code); }catch(_){ return; }
+  if (d.cls.code !== CUR.code) return;
+  // 讀取期間老師可能又勾了東西：以「現在畫面上的勾選」為準，不要蓋掉
   const u = checked('unitBox'), e = checked('examBox'), exName = $('exName').value, exDate = $('exDate').value;
-  try{ const d = await api('tDashboard', PW, CUR.code); if (d.cls.code !== CUR.code) return; DASH = d; CUR = d.cls; }catch(_){ return; }
+  DASH.units = d.units; DASH.versions = d.versions; CUR = d.cls;
   CUR.units = u; CUR.exam = Object.assign({}, CUR.exam, {units:e});
   renderUnits(); renderExam(); $('exName').value = exName; $('exDate').value = exDate; fillBankFilters();
 }
@@ -1187,7 +1190,6 @@ $('bQDel').addEventListener('click', async e => {
   const r = await bulk('tDeleteQuestions');
   if (r) toast('刪除 ' + r.deleted + ' 題' + (r.disabled ? '；' + r.disabled + ' 題已經有人作答過，改成停用以保留紀錄' : ''));
 });
-async function refreshUnits(){ const d = await api('tDashboard', PW, CUR.code); DASH = d; fillBankFilters(); renderUnits(); renderExam(); }
 const QF = {版本:'qVer', 年級:'qGrade', 學期:'qSem', 科目:'qSubj', 單元:'qUnit', 觀念:'qConcept', 題型:'qType', 題目:'qText', 選項A:'qA', 選項B:'qB', 選項C:'qC', 選項D:'qD', 答案:'qAns', 解析:'qExp', 情境:'qPass'};
 const QK = {版本:'version', 年級:'grade', 學期:'sem', 科目:'subject', 單元:'unit', 觀念:'concept', 題型:'type', 題目:'text', 選項A:'a', 選項B:'b', 選項C:'c', 選項D:'d', 答案:'answer', 解析:'explain', 情境:'passage'};
 function openEditor(q){

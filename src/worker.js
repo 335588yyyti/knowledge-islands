@@ -118,7 +118,9 @@ export default {
       const ctx = new Ctx(env);
       ctx.ip = request.headers.get('cf-connecting-ip') || 'local';
       ctx.importToken = request.headers.get('x-import-token') || '';
-      return json({ ok: (await fn(ctx, ...args)) ?? null });
+      const out = await fn(ctx, ...args);
+      if (BANK_WRITERS.has(name)) await bumpBank(ctx);
+      const res = json({ ok: out ?? null }); res.headers.set('x-rows-read', String(ctx.rows)); return res;
     } catch (e) {
       if (e instanceof UserError) return json({ err: e.message }, 200);
       console.error(name, e && e.stack || e);
@@ -134,10 +136,11 @@ function json(obj, status = 200) {
 /* ================= 共用 ================= */
 
 class Ctx {
-  constructor(env) { this.env = env; this.db = env.DB; this._set = null; }
-  all(sql, ...p) { return this.db.prepare(sql).bind(...p).all().then(r => r.results); }
-  first(sql, ...p) { return this.db.prepare(sql).bind(...p).first(); }
-  run(sql, ...p) { return this.db.prepare(sql).bind(...p).run(); }
+  constructor(env) { this.env = env; this.db = env.DB; this._set = null; this.rows = 0; }
+  // rows 累計這次請求讀了幾列（D1 免費方案每天有讀取上限，回應標頭 X-Rows-Read 會帶出來方便檢查）
+  all(sql, ...p) { return this.db.prepare(sql).bind(...p).all().then(r => { const n = (r.meta && r.meta.rows_read) || 0; this.rows += n; if (this.env.DEBUG_ROWS && n > 200) console.log('ROWS', n, sql.replace(/\s+/g, ' ').slice(0, 140)); return r.results; }); }
+  first(sql, ...p) { return this.all(sql, ...p).then(r => r[0] || null); }
+  run(sql, ...p) { return this.db.prepare(sql).bind(...p).run().then(r => { this.rows += (r.meta && r.meta.rows_read) || 0; return r; }); }
   stmt(sql, ...p) { return this.db.prepare(sql).bind(...p); }
   async batch(list) { for (let i = 0; i < list.length; i += 50) await this.db.batch(list.slice(i, i + 50)); }
   async settings() {
@@ -253,14 +256,40 @@ function outfit(s) {
 function liveStreak(s) { return (s.last_day === today() || s.last_day === yesterday()) ? s.streak : 0; }
 
 /** 題目池：在這些單元裡、已啟用的題目 */
-function poolFor(ctx, units) {
-  if (!units || !units.length) return Promise.resolve([]);
-  return ctx.all('SELECT * FROM questions WHERE enabled = 1 AND unit_key IN (SELECT value FROM json_each(?))', JSON.stringify(units));
+/* ---------- 題庫快取 ----------
+ * 題目只有在匯入、編輯、停用、刪除時才會變。整個題庫讀一次後留在記憶體，
+ * 用 settings 的 qver（題庫版本）判斷要不要重讀，大幅減少資料庫讀取（D1 免費方案每天有讀取上限）。 */
+let QCACHE = null;
+async function bank(ctx) {
+  if (ctx._bank) return ctx._bank;
+  const ver = (await ctx.settings()).qver || '0';
+  if (!QCACHE || QCACHE.ver !== ver) {
+    const rows = await ctx.all('SELECT * FROM questions');
+    const byId = new Map(), byUnit = new Map();
+    rows.forEach(q => { byId.set(q.id, q); if (!byUnit.has(q.unit_key)) byUnit.set(q.unit_key, []); byUnit.get(q.unit_key).push(q); });
+    QCACHE = { ver, rows, byId, byUnit };
+  }
+  return (ctx._bank = QCACHE);
+}
+async function bumpBank(ctx) {
+  const v = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  await ctx.run("INSERT INTO settings (key, value) VALUES ('qver', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", v);
+  QCACHE = null; ctx._bank = null; if (ctx._set) ctx._set.qver = v;
+}
+const BANK_WRITERS = new Set(['tImport', 'xImportQuestions', 'tSaveQuestion', 'tSetEnabled', 'tDeleteQuestions', 'tRenameUnit']);
+
+async function poolFor(ctx, units) {
+  if (!units || !units.length) return [];
+  const b = await bank(ctx), out = [];
+  [...new Set(units)].forEach(k => (b.byUnit.get(k) || []).forEach(q => { if (q.enabled === 1) out.push(q); }));
+  return out;
 }
 
 /** 每一題的作答狀況：last 最近一次對錯、days 答對過的不同日子數、rday 最後答對日、day 最後作答日 */
 async function history(ctx, code, seat) {
-  const h = {};
+  const mk = code + '|' + seat; ctx._hist = ctx._hist || {};
+  if (ctx._hist[mk]) return ctx._hist[mk];
+  const h = (ctx._hist[mk] = {});
   (await ctx.all('SELECT qid, last_ok, right_days, last_right_day, last_day FROM progress WHERE class_code = ? AND seat = ?', code, seat))
     .forEach(r => h[r.qid] = { last: r.last_ok === 1, days: r.right_days, rday: r.last_right_day, day: r.last_day });
   return h;
@@ -519,7 +548,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
   const ids = [...new Set(list.map(r => str(r && r.id, 40)))];
   if (!ids.length) fail('沒有收到作答。');
   const qmap = {};
-  (await ctx.all('SELECT * FROM questions WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(ids))).forEach(q => qmap[q.id] = q);
+  { const b = await bank(ctx); ids.forEach(id => { const q = b.byId.get(id); if (q) qmap[id] = q; }); }
   const ts = stampNow(), day = today();
   const stmts = [], missed = new Set(), seen = new Set();
   const before = await history(ctx, cls.code, s.seat);
@@ -527,6 +556,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
   const reviewUnits = new Set(unitLevels(taughtPool, before).filter(u => u.review).map(u => u.key));
   const wrongBefore = taughtPool.filter(q => before[q.id] && !before[q.id].last).length;
   const longAgo = new Date(Date.now() + 8 * 3600e3 - 21 * 864e5).toISOString().slice(0, 10);
+  const gotOk = {};
   const passageOk = {};   // 每一段情境：答了幾題、對了幾題（題組全對用）
   let correct = 0, rescued = 0, passageRight = 0, reviewDone = false, longmem = 0;
   list.forEach(r => {
@@ -534,6 +564,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     if (!q || seen.has(q.id)) return;  // 同一題只算一次
     seen.add(q.id);
     const ok = grade(q, r.answer);
+    gotOk[q.id] = ok;
     if (ok) {
       correct++;
       if (before[q.id] && !before[q.id].last) rescued++;   // 之前答錯，這次答對
@@ -549,6 +580,9 @@ API.submitRound = async (ctx, cred, island, responses) => {
         right_days = right_days + CASE WHEN excluded.last_ok = 1 AND last_right_day <> excluded.last_day THEN 1 ELSE 0 END,
         last_right_day = CASE WHEN excluded.last_ok = 1 THEN excluded.last_day ELSE last_right_day END`,
       cls.code, s.seat, q.id, ok ? 1 : 0, ok ? 1 : 0, ok ? day : '', day));
+    // 全班每題的累計對錯（老師後台的弱點統計用；測試帳號不算）
+    if (!s.is_test) stmts.push(ctx.stmt(`INSERT INTO qstats (class_code, qid, right, total) VALUES (?,?,?,1)
+      ON CONFLICT(class_code, qid) DO UPDATE SET right = right + excluded.right, total = total + 1`, cls.code, q.id, ok ? 1 : 0));
   });
   const total = seen.size;
   if (!total) fail('沒有收到作答。');
@@ -573,6 +607,14 @@ API.submitRound = async (ctx, cred, island, responses) => {
       streak = ?, last_day = ?, total = total + ?, right_count = right_count + ? WHERE class_code = ? AND seat = ?`,
     correct, correct, passed ? 1 : 0, gotStamp ? 1 : 0, s.streak, s.last_day, total, correct, cls.code, s.seat));
   await ctx.db.batch(stmts);
+  // 記憶體裡的作答紀錄也照資料庫的規則更新，後面算等級時不用再讀一次
+  Object.entries(gotOk).forEach(([id, ok]) => {
+    const h = before[id];
+    if (!h) { before[id] = { last: ok, days: ok ? 1 : 0, rday: ok ? day : '', day }; return; }
+    if (ok && h.rday !== day) h.days++;
+    if (ok) h.rday = day;
+    h.last = ok; h.day = day;
+  });
   const st = await state(ctx, cls, s);
   // 新精熟的單元：記錄下來（徽章與加點用），每個單元只記第一次
   const had = new Set((await ctx.all('SELECT unit_key FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.unit_key));
@@ -581,15 +623,17 @@ API.submitRound = async (ctx, cred, island, responses) => {
   // 一步一腳印：新精熟的單元裡，曾經有答錯過的題目
   let climb = false;
   if (newly.length) {
-    const w = await ctx.first('SELECT COUNT(*) AS n FROM logs WHERE class_code = ? AND seat = ? AND ok = 0 AND qid IN (SELECT id FROM questions WHERE unit_key IN (SELECT value FROM json_each(?)))',
-      cls.code, s.seat, JSON.stringify(newly.map(u => u.key)));
-    climb = w.n > 0;
+    const b = await bank(ctx), keys = new Set(newly.map(u => u.key));
+    climb = (await ctx.all('SELECT DISTINCT qid FROM logs WHERE class_code = ? AND seat = ? AND ok = 0', cls.code, s.seat))
+      .some(r => { const q = b.byId.get(r.qid); return q && keys.has(q.unit_key); });
   }
   // 觀念突破：這回合答過的觀念裡，有一個以前錯過 3 次以上、最近 5 題都答對
   let concept = false;
   const cs = [...new Set([...seen].map(id => qmap[id].concept).filter(Boolean))].slice(0, 10);
+  const recent = cs.length ? await ctx.all('SELECT qid, ok FROM logs WHERE class_code = ? AND seat = ? ORDER BY id DESC LIMIT 800', cls.code, s.seat) : [];
+  const bk = await bank(ctx);
   for (const c of cs) {
-    const rows = await ctx.all('SELECT l.ok FROM logs l JOIN questions q ON q.id = l.qid WHERE l.class_code = ? AND l.seat = ? AND q.concept = ? ORDER BY l.id DESC LIMIT 200', cls.code, s.seat, c);
+    const rows = recent.filter(r => { const q = bk.byId.get(r.qid); return q && q.concept === c; }).slice(0, 200);
     if (rows.length >= 8 && rows.slice(0, 5).every(r => r.ok === 1) && rows.slice(5).filter(r => r.ok === 0).length >= 3) { concept = true; break; }
   }
   const nb = await awardBadges(ctx, cls, s, st, {
@@ -651,17 +695,16 @@ function classOut(c) {
 
 async function versions(ctx) {
   const v = new Set([COMMON, '南一', '康軒', '翰林']);
-  (await ctx.all('SELECT DISTINCT version FROM questions UNION SELECT DISTINCT version FROM classes')).forEach(r => r.version && v.add(r.version));
+  (await bank(ctx)).rows.forEach(q => q.version && v.add(q.version));
+  (await ctx.all('SELECT version FROM classes')).forEach(r => r.version && v.add(r.version));
   (await ctx.all('SELECT versions FROM classes')).forEach(r => Object.values(jsonp(r.versions, {})).forEach(x => x && v.add(x)));
   return [...v];
 }
 
 /** 單元清單：老師管理的單元表 ＋ 題庫裡有題目的單元，照課本順序排列 */
 async function unitCatalog(ctx) {
-  const [rows, own] = await Promise.all([
-    ctx.all('SELECT unit_key AS key, version, grade, sem, subject, unit, SUM(enabled) AS enabled FROM questions GROUP BY unit_key'),
-    ctx.all('SELECT * FROM units')
-  ]);
+  const [b, own] = await Promise.all([bank(ctx), ctx.all('SELECT * FROM units')]);
+  const rows = [...b.byUnit.entries()].map(([key, qs]) => { const q = qs[0]; return { key, version: q.version, grade: q.grade, sem: q.sem, subject: q.subject, unit: q.unit, enabled: qs.filter(x => x.enabled === 1).length }; });
   const m = {};
   own.forEach(u => m[u.unit_key] = { key: u.unit_key, version: u.version, grade: u.grade, sem: u.sem, subject: u.subject, unit: u.unit, count: 0, sort: u.sort, own: true });
   rows.forEach(r => {
@@ -679,24 +722,38 @@ API.tLogin = async (ctx, pw) => {
   return { classes, versions: await versions(ctx) };
 };
 
+/** 只要單元清單（切換到教學進度、題庫管理時用），比整個後台資料輕很多 */
+API.tUnits = async (ctx, pw, code) => {
+  await checkPw(ctx, pw);
+  const cls = await findClass(ctx, code);
+  return { cls: classOut(cls), units: await unitCatalog(ctx), versions: await versions(ctx) };
+};
+
 API.tDashboard = async (ctx, pw, code) => {
   await checkPw(ctx, pw);
   const cls = await findClass(ctx, code);
   const rt = await rate(ctx);
   const week = new Date(Date.now() + 8 * 3600e3 - 6 * 864e5).toISOString().slice(0, 10);
-  const [students, days, units, qs, cs, wrongNow, mPend] = await Promise.all([
+  const [students, days, stats, wrongRows, mPend, b] = await Promise.all([
     ctx.all('SELECT * FROM students WHERE class_code = ? ORDER BY seat', cls.code),
     ctx.all('SELECT seat, COUNT(DISTINCT day) AS n FROM logs WHERE class_code = ? AND day >= ? GROUP BY seat', cls.code, week),
-    ctx.all('SELECT subject, unit, SUM(ok) AS right, COUNT(*) AS total FROM logs l WHERE class_code = ? AND NOT EXISTS (SELECT 1 FROM students t WHERE t.class_code = l.class_code AND t.seat = l.seat AND t.is_test = 1) GROUP BY subject, unit', cls.code),
-    ctx.all(`SELECT l.qid AS id, q.text, q.subject, q.unit, q.answer, COUNT(*) - SUM(l.ok) AS wrong, COUNT(*) AS total
-      FROM logs l JOIN questions q ON q.id = l.qid WHERE l.class_code = ? AND NOT EXISTS (SELECT 1 FROM students t WHERE t.class_code = l.class_code AND t.seat = l.seat AND t.is_test = 1) GROUP BY l.qid
-      HAVING total >= 3 AND wrong > 0 ORDER BY wrong * 1.0 / total DESC LIMIT 8`, cls.code),
-    ctx.all(`SELECT q.subject, q.concept, SUM(l.ok) AS right, COUNT(*) AS total FROM logs l JOIN questions q ON q.id = l.qid
-      WHERE l.class_code = ? AND q.concept <> '' AND NOT EXISTS (SELECT 1 FROM students t WHERE t.class_code = l.class_code AND t.seat = l.seat AND t.is_test = 1) GROUP BY q.subject, q.concept`, cls.code),
-    ctx.all(`SELECT p.seat, q.subject, q.concept FROM progress p JOIN questions q ON q.id = p.qid
-      WHERE p.class_code = ? AND p.last_ok = 0`, cls.code),
-    ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code)
+    ctx.all('SELECT qid, right, total FROM qstats WHERE class_code = ?', cls.code),
+    ctx.all('SELECT seat, qid FROM progress WHERE class_code = ? AND last_ok = 0', cls.code),
+    ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code),
+    bank(ctx)
   ]);
+  // 全班統計（不含測試帳號）：用每題累計的 qstats 加上記憶體裡的題庫算，不用掃全部作答紀錄
+  const uAgg = {}, cAgg = {}, qs = [];
+  stats.forEach(r => {
+    const q = b.byId.get(r.qid); if (!q) return;
+    const uk = q.subject + '｜' + q.unit, u = uAgg[uk] = uAgg[uk] || { subject: q.subject, unit: q.unit, right: 0, total: 0 };
+    u.right += r.right; u.total += r.total;
+    if (q.concept) { const ck = q.subject + '｜' + q.concept, c = cAgg[ck] = cAgg[ck] || { subject: q.subject, concept: q.concept, right: 0, total: 0 }; c.right += r.right; c.total += r.total; }
+    if (r.total >= 3 && r.total > r.right) qs.push({ id: q.id, text: q.text, subject: q.subject, unit: q.unit, answer: q.answer, wrong: r.total - r.right, total: r.total });
+  });
+  qs.sort((x, y) => y.wrong / y.total - x.wrong / x.total); qs.splice(8);
+  const units = Object.values(uAgg), cs = Object.values(cAgg);
+  const wrongNow = wrongRows.map(r => { const q = b.byId.get(r.qid); return q && { seat: r.seat, subject: q.subject, concept: q.concept }; }).filter(Boolean);
   const mMap = {}; mPend.forEach(r => mMap[r.seat] = r.n);
   const bMap = {}, cMap = Object.fromEntries((await customBadges(ctx)).map(b => [b.id, b]));
   (await ctx.all('SELECT seat, badge FROM badges WHERE class_code = ?', cls.code)).forEach(r => (bMap[r.seat] = bMap[r.seat] || []).push(r.badge));
@@ -811,6 +868,13 @@ API.tSetTest = async (ctx, pw, code, seat, on) => {
   await checkPw(ctx, pw);
   const r = await ctx.run('UPDATE students SET is_test = ? WHERE class_code = ? AND seat = ?', on ? 1 : 0, up(code), Math.floor(num(seat)));
   if (!r.meta.changes) fail('找不到這位學生。');
+  // 全班統計重算一次，讓這位學生以前的作答也照新的設定算進或排除
+  await ctx.db.batch([
+    ctx.stmt('DELETE FROM qstats WHERE class_code = ?', up(code)),
+    ctx.stmt(`INSERT INTO qstats (class_code, qid, right, total) SELECT l.class_code, l.qid, SUM(l.ok), COUNT(*) FROM logs l
+      WHERE l.class_code = ? AND NOT EXISTS (SELECT 1 FROM students t WHERE t.class_code = l.class_code AND t.seat = l.seat AND t.is_test = 1)
+      GROUP BY l.class_code, l.qid`, up(code))
+  ]);
   return true;
 };
 
@@ -1038,7 +1102,7 @@ async function importQuestions(ctx, text, source, defaultVersion) {
   const errors = [], stmts = [];
   const base = Date.now().toString(36).toUpperCase();
   // 同一個單元裡題目文字完全一樣的，視為重複，不再匯入（避免同一份檔案匯入兩次）
-  const seen = new Set((await ctx.all('SELECT unit_key, text, passage FROM questions')).map(r => r.unit_key + '\u0001' + r.text + '\u0001' + r.passage));
+  const seen = new Set((await bank(ctx)).rows.map(r => r.unit_key + '\u0001' + r.text + '\u0001' + r.passage));
   let added = 0, skipped = 0;
   for (let i = start; i < lines.length; i++) {
     if (!lines[i].join('').trim()) continue;

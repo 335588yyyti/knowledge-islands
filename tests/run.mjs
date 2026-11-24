@@ -586,6 +586,20 @@ try {
     await t.click('[data-tab="tBank"]');
     await t.waitForSelector('#bankTbl td:has-text("Key test question")', { timeout: 5000 });
   });
+  await step('題庫快取：匯入、停用題目後，學生端馬上看到新的題庫', async () => {
+    const c1 = { code: 'DEMO', seat: 1, pin: '1234' };
+    const count = async () => (await call('studentLogin', c1)).ok.units.reduce((a, u) => a + u.total, 0);
+    const n0 = await count();
+    const key = (await call('studentLogin', c1)).ok.units[0].key, [ver, gs, sj, unit] = key.split('｜');
+    const tsv = '版本\t年級\t學期\t科目\t單元\t觀念\t題型\t題目\t選項A\t選項B\t選項C\t選項D\t答案\t解析\t情境\n' +
+      [ver, gs[0], gs.slice(1), sj, unit, '', '是非', '快取測試題', '', '', '', '', 'O', '', ''].join('\t');
+    assert.equal((await call('tImport', PW, tsv, '老師', '')).ok.added, 1);
+    assert.equal(await count(), n0 + 1, '匯入後馬上算進單元題數');
+    const id = (await call('tQuestions', PW, { q: '快取測試題' })).ok.rows[0].id;
+    await call('tSetEnabled', PW, [id], false);
+    assert.equal(await count(), n0, '停用後馬上不算');
+    await call('tDeleteQuestions', PW, [id]);
+  });
   await step('關於與版權：顯示老師設定的署名', async () => {
     await call('tSaveSettings', PW, { credit: '測試國小 測試老師' });
     const p = await page('/');
