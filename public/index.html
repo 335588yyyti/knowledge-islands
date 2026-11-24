@@ -638,11 +638,11 @@ function renderMap(){
   if (ex) cards.push(`<button class="island" data-island="段考">${islandSvg({c:'#ff8fa3', d:'#e66d84', ch:'考'}, 2, false)}<div class="name">段考衝刺島</div><div class="meta">只出考試範圍</div><div class="bar"><i style="width:${ex.total ? Math.round(ex.mastered / ex.total * 100) : 0}%;background:#ff8fa3"></i></div></button>`);
   SUBJ.forEach((sj, i) => {
     const it = s.islands[sj.k] || {total:0, mastered:0};
-    const locked = !it.total;
+    const locked = !(it.practice ?? it.total);
     const pct = it.total ? Math.round(it.mastered / it.total * 100) : 0;
     cards.push(`<button class="island${locked?' locked':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
       ${islandSvg(sj, i, locked)}<div class="name">${sj.k}島</div>
-      <div class="meta">${locked ? '還在睡覺，等老師開放' : '已掌握 ' + it.mastered + ' / ' + it.total + ' 題'}</div>
+      <div class="meta">${locked ? '還在睡覺，等老師開放' : '記住 ' + it.mastered + ' / ' + it.total + ' 題' + (it.lit ? '<br><small>（含素養島 ' + it.lit + ' 題）</small>' : '')}</div>
       ${locked ? '' : '<div class="meta">🌳 精熟 ' + (it.masteredUnits || 0) + ' / ' + (it.units || 0) + ' 單元</div>'}
       ${!locked && it.links ? '<div class="meta">🧭 ' + it.links + ' 個延伸冒險</div>' : ''}
       <div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></button>`);
@@ -676,11 +676,11 @@ $('map').addEventListener('click', e => {
   startRound(b.dataset.island);
 });
 // 小視窗：選好之後開始一回合
-function openPick(title, items){
+function openPick(title, items, note){
   const d = document.createElement('div'); d.id = 'pick';
   d.innerHTML = `<div class="box" role="dialog" aria-label="${esc(title)}"><h3>${esc(title)}</h3><div class="list">
     ${items.map(it => `<button class="lp${it.main ? ' main' : ''}" data-go="${esc(it.v)}"><span>${esc(it.label)}</span><small>${esc(it.small || '')}</small></button>`).join('')}</div>
-    <button class="btn soft" data-go="">回地圖</button></div>`;
+    ${note ? '<p class="small" style="margin:0;opacity:.8">' + esc(note) + '</p>' : ''}<button class="btn soft" data-go="">回地圖</button></div>`;
   document.body.appendChild(d);
   d.addEventListener('click', e => {
     const b = e.target.closest('[data-go]');
@@ -694,7 +694,8 @@ function pickUnit(sj){
   const LV = ['', '🌱 初學', '🌿 熟練', '🌳 精熟'];
   const us = (state.units || []).filter(u => u.subject === sj && u.practice);
   openPick(sj + '島：想練哪裡？', [{ v: sj, label: '全部單元混合', small: '推薦：混著練，記得最久', main: true }]
-    .concat(us.map(u => ({ v: '單元:' + u.key, label: u.unit, small: (u.review ? '⏰ 該複習・' : '') + (LV[u.level] || '還沒練') + '・' + u.practice + ' 題' }))));
+    .concat(us.map(u => ({ v: '單元:' + u.key, label: u.unit, small: (u.review ? '⏰ 該複習・' : '') + (LV[u.level] || '還沒練') + '・記住 ' + u.remembered + ' / ' + u.total })))
+    , us.some(u => u.lit) ? '單課練習只出一般題；素養題組要到素養島練，也算在單元的題數裡。' : '');
 }
 // 素養島：先選科目（或全部混合）
 function pickLiteracy(){

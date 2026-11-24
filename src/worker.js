@@ -304,15 +304,17 @@ async function state(ctx, cls, s) {
   const pool = await poolFor(ctx, jsonp(cls.units, []));
   const hist = await history(ctx, cls.code, s.seat);
   const islands = {};
-  SUBJECTS.forEach(sj => islands[sj] = { total: 0, mastered: 0 });
+  // 科目島的數字和精熟圖鑑一致：記住幾題 / 這科全部題數（含素養題組）；practice 是科目島能出的一般題
+  SUBJECTS.forEach(sj => islands[sj] = { total: 0, mastered: 0, practice: 0, lit: 0 });
   // 素養島：有閱讀情境的題組集中在這裡，依科目分開
   const literacy = {}, litSets = {};
   SUBJECTS.forEach(sj => { literacy[sj] = { groups: 0, total: 0, mastered: 0 }; litSets[sj] = new Set(); });
   let wrong = 0;
   pool.forEach(q => {
     const h = hist[q.id];
-    const it = q.passage ? literacy[q.subject] : islands[q.subject];
-    if (it) { it.total++; if (h && h.last) it.mastered++; }
+    const lt = q.passage ? literacy[q.subject] : null, is = islands[q.subject];
+    if (lt) { lt.total++; if (h && h.last) lt.mastered++; }
+    if (is) { is.total++; if (remembered(h)) is.mastered++; if (q.passage) is.lit++; else is.practice++; }
     if (q.passage && litSets[q.subject]) litSets[q.subject].add(q.passage);
     if (h && !h.last) wrong++;
   });
@@ -323,9 +325,11 @@ async function state(ctx, cls, s) {
     ex = { name: ex.name, date: ex.date, days: ex.days, total: ep.length, mastered: ep.filter(q => hist[q.id] && hist[q.id].last).length };
   }
   const set = await ctx.settings();
+  const sortOf = {}; (await unitCatalog(ctx)).forEach(u => sortOf[u.key] = u.sort);
   const practice = {}; pool.forEach(q => { if (!q.passage) practice[q.unit_key] = (practice[q.unit_key] || 0) + 1; });
   const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right, once: u.once, lit: u.lit, practice: practice[u.key] || 0,
-    needMaster: Math.max(0, Math.ceil(u.total * MASTER_RATIO - 1e-9) - u.remembered), needSkilled: Math.max(0, Math.ceil(u.total * SKILLED_RATIO - 1e-9) - u.right) }));
+    needMaster: Math.max(0, Math.ceil(u.total * MASTER_RATIO - 1e-9) - u.remembered), needSkilled: Math.max(0, Math.ceil(u.total * SKILLED_RATIO - 1e-9) - u.right) }))
+    .sort((a, b) => SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject) || (sortOf[a.key] ?? 1e6) - (sortOf[b.key] ?? 1e6) || a.unit.localeCompare(b.unit, 'zh-Hant'));
   const linkRows = await ctx.all('SELECT unit_key FROM links WHERE unit_key IN (SELECT value FROM json_each(?))', cls.units || '[]');
   SUBJECTS.forEach(sj => {
     islands[sj].links = linkRows.filter(r => r.unit_key.split('｜')[2] === sj).length;
@@ -859,9 +863,10 @@ API.tMastery = async (ctx, pw, code) => {
   const hBy = {};
   prog.forEach(r => (hBy[r.seat] = hBy[r.seat] || {})[r.qid] = { last: r.last_ok === 1, days: r.right_days, rday: r.last_right_day, day: r.last_day });
   const base = unitLevels(pool, {});
+  const sortOf = {}; (await unitCatalog(ctx)).forEach(u => sortOf[u.key] = u.sort);
   const order = base.map(u => u.key).sort((a, b) => {
     const A = base.find(u => u.key === a), B = base.find(u => u.key === b);
-    return SUBJECTS.indexOf(A.subject) - SUBJECTS.indexOf(B.subject) || a.localeCompare(b);
+    return SUBJECTS.indexOf(A.subject) - SUBJECTS.indexOf(B.subject) || (sortOf[a] ?? 1e6) - (sortOf[b] ?? 1e6) || a.localeCompare(b);
   });
   const rows = students.map(st => {
     const lv = {}, review = [];

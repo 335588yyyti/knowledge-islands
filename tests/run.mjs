@@ -294,6 +294,10 @@ try {
     const qs = (await call('getRound', c3, '單元:' + u.key)).ok;
     assert.ok(qs.length && qs.every(q => q.unit === u.unit && !q.passage), '只出這一課');
     assert.match((await call('getRound', c3, '單元:通用｜6上｜數學｜沒教過')).err, /還沒開放/);
+    // 單元照課本順序（匯入單元表的順序）排列，不是照字串排
+    const cat = Object.fromEntries((await call('tDashboard', PW, 'DEMO')).ok.units.map(x => [x.key, x.sort]));
+    st.units.forEach((x, i) => { const y = st.units[i + 1]; if (y && y.subject === x.subject) assert.ok((cat[x.key] ?? 1e6) <= (cat[y.key] ?? 1e6), x.unit + ' 應該排在 ' + y.unit + ' 前面'); });
+    assert.ok(st.islands['數學'].practice > 0 && st.islands['數學'].total >= st.islands['數學'].practice, '科目島的題數含素養題組');
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
     await p.click('[data-island="數學"]'); await p.waitForSelector('#pick');
