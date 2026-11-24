@@ -81,9 +81,9 @@ const BADGES = [
   { id: 'reader10', series: 'reader', tier: 1, group: '挑戰', icon: '📖', name: '閱讀偵探', desc: '答對 10 題素養題' },
   { id: 'reader30', series: 'reader', tier: 2, group: '挑戰', icon: '🔎', name: '情境高手', desc: '答對 30 題素養題' },
   { id: 'reader60', series: 'reader', tier: 3, group: '挑戰', icon: '📚', name: '素養達人', desc: '答對 60 題素養題' },
-  { id: 'groupall', group: '挑戰', icon: '🧩', name: '題組全對', desc: '一組 3 題以上的素養題組全部答對' },
-  { id: 'perfect', group: '挑戰', icon: '🎯', name: '百發百中', desc: '一回合至少 8 題，全部答對' },
-  { id: 'lighthouse', group: '挑戰', icon: '🗼', name: '燈塔全對', desc: '燈塔挑戰（各科混合）一回合至少 5 題全部答對' },
+  { id: 'groupall', group: '挑戰', icon: '🧩', name: '題組全對', desc: '一組素養題組（3 題以上）每一題都答對' },
+  { id: 'perfect', group: '挑戰', icon: '🎯', name: '百發百中', desc: '一整回合每一題都答對（那一回合要有 8 題以上）' },
+  { id: 'lighthouse', group: '挑戰', icon: '🗼', name: '燈塔全對', desc: '燈塔挑戰一整回合每一題都答對，一題都沒錯（那一回合要有 5 題以上）' },
   { id: 'exam', group: '挑戰', icon: '🚩', name: '備戰完成', desc: '在段考衝刺島過關' },
   { id: 'prepared', group: '挑戰', icon: '🎒', name: '有備而來', desc: '段考前，考試範圍有 7 成題目最近一次答對' },
   // AI 素養
