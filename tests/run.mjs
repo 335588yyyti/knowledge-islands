@@ -243,6 +243,13 @@ try {
     assert.match(await p.textContent('[data-island="英文"]'), /精熟 2 \/ 2 單元/);
     await p.click('#bMastery'); await p.waitForSelector('#vMastery:not(.hidden)');
     assert.equal(await p.locator('.mrow.lv3').count(), 2);
+    assert.match(await p.textContent('#vMastery'), /已經精熟了/);
+    assert.match(await p.textContent('#vMastery'), /兩個不同的日子/);
+    // 還沒精熟的單元會寫出「還要再記住幾題」，數字和 9 成門檻一致
+    const st = (await call('studentLogin', { code: 'DEMO', seat: 2, pin: '2222' })).ok;
+    st.units.forEach(u => assert.equal(u.needMaster, Math.max(0, Math.ceil(u.total * 0.9) - u.remembered)));
+    const notYet = st.units.find(u => u.level < 3);
+    if (notYet) assert.match(await p.textContent('#vMastery'), new RegExp('精熟還要再記住 ' + notYet.needMaster + ' 題'));
   });
   await step('素養題：情境題組排在一起，畫面顯示閱讀情境', async () => {
     const c3 = { code: 'DEMO', seat: 3, pin: '3333' };

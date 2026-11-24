@@ -279,10 +279,10 @@ const remembered = h => !!h && h.last && h.days >= 2;
 function unitLevels(pool, hist) {
   const by = {};
   pool.forEach(q => {
-    const u = by[q.unit_key] = by[q.unit_key] || { key: q.unit_key, subject: q.subject, unit: q.unit, total: 0, tried: 0, right: 0, remembered: 0, lastDay: '' };
+    const u = by[q.unit_key] = by[q.unit_key] || { key: q.unit_key, subject: q.subject, unit: q.unit, total: 0, tried: 0, right: 0, remembered: 0, once: 0, lit: 0, lastDay: '' };
     const h = hist[q.id];
-    u.total++;
-    if (h) { u.tried++; if (h.last) u.right++; if (remembered(h)) u.remembered++; if (h.day > u.lastDay) u.lastDay = h.day; }
+    u.total++; if (q.passage) u.lit++;
+    if (h) { u.tried++; if (h.last) u.right++; if (remembered(h)) u.remembered++; else if (h.last) u.once++; if (h.day > u.lastDay) u.lastDay = h.day; }
   });
   const reviewBefore = new Date(Date.now() + 8 * 3600e3 - REVIEW_DAYS * 864e5).toISOString().slice(0, 10);
   return Object.keys(by).map(k => {
@@ -324,7 +324,8 @@ async function state(ctx, cls, s) {
   }
   const set = await ctx.settings();
   const practice = {}; pool.forEach(q => { if (!q.passage) practice[q.unit_key] = (practice[q.unit_key] || 0) + 1; });
-  const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right, practice: practice[u.key] || 0 }));
+  const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right, once: u.once, lit: u.lit, practice: practice[u.key] || 0,
+    needMaster: Math.max(0, Math.ceil(u.total * MASTER_RATIO - 1e-9) - u.remembered), needSkilled: Math.max(0, Math.ceil(u.total * SKILLED_RATIO - 1e-9) - u.right) }));
   const linkRows = await ctx.all('SELECT unit_key FROM links WHERE unit_key IN (SELECT value FROM json_each(?))', cls.units || '[]');
   SUBJECTS.forEach(sj => {
     islands[sj].links = linkRows.filter(r => r.unit_key.split('｜')[2] === sj).length;

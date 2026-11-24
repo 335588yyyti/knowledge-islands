@@ -174,6 +174,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .mlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 .mrow{display:flex;gap:10px;align-items:center;background:#fff;border:3px solid #f1e3c8;border-radius:18px;padding:10px 12px}
 .mrow.lv3{border-color:var(--mint);background:#f1fbf6}
+.mneed{display:block;margin-top:4px;line-height:1.6}
 .mrow .mi{font-size:28px;width:34px;text-align:center;flex:none}
 .mrow.lv0 .mi{color:var(--muted)}
 .mrow .mt{flex:1;min-width:0}
@@ -362,14 +363,24 @@ label{display:block;font-weight:800;margin-bottom:6px}
       </table>
 
       <h3>🌳 第 5 站：精熟——讓知識真的記住</h3>
-      <p class="rule">同一題，<b>換一天再答對一次</b>，就算記住了！<br><small>（哪兩天都可以，不用一定是隔天）</small></p>
+      <p class="rule">同一題，<b>換一天再答對一次</b>，這一題就「記住了」！<br><small>也就是：同一題在<b>兩個不同的日子</b>都答對，而且<b>最近一次也答對</b>。</small><br><small>（哪兩天都可以，不用一定是隔天）</small></p>
+      <p><b>看一個例子：</b>國語第一課有 40 題。</p>
+      <ol>
+        <li><b>星期一</b>：你答對了第 1～10 題。→ 這 10 題只答對過<b>一天</b>，還沒記住。</li>
+        <li><b>星期二</b>：你答對了第 11～20 題。→ 這 10 題也只答對過一天，還是沒記住。<br><small>「兩天都有答對」不等於「記住」，因為不是<b>同一題</b>。</small></li>
+        <li><b>星期四</b>：島上又出現第 3、5、8 題，你都答對了。→ 這 3 題<b>記住了</b>！✅</li>
+        <li>如果第 3 題後來又答錯，它就要<b>再答對一次</b>才算回來。答錯不會歸零喔。</li>
+      </ol>
+      <p>別擔心不知道該練哪一題：島上會<b>優先出</b>你答錯的題目，和「答對過一天、今天還沒答對」的題目，所以每天玩一回合，就會慢慢記住。</p>
       <table class="gtable">
-        <tr><td>🌱 初學</td><td>開始練習這個單元了，加油！</td></tr>
-        <tr><td>🌿 熟練</td><td>這個單元有 7 成題目，你最近一次都答對了。</td></tr>
-        <tr><td>🌳 精熟</td><td>這個單元 9 成的題目，你都在兩個不同的日子答對過。會拿到<b>精熟徽章</b>！</td></tr>
+        <tr><td>🌱 初學</td><td>這個單元開始練習了，加油！</td></tr>
+        <tr><td>🌿 熟練</td><td>這個單元 <b>7 成</b>的題目，你<b>最近一次</b>都答對了。（現在會了，但還沒證明換一天還記得）</td></tr>
+        <tr><td>🌳 精熟</td><td>這個單元 <b>9 成</b>的題目都<b>記住了</b>。例如 40 題要記住 36 題。會拿到<b>精熟徽章</b>！</td></tr>
         <tr><td>⏰ 該複習了</td><td>精熟的單元超過 3 週沒練，波波會提醒你回去看看。精熟不會被拿走喔。</td></tr>
       </table>
-      <p>在地圖上按「<b>精熟圖鑑</b>」，可以看到每個單元走到哪裡了。答錯也不會歸零，只要那一題再答對一次就好。</p>
+      <p>到地圖上的「<b>精熟圖鑑</b>」，每個單元都會寫：<b>記住幾題、精熟還要再記住幾題</b>、有幾題「換一天再答對就記住」。</p>
+      <p>📖 有些單元裡有<b>素養題組</b>，它們也算在單元的題數裡，要到<b>素養島</b>去練。</p>
+      <p>💡 題目多的單元要練比較久才會精熟，這很正常。每天一回合，一點一點累積！</p>
 
       <h3>🏅 第 6 站：收集徽章</h3>
       <ul>
@@ -437,7 +448,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
   <section id="vMastery" class="shop hidden">
     <div class="qtop"><h2 style="flex:1">精熟圖鑑</h2><button class="btn soft small" id="bMasteryBack">回地圖</button></div>
     <div class="card">
-      <div class="talk"><span class="bob" id="mMascot"></span><div class="say">同一題，<b>換一天再答對一次</b>，就算記住了！<br>一個單元 9 成的題目都記住，就能拿到 🌳 精熟。</div></div>
+      <div class="talk"><span class="bob" id="mMascot"></span><div class="say"><b>「記住」是看每一題：</b>同一題，在<b>兩個不同的日子</b>都答對，而且最近一次也答對，這一題才算記住。<br><b>「精熟」是看整個單元：</b>這個單元 9 成的題目都記住了，就是 🌳 精熟。<br><small>注意：昨天答對 10 題、今天答對另外 10 題，這 20 題都只答對過一天，還沒有記住喔！要同一題換一天再答對。</small></div></div>
       <div class="legend"><span>🌱 初學：開始練習</span><span>🌿 熟練：7 成答對</span><span>🌳 精熟：9 成記住了</span><span>⏰ 很久沒練，該複習了</span></div>
       <div id="masteryList"></div>
     </div>
@@ -884,7 +895,8 @@ function renderMastery(){
       const pct = u.total ? Math.round(u.remembered / u.total * 100) : 0;
       return `<div class="mrow lv${u.level}"><span class="mi" aria-hidden="true">${LV[u.level]}</span>
         <div class="mt"><b>${esc(u.unit)}</b>${u.review ? ' <span class="rv">⏰ 該複習了</span>' : ''}<br>
-        <small>${LVN[u.level]}・記住 ${u.remembered} / ${u.total} 題</small><div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></div></div>`;
+        <small>${LVN[u.level]}・記住 ${u.remembered} / ${u.total} 題</small><div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div>
+        <small class="mneed">${u.level < 3 ? '🌳 精熟還要再記住 <b>' + u.needMaster + '</b> 題' : '🌳 已經精熟了！'}${u.level < 2 && u.needSkilled ? '　🌿 熟練還差 <b>' + u.needSkilled + '</b> 題答對' : ''}${u.once ? '<br>🔁 有 <b>' + u.once + '</b> 題只答對過一天，<b>換一天</b>再答對就記住了' : ''}${u.lit ? '<br>📖 其中 ' + u.lit + ' 題是素養題組，要到素養島練' : ''}</small></div></div>`;
     }).join('') + '</div>';
   }).join('') || '<p>老師還沒開放單元喔。</p>';
 }
