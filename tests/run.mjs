@@ -211,14 +211,14 @@ try {
     };
     let r = await answerAll();
     let en = r.state.units.filter(u => u.subject === '英文');
-    assert.ok(en.every(u => u.level === 2), '同一天全對只到熟練');
+    assert.ok(en.every(u => u.level === 1), '同一天全對，題目都只答對過一天：還是發芽');
     r = await answerAll();  // 同一天再答對一次，還是不算
-    assert.ok(r.state.units.filter(u => u.subject === '英文').every(u => u.level === 2));
+    assert.ok(r.state.units.filter(u => u.subject === '英文').every(u => u.level === 1 && u.remembered === 0), '同一天答兩次也不算記住');
     // 模擬「換一天」：把上次答對的日期改成以前的某一天
     execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE progress SET last_right_day = '2026-01-01' WHERE seat = 2"`, { stdio: 'ignore' });
     r = await answerAll();
     en = r.state.units.filter(u => u.subject === '英文');
-    assert.ok(en.every(u => u.level === 3), '換一天再答對 = 精熟');
+    assert.ok(en.every(u => u.level === 4), '換一天再答對 = 精熟');
     assert.equal(r.mastered.length, en.length);
     assert.match(r.mastered.join(), /英文・Unit 1 單字/);
     r = await answerAll();
@@ -228,8 +228,8 @@ try {
     await call('tSaveSettings', PW, { perMastery: 2 });
     const g = (await call('tMastery', PW, 'DEMO')).ok;
     const s2 = g.students.find(x => x.seat === 2);
-    assert.equal(Object.values(s2.levels).filter(v => v === 3).length, 2);
-    await t.click('[data-tab="tMastery"]'); await t.waitForSelector('#mTbl td.lvc.l3'); assert.match(await t.textContent('#mTbl'), /精熟/); assert.doesNotMatch(await t.textContent('#mTbl'), /🌳/);
+    assert.equal(Object.values(s2.levels).filter(v => v === 4).length, 2);
+    await t.click('[data-tab="tMastery"]'); await t.waitForSelector('#mTbl td.lvc.l4'); assert.match(await t.textContent('#mTbl'), /精熟/); assert.doesNotMatch(await t.textContent('#mTbl'), /🌳/);
     const before = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 2);
     assert.equal(before.masteryPending, 2);
     const out = (await call('tRedeem', PW, 'DEMO', [2], '精熟測試')).ok;
@@ -242,7 +242,7 @@ try {
     await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
     assert.match(await p.textContent('[data-island="英文"]'), /精熟 2 \/ 2 單元/);
     await p.click('#bMastery'); await p.waitForSelector('#vMastery:not(.hidden)');
-    assert.equal(await p.locator('.mrow.lv3').count(), 2);
+    assert.equal(await p.locator('.mrow.lv4').count(), 2);
     assert.match(await p.textContent('#vMastery'), /已經精熟了/);
     assert.match(await p.textContent('#vMastery'), /兩個不同的日子/);
     // 還沒精熟的單元會寫出「還要再記住幾題」，數字和 9 成門檻一致
@@ -250,6 +250,13 @@ try {
     st.units.forEach(u => assert.equal(u.needMaster, Math.max(0, Math.ceil(u.total * 0.9) - u.remembered)));
     const notYet = st.units.find(u => u.level < 3);
     if (notYet) assert.match(await p.textContent('#vMastery'), new RegExp('精熟還要再記住 ' + notYet.needMaster + ' 題'));
+    // 精熟過就一直是精熟：之後答錯，等級不掉，只提醒還有幾題要再答對
+    const c2 = { code: 'DEMO', seat: 2, pin: '2222' };
+    const q = (await call('getRound', c2, '英文')).ok[0];
+    await call('submitRound', c2, '英文', [{ id: q.id, answer: 'zzz' }]);
+    const after = (await call('studentLogin', c2)).ok.units.filter(u => u.subject === '英文');
+    assert.ok(after.every(u => u.level === 4), '答錯後還是精熟');
+    assert.ok(after.some(u => u.again > 0 && u.wrong > 0), '提醒有題目要再答對、錯題在錯題礁');
   });
   await step('素養題：情境題組排在一起，畫面顯示閱讀情境', async () => {
     const c3 = { code: 'DEMO', seat: 3, pin: '3333' };
@@ -331,7 +338,7 @@ try {
     await p.click('#bGuideBack'); await p.waitForSelector('#vLogin:not(.hidden)');
     assert.equal(await p.locator('text=領航員手冊').count(), 0);
     await t.click('[data-tab="tGuide"]'); await t.waitForSelector('#tGuide:not(.hidden)');
-    assert.match(await t.textContent('#tGuide'), /初學和熟練的差別/);
+    assert.match(await t.textContent('#tGuide'), /記住了幾成/);
   });
   await step('徽章：達成有意義的事才拿得到，只拿一次', async () => {
     const c4 = { code: 'DEMO', seat: 3, pin: '3333' };

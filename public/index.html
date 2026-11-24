@@ -173,7 +173,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;font-weight:600;margin:14px 0 4px;color:var(--muted)}
 .mlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
 .mrow{display:flex;gap:10px;align-items:center;background:#fff;border:3px solid #f1e3c8;border-radius:18px;padding:10px 12px}
-.mrow.lv3{border-color:var(--mint);background:#f1fbf6}
+.mrow.lv4{border-color:var(--mint);background:#f1fbf6}
 .mneed{display:block;margin-top:4px;line-height:1.6}
 .mrow .mi{font-size:28px;width:34px;text-align:center;flex:none}
 .mrow.lv0 .mi{color:var(--muted)}
@@ -373,11 +373,13 @@ label{display:block;font-weight:800;margin-bottom:6px}
       </ol>
       <p>別擔心不知道該練哪一題：島上會<b>優先出</b>你答錯的題目，和「答對過一天、今天還沒答對」的題目，所以每天玩一回合，就會慢慢記住。</p>
       <table class="gtable">
-        <tr><td>🌱 初學</td><td>這個單元開始練習了，加油！</td></tr>
-        <tr><td>🌿 熟練</td><td>這個單元 <b>7 成</b>的題目，你<b>最近一次</b>都答對了。（現在會了，但還沒證明換一天還記得）</td></tr>
-        <tr><td>🌳 精熟</td><td>這個單元 <b>9 成</b>的題目都<b>記住了</b>。例如 40 題要記住 36 題。會拿到<b>精熟徽章</b>！</td></tr>
-        <tr><td>⏰ 該複習了</td><td>精熟的單元超過 3 週沒練，波波會提醒你回去看看。精熟不會被拿走喔。</td></tr>
+        <tr><td>🌱 發芽</td><td>這個單元開始練習了，加油！</td></tr>
+        <tr><td>🌿 長葉</td><td>這個單元 <b>3 成</b>的題目<b>記住了</b>。例如 40 題記住 12 題。</td></tr>
+        <tr><td>🪴 茁壯</td><td>這個單元 <b>6 成</b>的題目<b>記住了</b>。例如 40 題記住 24 題。</td></tr>
+        <tr><td>🌳 精熟</td><td>這個單元 <b>9 成</b>的題目都<b>記住了</b>。例如 40 題記住 36 題。會拿到<b>精熟徽章</b>！<br><small>精熟過就一直是 🌳。之後如果有題目答錯，或老師加了新題目，圖鑑會提醒你還有幾題要再答對。</small></td></tr>
+        <tr><td>⏰ 該複習了</td><td>精熟的單元超過 3 週沒練，波波會提醒你回去看看。</td></tr>
       </table>
+      <p>🪸 <b>最快的練法：</b>先去<b>錯題礁</b>把答錯的題目救回來，再回到各科島繼續練。錯題礁裡的題目，就是還沒記住、最需要練的題目。</p>
       <p>到地圖上的「<b>精熟圖鑑</b>」，每個單元都會寫：<b>記住幾題、精熟還要再記住幾題</b>、有幾題「換一天再答對就記住」。</p>
       <p>📖 <b>素養題組不算在單元的精熟裡</b>，它們在<b>素養島</b>另外練、另外計算「記住幾題」。</p>
       <p>💡 題目多的單元要練比較久才會精熟，這很正常。每天一回合，一點一點累積！</p>
@@ -448,8 +450,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
   <section id="vMastery" class="shop hidden">
     <div class="qtop"><h2 style="flex:1">精熟圖鑑</h2><button class="btn soft small" id="bMasteryBack">回地圖</button></div>
     <div class="card">
-      <div class="talk"><span class="bob" id="mMascot"></span><div class="say"><b>「記住」是看每一題：</b>同一題，在<b>兩個不同的日子</b>都答對，而且最近一次也答對，這一題才算記住。<br><b>「精熟」是看整個單元：</b>這個單元 9 成的題目都記住了，就是 🌳 精熟。<br><small>注意：昨天答對 10 題、今天答對另外 10 題，這 20 題都只答對過一天，還沒有記住喔！要同一題換一天再答對。</small></div></div>
-      <div class="legend"><span>🌱 初學：開始練習</span><span>🌿 熟練：7 成答對</span><span>🌳 精熟：9 成記住了</span><span>⏰ 很久沒練，該複習了</span></div>
+      <div class="talk"><span class="bob" id="mMascot"></span><div class="say"><b>「記住」是看每一題：</b>同一題，在<b>兩個不同的日子</b>都答對，而且最近一次也答對，這一題才算記住。<br><b>「精熟」是看整個單元：</b>這個單元 9 成的題目都記住了，就是 🌳 精熟。<br><small>注意：昨天答對 10 題、今天答對另外 10 題，這 20 題都只答對過一天，還沒有記住喔！要同一題換一天再答對。</small><br><b>小祕訣：</b>先去 🪸 錯題礁把答錯的題目救回來，再回島上練，最快！</div></div>
+      <div class="legend"><span>🌱 發芽：開始練習</span><span>🌿 長葉：記住 3 成</span><span>🪴 茁壯：記住 6 成</span><span>🌳 精熟：記住 9 成</span><span>⏰ 很久沒練，該複習了</span></div>
       <div id="masteryList"></div>
     </div>
   </section>
@@ -629,7 +631,7 @@ function renderMap(){
     const pct = ex.total ? Math.round(ex.mastered / ex.total * 100) : 0;
     $('exam').innerHTML = `<div class="cd">${ex.days ? '倒數<b>' + ex.days + '</b>天' : '<b>今天</b>考試'}</div>
       <div class="info"><b>${esc(ex.name)}</b>　<span class="small">${esc(ex.date.slice(5).replace('-', '/'))}</span><br>
-      <span style="font-size:14px;font-weight:600">考試範圍已掌握 ${ex.mastered} / ${ex.total} 題</span><div class="bar"><i style="width:${pct}%"></i></div></div>`;
+      <span style="font-size:14px;font-weight:600">考試範圍最近答對 ${ex.mastered} / ${ex.total} 題</span><div class="bar"><i style="width:${pct}%"></i></div></div>`;
   }
   $('todayText').textContent = s.todayDone
     ? '今天的印章拿到了，好棒！還想玩的話可以繼續賺金幣喔。'
@@ -691,7 +693,7 @@ function openPick(title, items, note){
 }
 // 科目島：可以全部單元混合，也可以只練一課
 function pickUnit(sj){
-  const LV = ['', '🌱 初學', '🌿 熟練', '🌳 精熟'];
+  const LV = ['', '🌱 發芽', '🌿 長葉', '🪴 茁壯', '🌳 精熟'];
   const us = (state.units || []).filter(u => u.subject === sj && u.practice);
   openPick(sj + '島：想練哪裡？', [{ v: sj, label: '全部單元混合', small: '推薦：混著練，記得最久', main: true }]
     .concat(us.map(u => ({ v: '單元:' + u.key, label: u.unit, small: (u.review ? '⏰ 該複習・' : '') + (LV[u.level] || '還沒練') + '・記住 ' + u.remembered + ' / ' + u.total })))
@@ -885,7 +887,7 @@ $('bShop').addEventListener('click', openShop);
 $('bShopBack').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 精熟圖鑑 ---------- */
-const LV = ['・', '🌱', '🌿', '🌳'], LVN = ['還沒練習', '初學', '熟練', '精熟'];
+const LV = ['・', '🌱', '🌿', '🪴', '🌳'], LVN = ['還沒練習', '發芽', '長葉', '茁壯', '精熟'];
 function renderMastery(){
   $('mMascot').innerHTML = mascot('happy');
   const units = state.units || [];
@@ -897,7 +899,9 @@ function renderMastery(){
       return `<div class="mrow lv${u.level}"><span class="mi" aria-hidden="true">${LV[u.level]}</span>
         <div class="mt"><b>${esc(u.unit)}</b>${u.review ? ' <span class="rv">⏰ 該複習了</span>' : ''}<br>
         <small>${LVN[u.level]}・記住 ${u.remembered} / ${u.total} 題</small><div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div>
-        <small class="mneed">${u.level < 3 ? '🌳 精熟還要再記住 <b>' + u.needMaster + '</b> 題' : '🌳 已經精熟了！'}${u.level < 2 && u.needSkilled ? '　🌿 熟練還差 <b>' + u.needSkilled + '</b> 題答對' : ''}${u.once ? '<br>🔁 有 <b>' + u.once + '</b> 題只答對過一天，<b>換一天</b>再答對就記住了' : ''}</small></div></div>`;
+        <small class="mneed">${u.level < 4
+          ? (u.level < 3 ? LV[Math.max(2, u.level + 1)] + ' ' + LVN[Math.max(2, u.level + 1)] + '還要再記住 <b>' + u.needNext + '</b> 題<br>' : '') + '🌳 精熟還要再記住 <b>' + u.needMaster + '</b> 題'
+          : '🌳 已經精熟了！' + (u.again ? '有 <b>' + u.again + '</b> 題最近答錯或是新題目，再答對就更穩' : '')}${u.wrong ? '<br>🪸 有 <b>' + u.wrong + '</b> 題在<b>錯題礁</b>，先去救回來' : ''}${u.once ? '<br>🔁 有 <b>' + u.once + '</b> 題只答對過一天，<b>換一天</b>再答對就記住了' : ''}</small></div></div>`;
     }).join('') + '</div>';
   }).join('') || '<p>老師還沒開放單元喔。</p>';
 }

@@ -297,13 +297,12 @@ async function history(ctx, code, seat) {
 
 /* ---------- 精熟制度 ----------
  * 一題「記住了」：在兩個不同的日子都答對過，而且最近一次是答對的。
- * 單元等級：
- *   精熟 🌳  9 成以上的題目記住了
- *   熟練 🌿  7 成以上的題目最近一次答對
- *   初學 🌱  有練習過
+ * 單元等級（只看「記住」的比例，素養題組不算）：
+ *   0 還沒練   1 發芽 🌱 有練習   2 長葉 🌿 記住 3 成   3 茁壯 🪴 記住 6 成   4 精熟 🌳 記住 9 成
+ * 精熟過的單元一直算精熟（記在 mastery 表），之後答錯或題目變多，只另外提醒還有幾題要再答對。
  * 已精熟的單元超過 21 天沒練習，會提醒複習（等級不會被扣）。
  */
-const MASTER_RATIO = 0.9, SKILLED_RATIO = 0.7, REVIEW_DAYS = 21;
+const LEVEL_RATIOS = [0, 0, 0.3, 0.6, 0.9], MASTER = 4, MASTER_RATIO = 0.9, REVIEW_DAYS = 21;
 const remembered = h => !!h && h.last && h.days >= 2;
 function unitLevels(pool, hist) {
   const by = {};
@@ -317,8 +316,22 @@ function unitLevels(pool, hist) {
   const reviewBefore = new Date(Date.now() + 8 * 3600e3 - REVIEW_DAYS * 864e5).toISOString().slice(0, 10);
   return Object.keys(by).map(k => {
     const u = by[k];
-    u.level = u.total && u.remembered / u.total >= MASTER_RATIO ? 3 : u.total && u.right / u.total >= SKILLED_RATIO ? 2 : u.tried ? 1 : 0;
-    u.review = u.level === 3 && !!u.lastDay && u.lastDay < reviewBefore;
+    const r = u.total ? u.remembered / u.total : 0;
+    u.rawLevel = !u.tried ? 0 : r >= LEVEL_RATIOS[4] - 1e-9 ? 4 : r >= LEVEL_RATIOS[3] - 1e-9 ? 3 : r >= LEVEL_RATIOS[2] - 1e-9 ? 2 : 1;
+    u.level = u.rawLevel;
+    u.reviewBefore = reviewBefore;
+    return u;
+  });
+}
+/** 套用「精熟過就一直算精熟」，並算出複習提醒與下一級還差幾題 */
+function finishLevels(units, had) {
+  return units.map(u => {
+    u.level = had && had.has(u.key) ? MASTER : u.rawLevel;
+    u.review = u.level === MASTER && !!u.lastDay && u.lastDay < u.reviewBefore;
+    const need = ratio => Math.max(0, Math.ceil(u.total * ratio - 1e-9) - u.remembered);
+    u.needMaster = need(MASTER_RATIO);
+    u.needNext = u.level < MASTER ? need(LEVEL_RATIOS[Math.max(2, u.level + 1)]) : 0;
+    u.again = u.level === MASTER ? u.needMaster : 0;  // 精熟過，但後來答錯或題目變多，還要再答對幾題
     return u;
   });
 }
@@ -357,14 +370,15 @@ async function state(ctx, cls, s) {
   const set = await ctx.settings();
   const sortOf = {}; (await unitCatalog(ctx)).forEach(u => sortOf[u.key] = u.sort);
   const practice = {}; pool.forEach(q => { if (!q.passage) practice[q.unit_key] = (practice[q.unit_key] || 0) + 1; });
-  const units = unitLevels(pool, hist).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, review: u.review, total: u.total, remembered: u.remembered, right: u.right, once: u.once, lit: u.lit, practice: practice[u.key] || 0,
-    needMaster: Math.max(0, Math.ceil(u.total * MASTER_RATIO - 1e-9) - u.remembered), needSkilled: Math.max(0, Math.ceil(u.total * SKILLED_RATIO - 1e-9) - u.right) }))
+  const had = new Set((await ctx.all('SELECT unit_key FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.unit_key));
+  const units = finishLevels(unitLevels(pool, hist), had).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, rawLevel: u.rawLevel, review: u.review, total: u.total, remembered: u.remembered, right: u.right, once: u.once, wrong: u.tried - u.right, practice: practice[u.key] || 0,
+    needMaster: u.needMaster, needNext: u.needNext, again: u.again }))
     .sort((a, b) => SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject) || (sortOf[a.key] ?? 1e6) - (sortOf[b.key] ?? 1e6) || a.unit.localeCompare(b.unit, 'zh-Hant'));
   const linkRows = await ctx.all('SELECT unit_key FROM links WHERE unit_key IN (SELECT value FROM json_each(?))', cls.units || '[]');
   SUBJECTS.forEach(sj => {
     islands[sj].links = linkRows.filter(r => r.unit_key.split('｜')[2] === sj).length;
     const us = units.filter(u => u.subject === sj);
-    islands[sj].units = us.length; islands[sj].masteredUnits = us.filter(u => u.level === 3).length;
+    islands[sj].units = us.length; islands[sj].masteredUnits = us.filter(u => u.level === MASTER).length;
   });
   const brows = await ctx.all('SELECT badge, note, day FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat);
   const badges = brows.map(r => r.badge);
@@ -458,7 +472,7 @@ async function awardBadges(ctx, cls, s, st, ev) {
     days10: s.stamps >= 10, days30: s.stamps >= 30, days60: s.stamps >= 60, week5, month15,
     master1: mastered >= 1, master5: mastered >= 5, master10: mastered >= 10, master20: mastered >= 20, master30: mastered >= 30, master50: mastered >= 50,
     longmem1: s.longmem >= 1, longmem30: s.longmem >= 30,
-    allfive: SUBJECTS.every(sj => subj(sj).some(u => u.level === 3)),
+    allfive: SUBJECTS.every(sj => subj(sj).some(u => u.level === MASTER)),
     rescue10: s.rescued >= 10, rescue50: s.rescued >= 50, rescue100: s.rescued >= 100,
     reader10: s.passage_right >= 10, reader30: s.passage_right >= 30, reader60: s.passage_right >= 60,
     prepared: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.7,
@@ -466,7 +480,7 @@ async function awardBadges(ctx, cls, s, st, ev) {
     comeback: !!ev.comeback, review: !!ev.review, perfect: !!ev.perfect, exam: !!ev.exam,
     climb: !!ev.climb, clearwrong: !!ev.clearwrong, concept: !!ev.concept, groupall: !!ev.groupall, lighthouse: !!ev.lighthouse
   };
-  SUBJECTS.forEach(sj => { const us = subj(sj); cond['isle_' + sj] = us.length >= 2 && us.every(u => u.level === 3); });
+  SUBJECTS.forEach(sj => { const us = subj(sj); cond['isle_' + sj] = us.length >= 2 && us.every(u => u.level === MASTER); });
   const fresh = BADGES.filter(b => cond[b.id] && !have.has(b.id));
   if (fresh.length) await ctx.batch(fresh.map(b => ctx.stmt('INSERT OR IGNORE INTO badges (class_code, seat, badge, day) VALUES (?,?,?,?)', cls.code, s.seat, b.id, today())));
   return fresh;
@@ -618,7 +632,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
   const st = await state(ctx, cls, s);
   // 新精熟的單元：記錄下來（徽章與加點用），每個單元只記第一次
   const had = new Set((await ctx.all('SELECT unit_key FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.unit_key));
-  const newly = st.units.filter(u => u.level === 3 && !had.has(u.key));
+  const newly = st.units.filter(u => u.rawLevel === MASTER && !had.has(u.key));
   if (newly.length) await ctx.batch(newly.map(u => ctx.stmt('INSERT OR IGNORE INTO mastery (class_code, seat, unit_key, day) VALUES (?,?,?,?)', cls.code, s.seat, u.key, day)));
   // 一步一腳印：新精熟的單元裡，曾經有答錯過的題目
   let climb = false;
@@ -925,6 +939,7 @@ API.tMastery = async (ctx, pw, code) => {
     ctx.all('SELECT seat, nick, is_test FROM students WHERE class_code = ? ORDER BY is_test, seat', cls.code),
     ctx.all('SELECT seat, qid, last_ok, right_days, last_right_day, last_day FROM progress WHERE class_code = ?', cls.code)
   ]);
+  const hadBy = {}; (await ctx.all('SELECT seat, unit_key FROM mastery WHERE class_code = ?', cls.code)).forEach(r => (hadBy[r.seat] = hadBy[r.seat] || new Set()).add(r.unit_key));
   const hBy = {};
   prog.forEach(r => (hBy[r.seat] = hBy[r.seat] || {})[r.qid] = { last: r.last_ok === 1, days: r.right_days, rday: r.last_right_day, day: r.last_day });
   const base = unitLevels(pool, {});
@@ -935,11 +950,11 @@ API.tMastery = async (ctx, pw, code) => {
   });
   const rows = students.map(st => {
     const lv = {}, review = [];
-    unitLevels(pool, hBy[st.seat] || {}).forEach(u => { lv[u.key] = u.level; if (u.review) review.push(u.key); });
+    finishLevels(unitLevels(pool, hBy[st.seat] || {}), hadBy[st.seat]).forEach(u => { lv[u.key] = u.level; if (u.review) review.push(u.key); });
     return { seat: st.seat, nick: st.nick, isTest: !!st.is_test, levels: lv, review };
   });
   return {
-    units: order.map(k => { const u = base.find(x => x.key === k); return { key: k, subject: u.subject, unit: u.unit, total: u.total, mastered: rows.filter(r => !r.isTest && r.levels[k] === 3).length }; }),
+    units: order.map(k => { const u = base.find(x => x.key === k); return { key: k, subject: u.subject, unit: u.unit, total: u.total, mastered: rows.filter(r => !r.isTest && r.levels[k] === MASTER).length }; }),
     students: rows
   };
 };
