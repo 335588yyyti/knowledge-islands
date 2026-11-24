@@ -379,7 +379,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <tr><td>⏰ 該複習了</td><td>精熟的單元超過 3 週沒練，波波會提醒你回去看看。精熟不會被拿走喔。</td></tr>
       </table>
       <p>到地圖上的「<b>精熟圖鑑</b>」，每個單元都會寫：<b>記住幾題、精熟還要再記住幾題</b>、有幾題「換一天再答對就記住」。</p>
-      <p>📖 有些單元裡有<b>素養題組</b>，它們也算在單元的題數裡，要到<b>素養島</b>去練。</p>
+      <p>📖 <b>素養題組不算在單元的精熟裡</b>，它們在<b>素養島</b>另外練、另外計算「記住幾題」。</p>
       <p>💡 題目多的單元要練比較久才會精熟，這很正常。每天一回合，一點一點累積！</p>
 
       <h3>🏅 第 6 站：收集徽章</h3>
@@ -642,7 +642,7 @@ function renderMap(){
     const pct = it.total ? Math.round(it.mastered / it.total * 100) : 0;
     cards.push(`<button class="island${locked?' locked':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
       ${islandSvg(sj, i, locked)}<div class="name">${sj.k}島</div>
-      <div class="meta">${locked ? '還在睡覺，等老師開放' : '記住 ' + it.mastered + ' / ' + it.total + ' 題' + (it.lit ? '<br><small>（含素養島 ' + it.lit + ' 題）</small>' : '')}</div>
+      <div class="meta">${locked ? '還在睡覺，等老師開放' : '記住 ' + it.mastered + ' / ' + it.total + ' 題'}</div>
       ${locked ? '' : '<div class="meta">🌳 精熟 ' + (it.masteredUnits || 0) + ' / ' + (it.units || 0) + ' 單元</div>'}
       ${!locked && it.links ? '<div class="meta">🧭 ' + it.links + ' 個延伸冒險</div>' : ''}
       <div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></button>`);
@@ -652,7 +652,7 @@ function renderMap(){
   const litTot = SUBJ.reduce((a, sj) => a + ((lit[sj.k] || {}).total || 0), 0), litOk = SUBJ.reduce((a, sj) => a + ((lit[sj.k] || {}).mastered || 0), 0);
   cards.push(`<button class="island${litGroups?'':' locked'}" data-island="素養" ${litGroups?'':'aria-disabled="true"'}>${islandSvg({c:'#ffb38a', d:'#f08a5d', ch:'素'}, 5, !litGroups)}<div class="name">素養島</div>
     <div class="meta">${litGroups ? litGroups + ' 組閱讀題組' : '還在睡覺，等老師開放'}</div>
-    ${litGroups ? '<div class="meta">已掌握 ' + litOk + ' / ' + litTot + ' 題</div><div class="bar"><i style="width:' + Math.round(litOk / Math.max(1, litTot) * 100) + '%;background:#ffb38a"></i></div>' : ''}</button>`);
+    ${litGroups ? '<div class="meta">記住 ' + litOk + ' / ' + litTot + ' 題</div><div class="bar"><i style="width:' + Math.round(litOk / Math.max(1, litTot) * 100) + '%;background:#ffb38a"></i></div>' : ''}</button>`);
   cards.push(`<button class="island${s.wrong?'':' locked'}" data-island="錯題">${reefSvg(!s.wrong)}<div class="name">錯題礁</div><div class="meta">${s.wrong ? '有 ' + s.wrong + ' 題等你救援' : '沒有錯題，太厲害了'}</div></button>`);
   const any = SUBJ.some(sj => (s.islands[sj.k]||{}).total);
   cards.push(`<button class="island${any?'':' locked'}" data-island="綜合">${lighthouseSvg()}<div class="name">燈塔挑戰</div><div class="meta">各科混合出題</div></button>`);
@@ -695,13 +695,13 @@ function pickUnit(sj){
   const us = (state.units || []).filter(u => u.subject === sj && u.practice);
   openPick(sj + '島：想練哪裡？', [{ v: sj, label: '全部單元混合', small: '推薦：混著練，記得最久', main: true }]
     .concat(us.map(u => ({ v: '單元:' + u.key, label: u.unit, small: (u.review ? '⏰ 該複習・' : '') + (LV[u.level] || '還沒練') + '・記住 ' + u.remembered + ' / ' + u.total })))
-    , us.some(u => u.lit) ? '單課練習只出一般題；素養題組要到素養島練，也算在單元的題數裡。' : '');
+    , '素養題組不在這裡，請到素養島練。');
 }
 // 素養島：先選科目（或全部混合）
 function pickLiteracy(){
   const lit = state.literacy || {};
   const subs = SUBJ.filter(sj => (lit[sj.k] || {}).groups);
-  openPick('📖 素養島：想讀哪一科？', subs.map(sj => ({ v: '素養:' + sj.k, label: sj.k, small: lit[sj.k].groups + ' 組・已掌握 ' + lit[sj.k].mastered + ' / ' + lit[sj.k].total + ' 題' }))
+  openPick('📖 素養島：想讀哪一科？', subs.map(sj => ({ v: '素養:' + sj.k, label: sj.k, small: lit[sj.k].groups + ' 組・記住 ' + lit[sj.k].mastered + ' / ' + lit[sj.k].total + ' 題' }))
     .concat(subs.length > 1 ? [{ v: '素養', label: '全部科目混合', small: '各科題組隨機出' }] : []));
 }
 
@@ -897,7 +897,7 @@ function renderMastery(){
       return `<div class="mrow lv${u.level}"><span class="mi" aria-hidden="true">${LV[u.level]}</span>
         <div class="mt"><b>${esc(u.unit)}</b>${u.review ? ' <span class="rv">⏰ 該複習了</span>' : ''}<br>
         <small>${LVN[u.level]}・記住 ${u.remembered} / ${u.total} 題</small><div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div>
-        <small class="mneed">${u.level < 3 ? '🌳 精熟還要再記住 <b>' + u.needMaster + '</b> 題' : '🌳 已經精熟了！'}${u.level < 2 && u.needSkilled ? '　🌿 熟練還差 <b>' + u.needSkilled + '</b> 題答對' : ''}${u.once ? '<br>🔁 有 <b>' + u.once + '</b> 題只答對過一天，<b>換一天</b>再答對就記住了' : ''}${u.lit ? '<br>📖 其中 ' + u.lit + ' 題是素養題組，要到素養島練' : ''}</small></div></div>`;
+        <small class="mneed">${u.level < 3 ? '🌳 精熟還要再記住 <b>' + u.needMaster + '</b> 題' : '🌳 已經精熟了！'}${u.level < 2 && u.needSkilled ? '　🌿 熟練還差 <b>' + u.needSkilled + '</b> 題答對' : ''}${u.once ? '<br>🔁 有 <b>' + u.once + '</b> 題只答對過一天，<b>換一天</b>再答對就記住了' : ''}</small></div></div>`;
     }).join('') + '</div>';
   }).join('') || '<p>老師還沒開放單元喔。</p>';
 }

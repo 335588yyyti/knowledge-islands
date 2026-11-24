@@ -297,7 +297,9 @@ try {
     // 單元照課本順序（匯入單元表的順序）排列，不是照字串排
     const cat = Object.fromEntries((await call('tDashboard', PW, 'DEMO')).ok.units.map(x => [x.key, x.sort]));
     st.units.forEach((x, i) => { const y = st.units[i + 1]; if (y && y.subject === x.subject) assert.ok((cat[x.key] ?? 1e6) <= (cat[y.key] ?? 1e6), x.unit + ' 應該排在 ' + y.unit + ' 前面'); });
-    assert.ok(st.islands['數學'].practice > 0 && st.islands['數學'].total >= st.islands['數學'].practice, '科目島的題數含素養題組');
+    assert.ok(st.islands['數學'].practice > 0 && st.islands['數學'].total === st.islands['數學'].practice, '科目島的題數不含素養題組');
+    assert.ok(st.literacy['數學'].total > 0, '素養題組在素養島另外計算');
+    assert.equal(st.units.filter(x => x.subject === '數學').reduce((a, x) => a + x.total, 0), st.islands['數學'].total, '單元精熟也不含素養題組');
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
     await p.click('[data-island="數學"]'); await p.waitForSelector('#pick');

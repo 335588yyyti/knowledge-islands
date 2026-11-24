@@ -279,6 +279,7 @@ const remembered = h => !!h && h.last && h.days >= 2;
 function unitLevels(pool, hist) {
   const by = {};
   pool.forEach(q => {
+    if (q.passage) return;  // 素養題組不算進單元精熟，在素養島另外計算
     const u = by[q.unit_key] = by[q.unit_key] || { key: q.unit_key, subject: q.subject, unit: q.unit, total: 0, tried: 0, right: 0, remembered: 0, once: 0, lit: 0, lastDay: '' };
     const h = hist[q.id];
     u.total++; if (q.passage) u.lit++;
@@ -313,8 +314,8 @@ async function state(ctx, cls, s) {
   pool.forEach(q => {
     const h = hist[q.id];
     const lt = q.passage ? literacy[q.subject] : null, is = islands[q.subject];
-    if (lt) { lt.total++; if (h && h.last) lt.mastered++; }
-    if (is) { is.total++; if (remembered(h)) is.mastered++; if (q.passage) is.lit++; else is.practice++; }
+    if (lt) { lt.total++; if (remembered(h)) lt.mastered++; }
+    if (is && !q.passage) { is.total++; is.practice++; if (remembered(h)) is.mastered++; }
     if (q.passage && litSets[q.subject]) litSets[q.subject].add(q.passage);
     if (h && !h.last) wrong++;
   });
