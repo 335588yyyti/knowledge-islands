@@ -695,6 +695,13 @@ try {
     await f.fill('#askText', '我今天過關星星沒加');
     assert.match(await f.textContent('#askHint'), /沒加星星/);   // 提問前先找到相關答案
     assert.ok(await f.locator('#bAsk').isDisabled(), '沒有截圖、沒勾「找不到」不能送出');
+    // 送出前會跳出提醒：亂提問會扣金幣；按「再想想」不會送出
+    await f.setInputFiles('#askFile', { name: 'shot.png', mimeType: 'image/png', buffer: Buffer.from(PNG.split(',')[1], 'base64') });
+    await f.check('#askChk'); await f.waitForFunction(() => !document.querySelector('#bAsk').disabled);
+    await f.click('#bAsk'); await f.waitForSelector('#pick [data-yes]');
+    assert.match(await f.textContent('#pick'), /亂提問.*扣金幣/);
+    await f.click('#pick [data-no]'); assert.equal(await f.locator('#pick').count(), 0);
+    assert.equal((await call('myAsks', c3)).ok.mine.length, 0, '按再想想不會送出');
     // 提問：一天最多 3 題，要附截圖
     assert.match((await call('askQuestion', c3, '衣櫃按買下沒反應', '')).err, /截圖/);
     for (let i = 0; i < 3; i++) assert.ok((await call('askQuestion', c3, '衣櫃按買下沒反應 ' + i, PNG)).ok);

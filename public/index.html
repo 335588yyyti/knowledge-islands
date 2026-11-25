@@ -1540,7 +1540,20 @@ $('askFile').addEventListener('change', async e => {
   try{ askImg = await shrinkShot(f); $('askPrev').src = askImg; $('askPrev').classList.remove('hidden'); }catch(err){ askImg = ''; $('askMsg').textContent = err.message; }
   askCheck();
 });
+/** 送出前提醒：亂提問會扣金幣 */
+function askConfirm(){
+  return new Promise(res => {
+    const d = document.createElement('div'); d.id = 'pick';
+    d.innerHTML = `<div class="box" role="dialog" aria-label="送出前確認"><h3>📮 送出前確認</h3>
+      <p style="margin:0;line-height:1.6;font-weight:600">老師會看你的截圖和問題。<b>亂提問（跟網站無關、故意亂打、重複問同一件事）會被扣金幣</b>；找到網站真的有問題，會得到金幣、星星和「系統偵探」徽章。</p>
+      <p style="margin:0;line-height:1.6;font-weight:600">你確定問題寫清楚了，也找不到答案嗎？</p>
+      <div class="actions" style="justify-content:center"><button class="btn soft" data-no>再想想</button><button class="btn" data-yes>確定送出</button></div></div>`;
+    document.body.appendChild(d);
+    d.addEventListener('click', e => { const y = e.target.closest('[data-yes]'), n = e.target.closest('[data-no]') || e.target === d; if (y || n){ d.remove(); res(!!y); } });
+  });
+}
 $('bAsk').addEventListener('click', async () => {
+  if (!(await askConfirm())) return;
   $('bAsk').disabled = true; $('askMsg').textContent = '送出中…';
   try{
     await api('askQuestion', cred, $('askText').value.trim(), askImg);
