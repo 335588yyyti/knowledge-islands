@@ -223,6 +223,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 #news .box{max-height:86vh;overflow:auto;width:min(480px,100%)}
 #news .nw{display:grid;grid-template-columns:34px 1fr;gap:4px 10px;align-items:start;border:3px solid #f1e3c8;background:#fffaf0;border-radius:16px;padding:8px 12px}
 #news .nw>span{font-size:26px;line-height:1.2}#news .nw b{display:block}#news .nw p{margin:2px 0 0;line-height:1.55;font-weight:600}
+#news .nsec{margin:6px 0 0;font-size:17px}#news .nw.brief{padding:6px 12px;font-weight:600;line-height:1.5}#news .nw.brief>span{font-size:20px}#news .nw.brief b{display:inline}
 #news .nhint{text-align:center;color:var(--muted);font-weight:700;margin:0}
 .bpop .bbig{font-size:64px;text-align:center;line-height:1.1}.bpop .bbig.off{filter:grayscale(1);opacity:.4}
 .bpop .bp{border:3px dashed #ddd6e8;background:#f4f2f6;border-radius:16px;padding:8px 12px;display:grid;gap:2px}
@@ -860,7 +861,8 @@ function sparkle(el){
 /* ---------- 這次更新了什麼（每個學生看完一次就不再跳出） ---------- */
 const NEWS = {
   ver: '2026-11-26',
-  items: [
+  // 每一段：標題、項目（圖示、標題、說明）；brief 的段落每項只顯示一行
+  sections: [{ title: '⭐ 這次新增', items: [
     ['🏞️', '衣櫃新增「背景」', '晴天海灘、珊瑚礁、星空、燈塔夜景，幫波波換一個風景！'],
     ['🐙', '四隻新寵物', '小海鷗、寄居蟹（⭐20）、小章魚（⭐40）、小燈籠魚（⭐60），星星夠了就能用金幣買。'],
     ['🎒', '新的帽子和配件', '望遠鏡、探險背包、星星皇冠、恐龍帽，還有要存 250 金幣的彩虹披風。'],
@@ -868,13 +870,22 @@ const NEWS = {
     ['🏅', '9 個新徽章', '完美單元、素養五島、小小探險家、探險隊長、滿分準備、乘風破浪、百日水手、記憶小達人、救援傳奇。到徽章牆點一下就能看怎麼拿。'],
     ['⭐', '星星一天最多 5 顆', '同一天過關超過 5 回合，照樣過關、照樣拿金幣，只是不再加星星。每天認真練，比一次刷很多回合更好！'],
     ['👑', '高級款要「指定徽章」', '高級款和套裝的關鍵物品 🔑，除了星星和徽章數量，還要拿到一個指定的徽章（商店會寫是哪一個）。已經買到的不會被收回。']
-  ]
+  ] }, { title: '🌳 前幾天也更新了', brief: true, items: [
+    ['🌱', '精熟有五個等級', '發芽 🌱 → 長葉 🌿 → 茁壯 🪴 → 精熟 🌳，看記住幾成；精熟過就一直算精熟。'],
+    ['✨', '星星徽章', '累積星星可以拿「一閃一閃」到「銀河旅人」的星星系列徽章。'],
+    ['🐶', '衣櫃大擴充', '新角色、品種狗和品種貓、外套、手套、腮紅、眼睛顏色、裙子・褲子、紳士帽和高禮帽。'],
+    ['🐾', '寵物', '會跟在波波旁邊跳跳跳，星星夠了就能買。'],
+    ['👑', '高級款和四套套裝', '運動明星、海上船長、太空人、魔法學院，整套買打 8 折。'],
+    ['🏅', '徽章可以點開', '在徽章牆點一下，看怎麼拿、哪天拿到、老師的話。']
+  ] }]
 };
 function showNews(force){
   if ($('news') || (!force && (!state || state.newsSeen === NEWS.ver))) return;
   const d = document.createElement('div'); d.id = 'news';
   d.innerHTML = `<div class="box" role="dialog" aria-label="這次更新了什麼"><h3>📢 這次更新了什麼</h3>`
-    + NEWS.items.map(([ic, t, p]) => `<div class="nw"><span aria-hidden="true">${ic}</span><div><b>${esc(t)}</b><p>${esc(p)}</p></div></div>`).join('')
+    + NEWS.sections.map(sec => `<h4 class="nsec">${esc(sec.title)}</h4>` + sec.items.map(([ic, t, p]) => sec.brief
+      ? `<div class="nw brief"><span aria-hidden="true">${ic}</span><div><b>${esc(t)}</b>：${esc(p)}</div></div>`
+      : `<div class="nw"><span aria-hidden="true">${ic}</span><div><b>${esc(t)}</b><p>${esc(p)}</p></div></div>`).join('')).join('')
     + `<p class="nhint" id="newsHint">往下看完，就可以關掉喔</p><button class="btn" id="bNewsOk">我看完了</button></div>`;
   document.body.appendChild(d);
   const box = d.querySelector('.box'), ok = d.querySelector('#bNewsOk'), hint = d.querySelector('.nhint');
