@@ -93,6 +93,8 @@ try {
   await step('更新公告：登入跳出，看完才能關，之後不再跳出（換裝置也一樣）', async () => {
     await s.waitForSelector('#news');
     assert.match(await s.textContent('#news'), /這次更新了什麼/);
+    assert.match(await s.textContent('#news'), /國語、數學是主力島/);  // 主力科目自動帶入公告
+    assert.ok(!(await s.textContent('#news')).includes('{F}'));
     await s.setViewportSize({ width: 360, height: 500 });  // 小螢幕：要往下捲才看得完
     await s.waitForFunction(() => document.querySelector('#bNewsOk').disabled);
     await s.$eval('#news .box', b => { b.scrollTop = b.scrollHeight; });
@@ -758,6 +760,8 @@ try {
     assert.equal(m.focusBonus, 5, '國語、數學都過關：每日任務 +5');
     assert.equal(m.coins, Math.round(m.correct * 1.5) + 5);
     assert.deepEqual(m.state.focus.done.sort(), ['★', '國語', '數學'].sort());
+    const lit = await play1('素養:數學');
+    assert.equal(lit.coins, Math.round(lit.correct * 2), '數學素養島金幣 2 倍');
     // 老師可以關掉「印章只算主力島」、換主力科目
     await call('tSaveSettings', PW, { focusSubjects: ['自然'], focusStamp: false });
     const g = (await call('tGetSettings', PW)).ok;

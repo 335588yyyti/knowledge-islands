@@ -330,11 +330,11 @@ async function checkNeed(ctx, cls, s, item, label) {
 }
 /* ---------- 主力島 ----------
  * 老師在系統設定勾選主力科目（預設國語、數學）：
- *   主力科目的題目答對 1 題得 1.5 枚金幣（一回合合計後四捨五入）；
+ *   主力科目的題目答對 1 題得 1.5 枚金幣，主力科目的素養題 2 枚（一回合合計後四捨五入）；
  *   每日任務：每個主力科目各過關 1 回合，額外得 FOCUS_BONUS 金幣，累積天數算「國數雙修」徽章；
  *   focus_stamp 開著時，今日印章只在主力島過關才拿得到。
  * 算「在主力島過關」的島：主力科目的科目島、該科的單課練習、該科的素養島（素養:國語 這種）。 */
-const FOCUS_RATE = 1.5, FOCUS_BONUS = 5;
+const FOCUS_RATE = 1.5, FOCUS_LIT_RATE = 2, FOCUS_BONUS = 5;  // 主力科目的素養題（有情境的題組）2 倍
 async function focusConf(ctx) {
   const set = await ctx.settings();
   const subj = jsonp(set.focus_subjects, null);
@@ -744,7 +744,7 @@ async function state(ctx, cls, s) {
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, focus: Object.assign(await focusConf(ctx), { done: focusToday(s), bonus: FOCUS_BONUS, rate: FOCUS_RATE, days: s.focus_days || 0 }), customColor: s.custom_color || '', saves: { slots: s.save_slots || 0, list: jsonp(s.saved, []), prices: SAVE_PRICES },  saleLeft: (q => q.active ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, focus: Object.assign(await focusConf(ctx), { done: focusToday(s), bonus: FOCUS_BONUS, rate: FOCUS_RATE, litRate: FOCUS_LIT_RATE, days: s.focus_days || 0 }), customColor: s.custom_color || '', saves: { slots: s.save_slots || 0, list: jsonp(s.saved, []), prices: SAVE_PRICES },  saleLeft: (q => q.active ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
   };
 }
 
@@ -941,7 +941,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     const ok = grade(q, r.answer);
     gotOk[q.id] = ok;
     if (ok) {
-      correct++; coinW += fc.subjects.includes(q.subject) ? FOCUS_RATE : 1;
+      correct++; coinW += fc.subjects.includes(q.subject) ? (q.passage ? FOCUS_LIT_RATE : FOCUS_RATE) : 1;
       if (before[q.id] && !before[q.id].last) rescued++;   // 之前答錯，這次答對
       if (q.passage) passageRight++;
       if (reviewUnits.has(q.unit_key)) reviewDone = true;
