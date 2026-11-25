@@ -275,7 +275,9 @@ function shopInfo(ctx) {
   return { day, launch: L, saleLast: addDays(over, -1), inLaunch: day >= L && day < over, beforeLaunch: day < L,
     drop: ld && day < addDays(ld.day, SALE_DAYS) ? { day: ld.day, name: ld.name, last: addDays(ld.day, SALE_DAYS - 1), items: ld.items.map(x => SHOP[x].name) } : null,
     lastDrop: ld ? { day: ld.day, name: ld.name, items: ld.items.map(x => SHOP[x].name) } : null,
-    next: nx ? { day: nx.day, name: nx.name, items: nx.items.map(x => SHOP[x].name) } : null };
+    next: nx ? { day: nx.day, name: nx.name, items: nx.items.map(x => SHOP[x].name) } : null,
+    // 上架行事曆：之後每一週上什麼（只給文字，不給圖）
+    schedule: Object.keys(DROPS).sort().filter(d => d > day && d >= over).map(d => ({ day: d, name: DROPS[d].name, items: DROPS[d].items.map(x => SHOP[x].name) })) };
 }
 const setPrice = (ctx, set, have) => Math.round(set.items.filter(x => !have.includes(x)).reduce((a, x) => a + priceInfo(ctx, x, shopDay(ctx)).price, 0) * 0.8);
 const badgeCount = async (ctx, cls, s) => (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;

@@ -143,6 +143,9 @@ try {
   for (const isl of ['自然', '社會', '英文', '綜合']) await play(s, isl);
   await step('商店：金幣不夠買不了，夠了可以買和穿', async () => {
     await s.click('#bShop'); await s.waitForSelector('#vShop:not(.hidden)');
+    // 上架行事曆：只有文字，列出之後每週的新品
+    assert.match(await s.textContent('#vShop .sched'), /上架行事曆[\s\S]*動物朋友[\s\S]*畢業典禮與皇家/);
+    assert.equal(await s.locator('#vShop .sched svg').count(), 0);
     const coins = Number(await s.textContent('#shopCoins'));
     assert.ok(coins >= 20 && coins < 150, 'coins=' + coins);
     await s.click('.item[data-id="color_gold"]'); assert.match(await s.textContent('#bShopAct'), /還差/);

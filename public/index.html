@@ -224,7 +224,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 #news .nw{display:grid;grid-template-columns:34px 1fr;gap:4px 10px;align-items:start;border:3px solid #f1e3c8;background:#fffaf0;border-radius:16px;padding:8px 12px}
 #news .nw>span{font-size:26px;line-height:1.2}#news .nw b{display:block}#news .nw p{margin:2px 0 0;line-height:1.55;font-weight:600}
 #news .nsec{margin:6px 0 0;font-size:17px}#news .nw.brief{padding:6px 12px;font-weight:600;line-height:1.5}#news .nw.brief>span{font-size:20px}#news .nw.brief b{display:inline}
-#vShop .shopboard{display:grid;gap:6px;margin:4px 0 10px}#vShop s.was{opacity:.6;font-weight:600}
+#vShop .shopboard{display:grid;gap:6px;margin:4px 0 10px}#vShop .sched summary{cursor:pointer}#vShop .sched ul{margin:6px 0 0;padding-left:20px;display:grid;gap:4px;font-weight:600;line-height:1.55}#vShop s.was{opacity:.6;font-weight:600}
 #news .nhint{text-align:center;color:var(--muted);font-weight:700;margin:0}
 .bpop .bbig{font-size:64px;text-align:center;line-height:1.1}.bpop .bbig.off{filter:grayscale(1);opacity:.4}
 .bpop .bp{border:3px dashed #ddd6e8;background:#f4f2f6;border-radius:16px;padding:8px 12px;display:grid;gap:2px}
@@ -891,7 +891,7 @@ const NEWS = {
   sections: [{ title: '🔥 限定特價 3 天：11/26～11/28', items: [
     ['🛍️', '衣櫃全部開放', '角色、帽子、配件、外套、手套、腮紅、眼睛、裙子・褲子、寵物、背景、耳朵顏色、娃娃裝……這 3 天全部用特價買得到！'],
     ['📈', '11/29 起恢復原價', '大部分是現在的 2 倍，最貴的是 1.5 倍。買到的東西永遠是你的。'],
-    ['🗓️', '之後每週一上架新品', '特價結束後，衣櫃先收起來一部分，每週一上架一批，新品也特價 3 天。衣櫃裡會預告下週的新品。']
+    ['🗓️', '之後每週一上架新品', '特價結束後，衣櫃先收起來一部分，每週一上架一批，新品也特價 3 天。衣櫃裡會預告下週的新品，可以先試穿；之後每週上什麼，衣櫃最上面的「📅 上架行事曆」寫給你看。']
   ] }, { title: '✨ 衣櫃新東西', brief: true, items: [
     ['🐰', '耳朵換色', '小兔、小狗、大麥町、吉娃娃、柯基、小狐狸可以換耳朵顏色，還有彩虹耳朵。'],
     ['🍿', '娃娃裝', '爆米花桶、杯子蛋糕、草莓、紅蘿蔔、牛奶盒、西瓜，還有學士服、碩士服、博士服。'],
@@ -1200,6 +1200,8 @@ function shopBoard(){
   if (f.inLaunch) rows.push(`🔥 <b>限定特價中，還剩 ${daysLeft(f.saleLast)} 天！</b>衣櫃全部開放，到 ${md(f.saleLast)}為止。之後恢復原價，新品改成每週一上架（買到的永遠是你的）。`);
   if (f.drop) rows.push(`🆕 <b>本週新品「${esc(f.drop.name)}」</b>特價到 ${md(f.drop.last)}。`);
   if (f.next && !f.inLaunch && !f.beforeLaunch) rows.push(`🔜 <b>${md(f.next.day)}上架「${esc(f.next.name)}」</b>：下面標 🔜 的可以先試穿，還不能買。`);
+  // 上架行事曆：只用文字列出之後每週的新品，圖片和試穿只開放下一週
+  if ((f.schedule || []).length) rows.push(`<details class="sched"><summary>📅 <b>上架行事曆</b>：接下來每週一上架什麼（點開看）</summary><ul>` + f.schedule.map((w, i) => `<li><b>${md(w.day)}「${esc(w.name)}」</b>${i === 0 && !f.inLaunch && !f.beforeLaunch ? '（下面標 🔜 的可以先試穿）' : ''}：${w.items.map(esc).join('、')}</li>`).join('') + '</ul></details>');
   return rows.length ? '<div class="notice shopboard">' + rows.map(r => `<div>${r}</div>`).join('') + '</div>' : '';
 }
 const priceTag = it => (it.was ? `<s class="was">${it.was}</s> ` : '') + IC.coin + it.price;
