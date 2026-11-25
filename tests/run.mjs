@@ -261,8 +261,8 @@ try {
     assert.ok(en.every(u => u.level === 1), '同一天全對，題目都只答對過一天：還是發芽');
     r = await answerAll();  // 同一天再答對一次，還是不算
     assert.ok(r.state.units.filter(u => u.subject === '英文').every(u => u.level === 1 && u.remembered === 0), '同一天答兩次也不算記住');
-    // 模擬「換一天」：把上次答對的日期改成以前的某一天
-    execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE progress SET last_right_day = '2026-01-01' WHERE seat = 2"`, { stdio: 'ignore' });
+    // 模擬「換一天」：把上次答對的日期改成以前的某一天（直接改資料庫時也要讓 total 變，伺服器暫存的作答紀錄才會重讀）
+    execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE progress SET last_right_day = '2026-01-01' WHERE seat = 2; UPDATE students SET total = total + 1 WHERE seat = 2"`, { stdio: 'ignore' });
     r = await answerAll();
     en = r.state.units.filter(u => u.subject === '英文');
     assert.ok(en.every(u => u.level === 4), '換一天再答對 = 精熟');

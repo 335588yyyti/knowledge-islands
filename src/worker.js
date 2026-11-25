@@ -597,12 +597,24 @@ async function poolFor(ctx, units) {
 }
 
 /** 每一題的作答狀況：last 最近一次對錯、days 答對過的不同日子數、rday 最後答對日、day 最後作答日 */
-async function history(ctx, code, seat) {
+/* 作答紀錄暫存在伺服器記憶體：只有交卷會改作答紀錄，交卷也會讓 students.total 變大，
+ * 所以用 total 當版本號：total 沒變就直接用暫存的，變了（例如在別台伺服器交過卷）就重讀資料庫。
+ * 出題和交卷通常在同一台伺服器，一回合可以少讀一次整份作答紀錄。
+ * 注意：如果直接改資料庫的 progress，也要讓那位學生的 total 變一下（或等 30 分鐘、重新部署），暫存才會更新。 */
+const HCACHE = new Map(), HCACHE_MS = 30 * 60e3, HCACHE_MAX = 400;
+function hcachePut(mk, total, h) {
+  HCACHE.delete(mk); HCACHE.set(mk, { total, h, t: Date.now() });
+  if (HCACHE.size > HCACHE_MAX) HCACHE.delete(HCACHE.keys().next().value);  // 刪最舊的
+}
+async function history(ctx, code, seat, total) {
   const mk = code + '|' + seat; ctx._hist = ctx._hist || {};
   if (ctx._hist[mk]) return ctx._hist[mk];
+  const c = HCACHE.get(mk);
+  if (total != null && c && c.total === total && Date.now() - c.t < HCACHE_MS) return (ctx._hist[mk] = c.h);
   const h = (ctx._hist[mk] = {});
   (await ctx.all('SELECT qid, last_ok, right_days, last_right_day, last_day FROM progress WHERE class_code = ? AND seat = ?', code, seat))
     .forEach(r => h[r.qid] = { last: r.last_ok === 1, days: r.right_days, rday: r.last_right_day, day: r.last_day });
+  if (total != null) hcachePut(mk, total, h);
   return h;
 }
 
@@ -656,7 +668,7 @@ function exam(cls) {
 
 async function state(ctx, cls, s) {
   const pool = await poolFor(ctx, jsonp(cls.units, []));
-  const hist = await history(ctx, cls.code, s.seat);
+  const hist = await history(ctx, cls.code, s.seat, s.total);
   const islands = {};
   // 科目島的數字和精熟圖鑑一致：記住幾題 / 這科全部題數（含素養題組）；practice 是科目島能出的一般題
   SUBJECTS.forEach(sj => islands[sj] = { total: 0, mastered: 0, practice: 0, lit: 0 });
@@ -813,7 +825,7 @@ API.getRound = async (ctx, cred, island) => {
   const { cls, s } = await auth(ctx, cred, false);
   const set = await ctx.settings();
   const n = Math.min(30, num(set.per_round) || 10);
-  const hist = await history(ctx, cls.code, s.seat);
+  const hist = await history(ctx, cls.code, s.seat, s.total);
   const isWrong = q => hist[q.id] && !hist[q.id].last;
   const td = today();
   // 出題順序：錯題（最多 3 題）→ 之前答對過一天、今天還沒答對的（換一天再答對就記住了）→ 新題目 → 其他錯題 → 已記住的
@@ -888,7 +900,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
   { const b = await bank(ctx); ids.forEach(id => { const q = b.byId.get(id); if (q) qmap[id] = q; }); }
   const ts = stampNow(), day = today();
   const stmts = [], missed = new Set(), seen = new Set();
-  const before = await history(ctx, cls.code, s.seat);
+  const before = await history(ctx, cls.code, s.seat, s.total);
   const taughtPool = await poolFor(ctx, jsonp(cls.units, []));
   const reviewUnits = new Set(unitLevels(taughtPool, before).filter(u => u.review).map(u => u.key));
   const wrongBefore = taughtPool.filter(q => before[q.id] && !before[q.id].last).length;
@@ -956,6 +968,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     if (ok) h.rday = day;
     h.last = ok; h.day = day;
   });
+  hcachePut(cls.code + '|' + s.seat, s.total, before);  // 交卷後的版本（total 已經加上這回合）
   const st = await state(ctx, cls, s);
   // 新精熟的單元：記錄下來（徽章與加點用），每個單元只記第一次
   const had = new Set((await ctx.all('SELECT unit_key FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat)).map(r => r.unit_key));
