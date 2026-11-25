@@ -37,9 +37,46 @@ const SHOP = {
   // 星星特別款：累積的星星達到門檻才能買（星星不會被花掉）
   hat_stars: { slot: 'hat', name: '星星髮箍', price: 40, stars: 20 },
   acc_wand: { slot: 'acc', name: '星星魔杖', price: 80, stars: 60 },
-  color_night: { slot: 'color', name: '星夜藍', price: 120, stars: 120 }
+  color_night: { slot: 'color', name: '星夜藍', price: 120, stars: 120 },
+  hat_party: { slot: 'hat', name: '生日帽', price: 40 },
+  hat_chef: { slot: 'hat', name: '廚師帽', price: 50 },
+  hat_grad: { slot: 'hat', name: '學士帽', price: 90 },
+  acc_lei: { slot: 'acc', name: '花圈', price: 45 },
+  acc_headphones: { slot: 'acc', name: '耳機', price: 60 },
+  color_coral: { slot: 'color', name: '珊瑚橘', price: 50 },
+  color_cloud: { slot: 'color', name: '雲朵灰', price: 50 },
+  // 角色：換成其他動物（顏色跟著「顏色」走）
+  sp_seal: { slot: 'species', name: '小海豹', price: 0 },
+  sp_cat: { slot: 'species', name: '小貓', price: 60 },
+  sp_bunny: { slot: 'species', name: '小兔', price: 60 },
+  sp_bear: { slot: 'species', name: '小熊', price: 60 },
+  sp_fox: { slot: 'species', name: '小狐狸', price: 80 },
+  sp_sheep: { slot: 'species', name: '小綿羊', price: 80 },
+  // 外套
+  coat_none: { slot: 'coat', name: '不穿外套', price: 0 },
+  coat_rain: { slot: 'coat', name: '黃色雨衣', price: 40 },
+  coat_denim: { slot: 'coat', name: '牛仔外套', price: 50 },
+  coat_down: { slot: 'coat', name: '羽絨外套', price: 60 },
+  coat_team: { slot: 'coat', name: '校隊外套', price: 70 },
+  coat_cape: { slot: 'coat', name: '星空斗篷', price: 90, stars: 80 },
+  // 手套
+  glove_none: { slot: 'glove', name: '不戴手套', price: 0 },
+  glove_white: { slot: 'glove', name: '白手套', price: 20 },
+  glove_red: { slot: 'glove', name: '毛線手套', price: 25 },
+  glove_boxing: { slot: 'glove', name: '拳擊手套', price: 50 },
+  glove_star: { slot: 'glove', name: '星星手套', price: 60, stars: 40 },
+  // 腮紅：基礎色每個 4 金幣
+  cheek_pink: { slot: 'cheek', name: '粉紅腮紅', price: 0 },
+  cheek_rose: { slot: 'cheek', name: '桃紅腮紅', price: 4 },
+  cheek_peach: { slot: 'cheek', name: '蜜桃橘腮紅', price: 4 },
+  cheek_lilac: { slot: 'cheek', name: '淡紫腮紅', price: 4 },
+  cheek_sky: { slot: 'cheek', name: '天空藍腮紅', price: 4 },
+  cheek_shy: { slot: 'cheek', name: '害羞大腮紅', price: 20 },
+  cheek_heart: { slot: 'cheek', name: '愛心腮紅', price: 30 },
+  cheek_star: { slot: 'cheek', name: '星星腮紅', price: 40 },
+  cheek_rainbow: { slot: 'cheek', name: '彩虹腮紅', price: 60 }
 };
-const DEFAULT_OUTFIT = { hat: 'hat_sailor', acc: 'acc_none', color: 'color_blue' };
+const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', color: 'color_blue' };
 
 /**
  * 徽章：每一個都要做到一件有意義的事，而且只拿一次。
