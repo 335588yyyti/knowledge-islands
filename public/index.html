@@ -428,10 +428,10 @@ label{display:block;font-weight:800;margin-bottom:6px}
 
       <h3>👕 第 7 站：波波的衣櫃</h3>
       <ul>
-        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊、小狗、星星品種狗（柴犬、哈士奇、大麥町、柯基、貴賓狗、吉娃娃、雪納瑞）、星星品種貓（三花貓、虎斑貓、暹羅貓、折耳貓、波斯貓），品種狗和品種貓要先拿到 20～60 顆星星才能買、小豬、小老鼠、小青蛙、小老虎、貓熊、小恐龍，還有要 100 顆星星才能買的獨角獸）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>顏色</b>。</li>
+        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊、小狗、星星品種狗（柴犬、哈士奇、大麥町、柯基、貴賓狗、吉娃娃、雪納瑞）、星星品種貓（三花貓、虎斑貓、暹羅貓、折耳貓、波斯貓），品種狗和品種貓要先拿到 20～60 顆星星才能買、小豬、小老鼠、小青蛙、小老虎、貓熊、小恐龍，還有要 100 顆星星才能買的獨角獸）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>眼睛</b>（基礎色咖啡、藍、綠、灰各 4 金幣）、<b>顏色</b>。</li>
         <li>腮紅基礎色一個只要 4 金幣，愛心、星星、彩虹等特別款比較貴。</li>
         <li><b>花掉金幣不會讓老師少加點！</b>老師看的是你「累積賺到」的金幣總數，不是剩下的。</li>
-        <li><b>⭐ 星星特別款</b>：星星髮箍、星星手套、星星魔杖、星空斗篷、星夜藍、獨角獸，還有所有品種狗和品種貓（柴犬、哈士奇、吉娃娃、虎斑貓 20 顆；大麥町、柯基、貴賓狗、雪納瑞、三花貓、暹羅貓、折耳貓 40 顆；波斯貓 60 顆），要先累積足夠的星星才能用金幣買。星星不會被花掉喔！</li>
+        <li><b>⭐ 星星特別款</b>：星星髮箍、星星手套、星星魔杖、星空斗篷、星夜藍、星星眼（30 顆）、獨角獸，還有所有品種狗和品種貓（柴犬、哈士奇、吉娃娃、虎斑貓 20 顆；大麥町、柯基、貴賓狗、雪納瑞、三花貓、暹羅貓、折耳貓 40 顆；波斯貓 60 顆），要先累積足夠的星星才能用金幣買。星星不會被花掉喔！</li>
       </ul>
 
       <h3>🧭 船長的小祕訣</h3>
@@ -634,6 +634,17 @@ const COATS = {
   coat_team: () => coatShape('#e84a5f', '#c23a4d') + '<path d="M49 82 L52 118 M71 82 L68 118" stroke="#fff" stroke-width="3"/><text x="30" y="104" font-size="10" font-weight="800" fill="#fff">6</text>',
   coat_cape: () => '<path d="M22 84 Q12 104 24 118 L96 118 Q108 104 98 84 Q60 98 22 84 Z" fill="#6d5bd0" opacity=".9"/>' + [[34,104],[60,110],[84,100]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#ffd66b"/>`).join('')
 };
+/* 眼睛顏色：兩眼 (45,62) 與 (75,62)，只在睜眼時看得到 */
+const eyeIris = (l, r) => [[45, l], [75, r]].map(([x, c]) => `<ellipse cx="${x}" cy="62" rx="5" ry="6" fill="${c}"/><ellipse cx="${x}" cy="62.5" rx="2.6" ry="3.4" fill="#2e2a40"/><circle cx="${x + 2}" cy="59.5" r="2" fill="#fff"/>`).join('');
+const EYES = {
+  eye_dark: () => '<ellipse cx="45" cy="62" rx="5" ry="6" fill="#4a4566"/><ellipse cx="75" cy="62" rx="5" ry="6" fill="#4a4566"/><circle cx="47" cy="59.5" r="2" fill="#fff"/><circle cx="77" cy="59.5" r="2" fill="#fff"/>',
+  eye_brown: () => eyeIris('#9a6a45', '#9a6a45'), eye_blue: () => eyeIris('#4f9ee8', '#4f9ee8'),
+  eye_green: () => eyeIris('#3fae7a', '#3fae7a'), eye_gray: () => eyeIris('#8a8aa0', '#8a8aa0'),
+  eye_purple: () => eyeIris('#9b6fe0', '#9b6fe0'), eye_pink: () => eyeIris('#f0709a', '#f0709a'),
+  eye_gold: () => eyeIris('#e6a92a', '#e6a92a'), eye_odd: () => eyeIris('#4f9ee8', '#e6a92a'),
+  eye_sparkle: () => [45, 75].map(x => `<ellipse cx="${x}" cy="62" rx="5.5" ry="6.5" fill="#4a4566"/><circle cx="${x + 2}" cy="59" r="2.4" fill="#fff"/><circle cx="${x - 2}" cy="65" r="1.2" fill="#fff"/><circle cx="${x + 2.5}" cy="64.5" r=".8" fill="#fff"/>`).join(''),
+  eye_star: () => [45, 75].map(x => `<path transform="translate(${x} 62) scale(1.15)" d="M0 -6 l1.8 3.6 4 .6 -2.9 2.8 .7 4 -3.6 -1.9 -3.6 1.9 .7 -4 -2.9 -2.8 4 -.6 Z" fill="#ffc83d" stroke="#d99a1c" stroke-width="1" stroke-linejoin="round"/>`).join('')
+};
 /* 腮紅：兩頰 (36,74) 與 (84,74) */
 const cheekDot = fill => [36, 84].map(x => `<ellipse cx="${x}" cy="74" rx="7" ry="4.5" fill="${fill}" opacity=".9"/>`).join('');
 const CHEEKS = {
@@ -662,7 +673,7 @@ function mascot(mood, outfit){
     ? '<path d="M40 62 Q45 66 50 62 M70 62 Q75 66 80 62" stroke="#4a4566" stroke-width="3" fill="none" stroke-linecap="round"/>'
     : mood === 'cheer'
     ? '<path d="M39 64 Q45 56 51 64 M69 64 Q75 56 81 64" stroke="#4a4566" stroke-width="3.5" fill="none" stroke-linecap="round"/>'
-    : '<g class="blink"><ellipse cx="45" cy="62" rx="5" ry="6" fill="#4a4566"/><ellipse cx="75" cy="62" rx="5" ry="6" fill="#4a4566"/><circle cx="47" cy="59.5" r="2" fill="#fff"/><circle cx="77" cy="59.5" r="2" fill="#fff"/></g>';
+    : '<g class="blink">' + (EYES[o.eye] || EYES.eye_dark)() + '</g>';
   const arms = mood === 'cheer'
     ? `<path d="M22 84 Q8 66 14 56" stroke="${arm}" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M98 84 Q112 66 106 56" stroke="${arm}" stroke-width="10" fill="none" stroke-linecap="round"/>`
     : `<ellipse cx="22" cy="96" rx="9" ry="14" transform="rotate(30 22 96)" fill="${arm}"/><ellipse cx="98" cy="96" rx="9" ry="14" transform="rotate(-30 98 96)" fill="${arm}"/>`;
@@ -973,7 +984,7 @@ function renderResult(r){
 $('bQuit').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 波波的衣櫃 ---------- */
-const SLOTS = [['species','角色'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['color','顏色']];
+const SLOTS = [['species','角色'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['eye','眼睛'],['color','顏色']];
 let trying = null, selId = null;
 function openShop(){ trying = Object.assign({}, state.outfit); selId = null; renderShop(); show('vShop'); }
 function renderShop(){
@@ -981,7 +992,7 @@ function renderShop(){
   const has = id => shop[id].price === 0 || owned.has(id);
   $('shopCoins').textContent = state.coins;
   $('shopEarned').textContent = state.earned;
-  $('shopStage').innerHTML = mascot('cheer', trying);
+  $('shopStage').innerHTML = mascot(selId && shop[selId] && shop[selId].slot === 'eye' ? 'happy' : 'cheer', trying);
   $('shopList').innerHTML = SLOTS.map(([slot, label]) => `<h3>${label}</h3><div class="items">` +
     Object.keys(shop).filter(id => shop[id].slot === slot).map(id => {
       const it = shop[id], wear = state.outfit[slot] === id;
@@ -998,7 +1009,7 @@ function renderShop(){
   else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = '「' + it.name + '」很適合波波喔！'; }
   else { b.disabled = true; b.textContent = '還差 ' + (it.price - state.coins) + ' 金幣'; $('shopMsg').textContent = '再去島上答對幾題，就能買「' + it.name + '」了。'; }
 }
-const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', color:'color_blue'};
+const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', color:'color_blue'};
 $('shopList').addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
   selId = b.dataset.id; trying = Object.assign({}, state.outfit, {[state.shop[selId].slot]: selId}); renderShop();

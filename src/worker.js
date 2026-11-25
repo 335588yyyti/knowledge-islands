@@ -72,6 +72,17 @@ const SHOP = {
   sp_siamese: { slot: 'species', name: '暹羅貓', price: 80, stars: 40 },
   sp_scottish: { slot: 'species', name: '折耳貓', price: 80, stars: 40 },
   sp_persian: { slot: 'species', name: '波斯貓', price: 90, stars: 60 },
+  eye_dark: { slot: 'eye', name: '深紫黑', price: 0 },
+  eye_brown: { slot: 'eye', name: '咖啡色', price: 4 },
+  eye_blue: { slot: 'eye', name: '藍色', price: 4 },
+  eye_green: { slot: 'eye', name: '綠色', price: 4 },
+  eye_gray: { slot: 'eye', name: '灰色', price: 4 },
+  eye_purple: { slot: 'eye', name: '紫色', price: 20 },
+  eye_pink: { slot: 'eye', name: '粉紅色', price: 20 },
+  eye_gold: { slot: 'eye', name: '金色', price: 25 },
+  eye_sparkle: { slot: 'eye', name: '閃亮眼', price: 30 },
+  eye_odd: { slot: 'eye', name: '異色瞳（藍＋金）', price: 40 },
+  eye_star: { slot: 'eye', name: '星星眼', price: 60, stars: 30 },
   // 外套
   coat_none: { slot: 'coat', name: '不穿外套', price: 0 },
   coat_rain: { slot: 'coat', name: '黃色雨衣', price: 40 },
@@ -96,7 +107,7 @@ const SHOP = {
   cheek_star: { slot: 'cheek', name: '星星腮紅', price: 40 },
   cheek_rainbow: { slot: 'cheek', name: '彩虹腮紅', price: 60 }
 };
-const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', color: 'color_blue' };
+const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', color: 'color_blue' };
 
 /**
  * 徽章：每一個都要做到一件有意義的事，而且只拿一次。
