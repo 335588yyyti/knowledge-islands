@@ -224,6 +224,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 #news .nw{display:grid;grid-template-columns:34px 1fr;gap:4px 10px;align-items:start;border:3px solid #f1e3c8;background:#fffaf0;border-radius:16px;padding:8px 12px}
 #news .nw>span{font-size:26px;line-height:1.2}#news .nw b{display:block}#news .nw p{margin:2px 0 0;line-height:1.55;font-weight:600}
 #news .nsec{margin:6px 0 0;font-size:17px}#news .nw.brief{padding:6px 12px;font-weight:600;line-height:1.5}#news .nw.brief>span{font-size:20px}#news .nw.brief b{display:inline}
+#vShop .shopboard{display:grid;gap:6px;margin:4px 0 10px}#vShop s.was{opacity:.6;font-weight:600}
 #news .nhint{text-align:center;color:var(--muted);font-weight:700;margin:0}
 .bpop .bbig{font-size:64px;text-align:center;line-height:1.1}.bpop .bbig.off{filter:grayscale(1);opacity:.4}
 .bpop .bp{border:3px dashed #ddd6e8;background:#f4f2f6;border-radius:16px;padding:8px 12px;display:grid;gap:2px}
@@ -452,6 +453,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li><b>⭐ 星星特別款</b>：星星髮箍、星星手套、星星魔杖、星空斗篷、星夜藍、星星眼（30 顆）、彩虹裙（40 顆）、所有寵物（小雞 10 顆～星星精靈 150 顆；新寵物：小海鷗、寄居蟹 20 顆，小章魚 40 顆，小燈籠魚 60 顆）、獨角獸，還有所有品種狗和品種貓（柴犬、哈士奇、吉娃娃、虎斑貓 20 顆；大麥町、柯基、貴賓狗、雪納瑞、三花貓、暹羅貓、折耳貓 40 顆；波斯貓 60 顆），要先累積足夠的星星才能用金幣買。星星不會被花掉喔！</li>
         <li><b>👑 高級款</b>：要<b>星星和徽章數量都夠，還要拿到指定的徽章</b>才能買，星星和徽章都不會被花掉：銀河眼（⭐100＋🏅10＋閱讀偵探）、黃金手套（⭐100＋🏅10＋救援隊長）、國王披風（⭐120＋🏅12＋森林守護者）、公主禮服裙（⭐120＋🏅12＋全勤一週）、寶石皇冠（⭐150＋🏅15＋知識森林）、雲朵小鯨魚（⭐200＋🏅15＋穩定航行）、小龍（⭐250＋🏅18＋航海王）、小鳳凰（⭐300＋🏅20＋越挫越勇）。老師頒發的徽章也算在裡面！</li>
         <li><b>🎽 套裝</b>：運動明星（⭐50＋🏅5＋百發百中）、海上船長（⭐60＋🏅6＋一週不間斷）、太空人（⭐80＋🏅8＋五島通航）、魔法學院（⭐100＋🏅10＋觀念突破）。星星和徽章夠了就能<b>整套買，還沒有的單品打 8 折</b>。也可以先一件一件<b>單買</b>，不用徽章；只有每套的<b>關鍵物品 🔑</b>（冠軍獎盃、船長帽、太空頭盔、星空魔法袍）要星星＋徽章＋指定徽章才能買。</li>
+        <li><b>🔥 限定特價與每週新品</b>：11/26～11/28 衣櫃全部特價！之後恢復原價，新品改成<b>每週一上架</b>，上架後特價 3 天。衣櫃裡標 🔜 的是下週新品，可以先試穿。買到的東西永遠是你的。</li>
+        <li><b>🐰 耳朵顏色</b>：小兔、小狗、大麥町、吉娃娃、柯基、小狐狸可以換耳朵顏色。<b>🍿 娃娃裝</b>：穿上會蓋住外套和裙子・褲子。</li>
         <li><b>🎖️ 徽章限定款</b>：拿到指定的徽章就能用金幣買——偵探帽（題目偵探，80 金幣）、救生圈（救援英雄，100 金幣）、金色船舵（航海王，120 金幣）、五島旗（五島通航，120 金幣）。另有星星皇冠（⭐60，100 金幣）、恐龍帽（70 金幣）。</li>
       </ul>
 
@@ -609,13 +612,13 @@ const SPECIES = {
   sp_seal: { back: () => '', front: () => '' },
   sp_cat: { back: c => `<path d="M24 56 L30 20 L52 38 Z" fill="${c}"/><path d="M30 46 L33 28 L45 38 Z" fill="#ffc7d2"/><path d="M96 56 L90 20 L68 38 Z" fill="${c}"/><path d="M90 46 L87 28 L75 38 Z" fill="#ffc7d2"/>`,
     front: () => '<path d="M28 70 L12 66 M28 75 L12 77 M92 70 L108 66 M92 75 L108 77" stroke="#4a4566" stroke-width="2" stroke-linecap="round" opacity=".7"/>' },
-  sp_bunny: { back: c => `<ellipse cx="44" cy="18" rx="9" ry="24" transform="rotate(-12 44 18)" fill="${c}"/><ellipse cx="44" cy="20" rx="4.5" ry="17" transform="rotate(-12 44 20)" fill="#ffc7d2"/><ellipse cx="76" cy="18" rx="9" ry="24" transform="rotate(12 76 18)" fill="${c}"/><ellipse cx="76" cy="20" rx="4.5" ry="17" transform="rotate(12 76 20)" fill="#ffc7d2"/>`,
+  sp_bunny: { back: (c, a, e) => `<ellipse cx="44" cy="18" rx="9" ry="24" transform="rotate(-12 44 18)" fill="${e || c}"/><ellipse cx="44" cy="20" rx="4.5" ry="17" transform="rotate(-12 44 20)" fill="#ffc7d2"/><ellipse cx="76" cy="18" rx="9" ry="24" transform="rotate(12 76 18)" fill="${e || c}"/><ellipse cx="76" cy="20" rx="4.5" ry="17" transform="rotate(12 76 20)" fill="#ffc7d2"/>`,
     front: () => '' },
   sp_bear: { back: c => `<circle cx="32" cy="42" r="13" fill="${c}"/><circle cx="32" cy="42" r="6.5" fill="#ffc7d2"/><circle cx="88" cy="42" r="13" fill="${c}"/><circle cx="88" cy="42" r="6.5" fill="#ffc7d2"/>`,
     front: () => '' },
-  sp_fox: { back: c => `<path d="M98 104 Q122 92 114 66 Q104 84 92 92 Z" fill="${c}"/><path d="M114 66 Q118 76 112 82 Q108 74 114 66 Z" fill="#fff"/><path d="M22 58 L26 14 L54 38 Z" fill="${c}"/><path d="M26 22 L28 14 L34 20 Z" fill="#4a4566"/><path d="M98 58 L94 14 L66 38 Z" fill="${c}"/><path d="M94 22 L92 14 L86 20 Z" fill="#4a4566"/>`,
+  sp_fox: { back: (c, a, e) => `<path d="M98 104 Q122 92 114 66 Q104 84 92 92 Z" fill="${c}"/><path d="M114 66 Q118 76 112 82 Q108 74 114 66 Z" fill="#fff"/><path d="M22 58 L26 14 L54 38 Z" fill="${e || c}"/><path d="M26 22 L28 14 L34 20 Z" fill="#4a4566"/><path d="M98 58 L94 14 L66 38 Z" fill="${e || c}"/><path d="M94 22 L92 14 L86 20 Z" fill="#4a4566"/>`,
     front: () => '' },
-  sp_dog: { back: () => '', front: (c, a) => `<ellipse cx="24" cy="58" rx="9" ry="19" transform="rotate(18 24 58)" fill="${a}"/><ellipse cx="96" cy="58" rx="9" ry="19" transform="rotate(-18 96 58)" fill="${a}"/>` },
+  sp_dog: { back: () => '', front: (c, a, e) => `<ellipse cx="24" cy="58" rx="9" ry="19" transform="rotate(18 24 58)" fill="${e || a}"/><ellipse cx="96" cy="58" rx="9" ry="19" transform="rotate(-18 96 58)" fill="${e || a}"/>` },
   sp_pig: { back: c => `<path d="M30 46 L34 26 L50 38 Z" fill="${c}"/><path d="M34 40 L36 31 L44 38 Z" fill="#ffc7d2"/><path d="M90 46 L86 26 L70 38 Z" fill="${c}"/><path d="M86 40 L84 31 L76 38 Z" fill="#ffc7d2"/>`,
     front: () => '<ellipse cx="60" cy="69" rx="9" ry="6.5" fill="#ffc7d2" stroke="#f2a7b7" stroke-width="2"/><ellipse cx="57" cy="69" rx="1.8" ry="2.4" fill="#c97b8b"/><ellipse cx="63" cy="69" rx="1.8" ry="2.4" fill="#c97b8b"/>' },
   sp_mouse: { back: c => `<circle cx="28" cy="38" r="17" fill="${c}"/><circle cx="28" cy="38" r="10" fill="#ffc7d2"/><circle cx="92" cy="38" r="17" fill="${c}"/><circle cx="92" cy="38" r="10" fill="#ffc7d2"/>`,
@@ -635,11 +638,11 @@ const SPECIES = {
   sp_husky: { back: () => catEars('#7d7896', '#fff'), skin: () => hood('#7d7896'),
     face: () => '<ellipse cx="60" cy="74" rx="19" ry="11" fill="#fff"/><ellipse cx="45" cy="61" rx="9.5" ry="8.5" fill="#fff"/><ellipse cx="75" cy="61" rx="9.5" ry="8.5" fill="#fff"/>', front: () => '' },
   sp_dalmatian: { back: () => '', skin: () => '<g fill="#4a4566">' + [[26,82,4.5],[32,104,3.5],[94,86,5],[88,106,3.5],[50,110,3],[73,100,4],[33,55,3],[88,58,3.5],[23,95,2.5],[60,90,2.5],[98,98,2.5]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + '</g>',
-    front: () => '<ellipse cx="24" cy="58" rx="9" ry="19" transform="rotate(18 24 58)" fill="#4a4566"/><ellipse cx="96" cy="58" rx="9" ry="19" transform="rotate(-18 96 58)" fill="#4a4566"/>' },
-  sp_corgi: { back: c => `<path d="M20 60 L22 10 L54 38 Z" fill="${c}"/><path d="M27 48 L28 22 L46 38 Z" fill="#ffc7d2"/><path d="M100 60 L98 10 L66 38 Z" fill="${c}"/><path d="M93 48 L92 22 L74 38 Z" fill="#ffc7d2"/>`,
+    front: (c, a, e) => `<ellipse cx="24" cy="58" rx="9" ry="19" transform="rotate(18 24 58)" fill="${e || '#4a4566'}"/><ellipse cx="96" cy="58" rx="9" ry="19" transform="rotate(-18 96 58)" fill="${e || '#4a4566'}"/>` },
+  sp_corgi: { back: (c, a, e) => `<path d="M20 60 L22 10 L54 38 Z" fill="${e || c}"/><path d="M27 48 L28 22 L46 38 Z" fill="#ffc7d2"/><path d="M100 60 L98 10 L66 38 Z" fill="${e || c}"/><path d="M93 48 L92 22 L74 38 Z" fill="#ffc7d2"/>`,
     face: () => '<ellipse cx="60" cy="75" rx="15" ry="9" fill="#fff"/><path d="M57 50 Q60 46 63 50 L64 68 L56 68 Z" fill="#fff"/>', front: () => '' },
   sp_poodle: { back: () => '', front: (c, a) => '<g fill="' + c + '" stroke="' + a + '" stroke-width="2">' + [[22,58,8],[20,70,8],[24,81,7],[98,58,8],[100,70,8],[96,81,7],[42,38,10],[52,31,11],[60,28,11],[68,31,11],[78,38,10]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + '</g>' },
-  sp_chihuahua: { back: c => `<path d="M34 50 L0 12 L54 34 Z" fill="${c}"/><path d="M34 44 L12 20 L46 36 Z" fill="#ffc7d2"/><path d="M86 50 L120 12 L66 34 Z" fill="${c}"/><path d="M86 44 L108 20 L74 36 Z" fill="#ffc7d2"/>`, front: () => '' },
+  sp_chihuahua: { back: (c, a, e) => `<path d="M34 50 L0 12 L54 34 Z" fill="${e || c}"/><path d="M34 44 L12 20 L46 36 Z" fill="#ffc7d2"/><path d="M86 50 L120 12 L66 34 Z" fill="${e || c}"/><path d="M86 44 L108 20 L74 36 Z" fill="#ffc7d2"/>`, front: () => '' },
   sp_schnauzer: { back: () => '', skin: () => hood('#8f8aa6'), face: () => '<ellipse cx="51" cy="79" rx="11" ry="8" fill="#eceaf2"/><ellipse cx="69" cy="79" rx="11" ry="8" fill="#eceaf2"/><ellipse cx="60" cy="84" rx="9" ry="7" fill="#eceaf2"/>',
     front: () => `<path d="M16 50 L36 40 L28 62 Z" fill="#6b6585"/><path d="M104 50 L84 40 L92 62 Z" fill="#6b6585"/><path d="M38 53 L52 51 M68 51 L82 53" stroke="#eceaf2" stroke-width="4.5" stroke-linecap="round"/>` },
   /* 貓咪品種 */
@@ -733,6 +736,8 @@ const PETS = {
   pet_crab: '<circle cx="137" cy="106" r="11" fill="#f5d9a8" stroke="#d1a96a" stroke-width="2"/><path d="M137 106 m-6 0 a6 6 0 1 1 6 6 a3.5 3.5 0 1 1 -3 -4" stroke="#d1a96a" stroke-width="2" fill="none"/><path d="M118 113 Q112 110 114 106 Q117 108 119 110" fill="#ff5a4f"/><ellipse cx="124" cy="113" rx="7" ry="5" fill="#ff7a6b"/><path d="M121 109 L120 101 M127 109 L128 101" stroke="#ff7a6b" stroke-width="2"/><circle cx="120" cy="100" r="2.3" fill="#fff" stroke="#4a4566" stroke-width="1"/><circle cx="128" cy="100" r="2.3" fill="#fff" stroke="#4a4566" stroke-width="1"/><circle cx="120" cy="100" r="1" fill="#4a4566"/><circle cx="128" cy="100" r="1" fill="#4a4566"/><path d="M120 117 L117 120 M124 118 L123 121 M128 117 L130 120" stroke="#ff5a4f" stroke-width="1.8" stroke-linecap="round"/>',
   pet_octo: '<path d="M122 108 Q117 117 121 119 M127 110 Q124 119 128 120 M132 111 Q132 120 136 119 M137 110 Q140 119 143 118 M142 108 Q147 116 147 112" stroke="#ff9ec0" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="132" cy="100" rx="13" ry="12" fill="#ff9ec0"/><circle cx="127" cy="100" r="2" fill="#4a4566"/><circle cx="137" cy="100" r="2" fill="#4a4566"/><path d="M129 105 Q132 108 135 105" stroke="#4a4566" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="125" cy="93" r="1.8" fill="#fff" opacity=".8"/><circle cx="139" cy="92" r="1.2" fill="#fff" opacity=".8"/>',
   pet_lantern: '<path d="M132 94 Q134 83 142 80" stroke="#5a5f9e" stroke-width="2" fill="none"/><circle cx="143" cy="80" r="6" fill="#ffd66b" opacity=".4"/><circle cx="143" cy="80" r="3" fill="#ffe98a"/><path d="M143 104 L152 97 L152 113 Z" fill="#4c5aa8"/><ellipse cx="132" cy="105" rx="13" ry="11" fill="#5d6bc4"/><path d="M130 95 Q134 90 138 95" fill="#4c5aa8"/><circle cx="126" cy="101" r="3" fill="#fff"/><circle cx="125.5" cy="101" r="1.6" fill="#2e2a40"/><path d="M121 108 Q125 111 129 108" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="136" cy="108" r="1.2" fill="#9fb0ff"/><circle cx="139" cy="104" r="1" fill="#9fb0ff"/>',
+  pet_plushbunny: '<ellipse cx="121" cy="104" rx="5" ry="16" transform="rotate(8 121 104)" fill="#d42a38"/><ellipse cx="143" cy="104" rx="5" ry="16" transform="rotate(-8 143 104)" fill="#d42a38"/><ellipse cx="132" cy="108" rx="11" ry="10" fill="#e8343f"/><circle cx="132" cy="92" r="10" fill="#e8343f"/>' + [[123,86],[141,86],[124,99],[140,99],[126,116],[138,116]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="#f04a55"/>`).join('') + '<circle cx="128" cy="92" r="2.6" fill="#3a3f9e"/><circle cx="136" cy="92" r="2.6" fill="#3a3f9e"/><path d="M127.4 91.2 L128.6 91.2 M128 90.6 L128 91.8 M135.4 91.2 L136.6 91.2 M136 90.6 L136 91.8" stroke="#fff" stroke-width=".8"/><path d="M131 96 L133 96 L132 97.2 Z" fill="#4a2030"/><path d="M132 112 Q128 108 128.6 105.6 Q130 104 132 106 Q134 104 135.4 105.6 Q136 108 132 112 Z" fill="#a8182a"/>',
+  pet_popcorn: '<rect x="125" y="113" width="5" height="5" rx="1.5" fill="#e84a5f"/><rect x="134" y="113" width="5" height="5" rx="1.5" fill="#e84a5f"/><path d="M121 99 L143 99 L140 115 L124 115 Z" fill="#fff" stroke="#e3dfee" stroke-width="1"/><path d="M126 99 L127 115 M132 99 L132 115 M138 99 L137 115" stroke="#e84a5f" stroke-width="3"/><path d="M135 104 l.9 1.9 2 .3 -1.5 1.4 .4 2 -1.8 -1 -1.8 1 .4 -2 -1.5 -1.4 2 -.3 Z" fill="#ffd66b"/><circle cx="132" cy="91" r="8.5" fill="#ffe3cf"/>' + [[124,86,4.5],[128,82,4.5],[133,81,5],[138,83,4.5],[141,88,4],[123,91,3.5]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#ffd66b"/>`).join('') + '<ellipse cx="124" cy="81" rx="3" ry="2" fill="#fff"/><ellipse cx="140" cy="80" rx="3" ry="2" fill="#fff"/><circle cx="129" cy="92" r="1.6" fill="#3b2a2a"/><circle cx="135" cy="92" r="1.6" fill="#3b2a2a"/><circle cx="127" cy="95" r="1.4" fill="#ffb3b3"/><circle cx="137" cy="95" r="1.4" fill="#ffb3b3"/><path d="M131 95.5 Q132 96.5 133 95.5" stroke="#c4566a" stroke-width="1" fill="none"/>',
   pet_sprite: '<path transform="translate(132 101) scale(2.1)" d="M0 -6 l1.8 3.6 4 .6 -2.9 2.8 .7 4 -3.6 -1.9 -3.6 1.9 .7 -4 -2.9 -2.8 4 -.6 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width=".6" stroke-linejoin="round"/><circle cx="128.5" cy="101" r="1.4" fill="#4a4566"/><circle cx="135.5" cy="101" r="1.4" fill="#4a4566"/><path d="M130 104 Q132 106 134 104" stroke="#4a4566" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="117" cy="92" r="1.5" fill="#ffd66b"/><circle cx="148" cy="88" r="1.2" fill="#ffd66b"/><circle cx="146" cy="112" r="1.4" fill="#ffd66b"/>'
 };
 /* 腮紅：兩頰 (36,74) 與 (84,74) */
@@ -756,12 +761,34 @@ const BGS = {
   bg_stars: W => bgWrap(W, `<rect x="0" y="-4" width="${W}" height="128" fill="#2e2f6e"/><circle cx="16" cy="14" r="8" fill="#ffe98a"/><circle cx="20" cy="11" r="7" fill="#2e2f6e"/>` + [[34, 8, .8], [W - 14, 12, 1], [W - 30, 30, .6], [10, 44, .6], [W - 10, 56, .8], [W / 2 + 10, 2, .6], [8, 80, .5], [W - 6, 92, .5]].map(([x, y, r]) => star4(x, y, r, '#fff')).join('') + `<rect x="0" y="112" width="${W}" height="14" fill="#25265a"/>`),
   bg_lighthouse: W => bgWrap(W, `<rect x="0" y="-4" width="${W}" height="128" fill="#34397a"/>` + [[W - 14, 10, .7], [W - 34, 24, .5], [40, 6, .5]].map(([x, y, r]) => star4(x, y, r, '#fff')).join('') + `<path d="M12 50 L${W} 14 L${W} 40 Z" fill="#ffe98a" opacity=".22"/><path d="M6 98 L8 56 L16 56 L18 98 Z" fill="#fff"/><path d="M7.4 70 L16.6 70 L17 78 L7 78 Z M6.6 86 L17.4 86 L17.8 94 L6.2 94 Z" fill="#e84a5f"/><rect x="7" y="48" width="10" height="8" fill="#ffe98a"/><path d="M5 48 L12 41 L19 48 Z" fill="#e84a5f"/><rect x="0" y="96" width="${W}" height="30" fill="#2a5a96"/><path d="M24 104 q6 -3 12 0 M${W - 30} 108 q6 -3 12 0 M${W / 2 + 26} 116 q6 -3 12 0" stroke="#9cc8ff" stroke-width="1.5" fill="none"/>`)
 };
+/* 耳朵顏色：有明顯耳朵的角色才看得到 */
+const LONG_EARS = ['sp_bunny', 'sp_dog', 'sp_dalmatian', 'sp_chihuahua', 'sp_corgi', 'sp_fox'];
+const EARS = { ear_same: null, ear_red: '#ff5a6a', ear_yellow: '#ffe08a', ear_mint: '#9be0b8', ear_sky: '#9ccfff', ear_lav: '#c9b3f2', ear_rainbow: 'rainbow' };
+/* 娃娃裝：包住身體的布偶裝，穿上時蓋住外套和裙子・褲子 */
+const DOLL = 'M19 80 Q60 92 101 80 L106 119 Q60 128 14 119 Z', GOWN = 'M18 92 C18 82 24 78 34 78 L86 78 C96 78 102 82 102 92 L106 120 Q60 128 14 120 Z';
+const dollClip = inner => { const id = 'dlc' + (++bgSeq); return `<defs><clipPath id="${id}"><path d="${DOLL}"/></clipPath></defs><g clip-path="url(#${id})">${inner}</g>`; };
+const gown = extra => `<path d="${GOWN}" fill="#2e2a40" stroke="#1d1a2e" stroke-width="2" stroke-linejoin="round"/><path d="M60 92 L60 124" stroke="#1d1a2e" stroke-width="1.5"/>` + extra + '<path d="M48 78 L60 92 L72 78 Z" fill="#fff"/>';
+const DOLLS = {
+  doll_none: null,
+  doll_popcorn: () => dollClip('<rect x="0" y="70" width="120" height="60" fill="#fff"/>' + [22, 36, 50, 64, 78, 92].map(x => `<rect x="${x}" y="70" width="7" height="60" fill="#e84a5f"/>`).join('')) + `<path d="${DOLL}" fill="none" stroke="#c9c6d6" stroke-width="1.5"/>` + [[24,80],[34,84],[44,87],[56,88],[68,88],[80,86],[92,82],[30,77],[50,82],[72,82],[88,77]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#fff3c4" stroke="#e8c96a" stroke-width="1.2"/>`).join('') + '<path d="M40 110 Q35 104 36.5 101 Q38.5 99 40 101.5 Q41.5 99 43.5 101 Q45 104 40 110 Z" fill="#ffb3c8"/>' + [[80,102,1],[52,116,.6],[90,114,.7]].map(([x, y, k]) => `<path transform="translate(${x} ${y}) scale(${k})" d="M0 -6 l1.8 3.7 4 .6 -2.9 2.8 .7 4 -3.6 -1.9 -3.6 1.9 .7 -4 -2.9 -2.8 4 -.6 Z" fill="#ffd66b"/>`).join(''),
+  doll_cupcake: () => '<path d="M24 94 L96 94 L90 121 Q60 126 30 121 Z" fill="#ffb3c8" stroke="#f08fae" stroke-width="2" stroke-linejoin="round"/>' + [34, 44, 54, 66, 76, 86].map((x, i) => `<path d="M${x} 95 L${x + (i < 3 ? 1.5 : -1.5)} 122" stroke="#f08fae" stroke-width="1.5"/>`).join('') + '<path d="M16 94 Q12 80 28 80 Q36 70 50 76 Q60 66 70 76 Q84 70 92 80 Q108 80 104 94 Q60 102 16 94 Z" fill="#fff4f8" stroke="#f5b8cc" stroke-width="2" stroke-linejoin="round"/>' + [[30,86,'#7fc6ff',20],[44,82,'#ffd66b',-30],[58,88,'#9be0b8',10],[72,82,'#ff8fa3',40],[86,87,'#b79cf0',-20],[50,92,'#ff8fa3',60],[78,92,'#7fc6ff',-50]].map(([x, y, c, r]) => `<rect x="${x}" y="${y}" width="5" height="2" rx="1" fill="${c}" transform="rotate(${r} ${x} ${y})"/>`).join(''),
+  doll_strawberry: () => `<path d="M17 84 Q60 94 103 84 Q108 104 90 118 Q60 132 30 118 Q12 104 17 84 Z" fill="#ff5a6a" stroke="#d93c4c" stroke-width="2" stroke-linejoin="round"/>` + [[30,96],[44,102],[58,96],[72,102],[86,96],[36,110],[52,114],[68,114],[84,110],[60,122]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="1.4" ry="2.2" fill="#ffe08a"/>`).join('') + '<path d="M18 82 L28 92 L36 80 L46 92 L54 82 L60 94 L66 82 L74 92 L84 80 L92 92 L102 82 Q60 96 18 82 Z" fill="#4fbf7f" stroke="#3a9e64" stroke-width="1.5" stroke-linejoin="round"/>',
+  doll_carrot: () => '<path d="M18 84 Q60 94 102 84 L92 112 Q60 130 28 112 Z" fill="#ff9a3c" stroke="#e07a1f" stroke-width="2" stroke-linejoin="round"/>' + [[30,96,10],[70,100,12],[44,108,9],[80,110,8],[56,118,8]].map(([x, y, w]) => `<path d="M${x} ${y} L${x + w} ${y}" stroke="#e07a1f" stroke-width="2" stroke-linecap="round"/>`).join('') + '<g fill="#4fbf7f" stroke="#3a9e64" stroke-width="1.5" stroke-linejoin="round"><path d="M34 86 L26 70 L40 82 Z"/><path d="M46 88 L44 68 L54 86 Z"/><path d="M60 89 L60 66 L66 88 Z"/><path d="M74 88 L78 68 L80 86 Z"/><path d="M86 86 L96 70 L92 84 Z"/></g>',
+  doll_milk: () => '<path d="M20 82 L100 82 L102 120 Q60 126 18 120 Z" fill="#fff" stroke="#c9d6e6" stroke-width="2" stroke-linejoin="round"/><path d="M20 82 L100 82 L101 94 L19 94 Z" fill="#7cc2ff"/><path d="M20 82 L60 72 L100 82 Z" fill="#e8f3ff" stroke="#c9d6e6" stroke-width="2" stroke-linejoin="round"/><path d="M60 98 Q53 107 56 112 Q60 116 64 112 Q67 107 60 98 Z" fill="#7cc2ff"/><text x="60" y="122" font-size="7.5" font-weight="800" text-anchor="middle" fill="#4f7fb8">牛奶</text>' + [[32,104],[88,106],[28,116]].map(([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="5" ry="3.5" fill="#4a4566" opacity=".8"/>`).join(''),
+  doll_melon: () => dollClip('<rect x="0" y="70" width="120" height="60" fill="#ff6b7a"/><path d="M0 110 Q60 122 120 110 L120 130 L0 130 Z" fill="#3fae5a"/><path d="M0 108 Q60 120 120 108" stroke="#e8ffe0" stroke-width="3" fill="none"/><path d="M0 114 Q60 126 120 114" stroke="#2e8a46" stroke-width="2" fill="none" stroke-dasharray="6 5"/>') + `<path d="${DOLL}" fill="none" stroke="#d94c5c" stroke-width="1.5"/>` + [[34,92],[48,98],[62,92],[76,98],[88,92],[40,104],[70,104]].map(([x, y]) => `<path d="M${x} ${y} Q${x - 2} ${y + 4} ${x} ${y + 5} Q${x + 2} ${y + 4} ${x} ${y} Z" fill="#2e2a40"/>`).join(''),
+  doll_bachelor: () => gown('<path d="M44 78 L60 98 L76 78" stroke="#fff" stroke-width="2.5" fill="none"/>'),
+  doll_master: () => gown('<path d="M28 79 Q60 114 92 79 L84 78 Q60 102 36 78 Z" fill="#4f7fb8" stroke="#ffd66b" stroke-width="2" stroke-linejoin="round"/>'),
+  doll_doctor: () => gown('<path d="M42 90 L48 90 L49 124 L43 124 Z M72 90 L78 90 L77 124 L71 124 Z" fill="#c8323f"/>' + [96, 102, 108].map(y => `<path d="M17 ${y} L25 ${y + 1} M103 ${y} L95 ${y + 1}" stroke="#c8323f" stroke-width="3" stroke-linecap="round"/>`).join('') + '<path d="M28 79 Q60 114 92 79 L84 78 Q60 102 36 78 Z" fill="#c8323f" stroke="#ffd66b" stroke-width="2.5" stroke-linejoin="round"/>')
+};
 function mascot(mood, outfit){
   const o = outfit || (state && state.outfit) || {};
   const [body, belly, arm] = COLORS[o.color] || COLORS.color_blue;
   const hat = HATS[o.hat] != null ? HATS[o.hat] : HATS.hat_sailor;
   const acc = ACCS[o.acc] || '';
   const front = o.acc === 'acc_glasses' ? acc : '', neck = o.acc === 'acc_glasses' ? '' : acc;
+  const doll = DOLLS[o.doll] ? DOLLS[o.doll]() : '';
+  let ear = EARS[o.ear] || null, earDefs = '';
+  if (ear === 'rainbow'){ const id = 'erb' + (++bgSeq); earDefs = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">` + ['#ff8fa3', '#ffd66b', '#9be0b8', '#7fc6ff', '#b79cf0'].map((c, i) => `<stop offset="${i / 4}" stop-color="${c}"/>`).join('') + '</linearGradient></defs>'; ear = `url(#${id})`; }
   const coat = (COATS[o.coat] || COATS.coat_none)(), sp = SPECIES[o.species] || SPECIES.sp_seal, bottom = (BOTTOMS[o.bottom] || BOTTOMS.bottom_none)(), pet = PETS[o.pet] || '', glove = GLOVES[o.glove] || GLOVES.glove_none, cheek = (CHEEKS[o.cheek] || CHEEKS.cheek_pink)();
   const hands = mood === 'cheer' ? [[14, 56], [106, 56]] : [[15, 108], [105, 108]];
   const mouth = {
@@ -781,17 +808,16 @@ function mascot(mood, outfit){
   return `<svg class="mascot${pet ? ' withpet' : ''}" viewBox="0 -4 ${pet ? 160 : 120} 128" aria-hidden="true">
     ${BGS[o.bg] ? BGS[o.bg](pet ? 160 : 120) : ''}
     <ellipse cx="60" cy="118" rx="38" ry="5" fill="rgba(74,69,102,.12)"/>
-    ${sp.back(body, arm)}${arms}
+    ${earDefs}${sp.back(body, arm, ear)}${arms}
     <path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 C102 112 84 118 60 118 C36 118 18 112 18 92 Z" fill="${body}"/>
     <ellipse cx="60" cy="98" rx="26" ry="18" fill="${belly}"/>
     ${sp.skin ? sp.skin(body, arm) : ''}
-    ${bottom}
-    ${coat}
+    ${doll || bottom + coat}
     ${hands.map(([x, y]) => glove(x, y)).join('')}
     ${cheek}
     ${sp.face ? sp.face(body, arm) : ''}${eyes}
     <ellipse cx="60" cy="69" rx="5" ry="3.5" fill="#4a4566"/>${mouth}
-    ${sp.front(body, arm)}${neck}${front}${hat}
+    ${sp.front(body, arm, ear)}${neck}${front}${hat}
     ${pet ? `<ellipse cx="134" cy="118.5" rx="17" ry="3.5" fill="rgba(74,69,102,.12)"/><g class="pet"><g transform="translate(134 118) scale(1.2) translate(-132 -118)">${pet}</g></g>` : ''}
     ${mood === 'sleep' ? '<text x="92" y="30" font-size="16" font-weight="800" fill="#8a85a3">z</text><text x="102" y="18" font-size="12" font-weight="800" fill="#8a85a3">z</text>' : ''}
   </svg>`;
@@ -860,33 +886,51 @@ function sparkle(el){
 /* ---------- 地圖 ---------- */
 /* ---------- 這次更新了什麼（每個學生看完一次就不再跳出） ---------- */
 const NEWS = {
-  ver: '2026-11-26',
+  ver: 'launch-2026-11-26',
   // 每一段：標題、項目（圖示、標題、說明）；brief 的段落每項只顯示一行
-  sections: [{ title: '⭐ 這次新增', items: [
-    ['🏞️', '衣櫃新增「背景」', '晴天海灘、珊瑚礁、星空、燈塔夜景，幫波波換一個風景！'],
-    ['🐙', '四隻新寵物', '小海鷗、寄居蟹（⭐20）、小章魚（⭐40）、小燈籠魚（⭐60），星星夠了就能用金幣買。'],
-    ['🎒', '新的帽子和配件', '望遠鏡、探險背包、星星皇冠、恐龍帽，還有要存 250 金幣的彩虹披風。'],
-    ['🎖️', '徽章限定款', '偵探帽、救生圈、金色船舵、五島旗：拿到指定的徽章，就能用金幣買。'],
-    ['🏅', '9 個新徽章', '完美單元、素養五島、小小探險家、探險隊長、滿分準備、乘風破浪、百日水手、記憶小達人、救援傳奇。到徽章牆點一下就能看怎麼拿。'],
-    ['⭐', '星星一天最多 5 顆', '同一天過關超過 5 回合，照樣過關、照樣拿金幣，只是不再加星星。每天認真練，比一次刷很多回合更好！'],
-    ['👑', '高級款要「指定徽章」', '高級款和套裝的關鍵物品 🔑，除了星星和徽章數量，還要拿到一個指定的徽章（商店會寫是哪一個）。已經買到的不會被收回。']
-  ] }, { title: '🌳 前幾天也更新了', brief: true, items: [
-    ['🌱', '精熟有五個等級', '發芽 🌱 → 長葉 🌿 → 茁壯 🪴 → 精熟 🌳，看記住幾成；精熟過就一直算精熟。'],
-    ['✨', '星星徽章', '累積星星可以拿「一閃一閃」到「銀河旅人」的星星系列徽章。'],
-    ['🐶', '衣櫃大擴充', '新角色、品種狗和品種貓、外套、手套、腮紅、眼睛顏色、裙子・褲子、紳士帽和高禮帽。'],
-    ['🐾', '寵物', '會跟在波波旁邊跳跳跳，星星夠了就能買。'],
-    ['👑', '高級款和四套套裝', '運動明星、海上船長、太空人、魔法學院，整套買打 8 折。'],
-    ['🏅', '徽章可以點開', '在徽章牆點一下，看怎麼拿、哪天拿到、老師的話。']
+  sections: [{ title: '🔥 限定特價 3 天：11/26～11/28', items: [
+    ['🛍️', '衣櫃全部開放', '角色、帽子、配件、外套、手套、腮紅、眼睛、裙子・褲子、寵物、背景、耳朵顏色、娃娃裝……這 3 天全部用特價買得到！'],
+    ['📈', '11/29 起恢復原價', '大部分是現在的 2 倍，最貴的是 1.5 倍。買到的東西永遠是你的。'],
+    ['🗓️', '之後每週一上架新品', '特價結束後，衣櫃先收起來一部分，每週一上架一批，新品也特價 3 天。衣櫃裡會預告下週的新品。']
+  ] }, { title: '✨ 衣櫃新東西', brief: true, items: [
+    ['🐰', '耳朵換色', '小兔、小狗、大麥町、吉娃娃、柯基、小狐狸可以換耳朵顏色，還有彩虹耳朵。'],
+    ['🍿', '娃娃裝', '爆米花桶、杯子蛋糕、草莓、紅蘿蔔、牛奶盒、西瓜，還有學士服、碩士服、博士服。'],
+    ['🐾', '新寵物', '紅絨毛長耳兔、爆米花娃娃、小海鷗、寄居蟹、小章魚、小燈籠魚，還有更多會跟在波波旁邊跳的寵物。'],
+    ['🏞️', '背景', '晴天海灘、珊瑚礁、星空、燈塔夜景。'],
+    ['🐶', '更多角色和衣服', '小狗、小貓、品種狗和品種貓、外套、手套、腮紅、眼睛顏色、裙子・褲子、四套套裝。']
+  ] }, { title: '⭐ 新規則和新徽章', brief: true, items: [
+    ['⭐', '星星一天最多 5 顆', '超過 5 回合照樣過關、照樣拿金幣，只是不再加星星。'],
+    ['👑', '高級款要指定徽章', '高級款和套裝的關鍵物品 🔑，還要拿到一個指定的徽章。'],
+    ['🎖️', '徽章限定款', '偵探帽、救生圈、金色船舵、五島旗：拿到指定徽章就能買。'],
+    ['🏅', '新徽章', '完美單元、素養五島、探險家、滿分準備、星星系列……徽章牆點一下就能看怎麼拿。'],
+    ['🌱', '精熟有五個等級', '發芽 🌱 → 長葉 🌿 → 茁壯 🪴 → 精熟 🌳，看記住幾成。']
   ] }]
 };
+/** 每週新品公告：每週一上架後跳出一次 */
+function dropNews(){
+  const f = state && state.shopInfo, d = f && f.lastDrop;
+  if (!d) return null;
+  const secs = [{ title: '🆕 本週新品：' + d.name, items: [['🛍️', md(d.day) + '上架', d.items.join('、') + '。上架後特價 3 天，到 ' + md(f.drop ? f.drop.last : d.day) + '！']] }];
+  if (f.next) secs.push({ title: '🔜 下週預告', brief: true, items: [['🗓️', md(f.next.day) + '「' + f.next.name + '」', '衣櫃裡標 🔜 的可以先試穿。']] });
+  return { ver: 'drop:' + d.day, sections: secs };
+}
+/** 還沒看過的公告：先看特價公告，再看本週新品 */
+function pendingNews(){
+  const seen = (state && state.newsSeen) || '';
+  if (seen !== NEWS.ver && !seen.startsWith('drop:')) return NEWS;
+  const dn = dropNews();
+  return dn && seen !== dn.ver ? dn : null;
+}
 function showNews(force){
-  if ($('news') || (!force && (!state || state.newsSeen === NEWS.ver))) return;
+  if ($('news')) return;
+  const N = force ? (dropNews() && (state.newsSeen || '').startsWith('drop:') ? dropNews() : NEWS) : pendingNews();
+  if (!N) return;
   const d = document.createElement('div'); d.id = 'news';
   d.innerHTML = `<div class="box" role="dialog" aria-label="這次更新了什麼"><h3>📢 這次更新了什麼</h3>`
-    + NEWS.sections.map(sec => `<h4 class="nsec">${esc(sec.title)}</h4>` + sec.items.map(([ic, t, p]) => sec.brief
+    + N.sections.map(sec => `<h4 class="nsec">${esc(sec.title)}</h4>` + sec.items.map(([ic, t, p]) => sec.brief
       ? `<div class="nw brief"><span aria-hidden="true">${ic}</span><div><b>${esc(t)}</b>：${esc(p)}</div></div>`
       : `<div class="nw"><span aria-hidden="true">${ic}</span><div><b>${esc(t)}</b><p>${esc(p)}</p></div></div>`).join('')).join('')
-    + `<p class="nhint" id="newsHint">往下看完，就可以關掉喔</p><button class="btn" id="bNewsOk">我看完了</button></div>`;
+    + `<p class="nhint">往下看完，就可以關掉喔</p><button class="btn" id="bNewsOk">我看完了</button></div>`;
   document.body.appendChild(d);
   const box = d.querySelector('.box'), ok = d.querySelector('#bNewsOk'), hint = d.querySelector('.nhint');
   // 要捲到最下面（看完）才能關；內容不用捲就看得完時，直接可以關
@@ -894,7 +938,7 @@ function showNews(force){
   box.addEventListener('scroll', check); check();
   ok.addEventListener('click', () => {
     d.remove();
-    if (state && cred && state.newsSeen !== NEWS.ver){ state.newsSeen = NEWS.ver; api('seenNews', cred, NEWS.ver).catch(() => {}); }
+    if (!force && state && cred && state.newsSeen !== N.ver){ state.newsSeen = N.ver; api('seenNews', cred, N.ver).catch(() => {}); showNews(); }
   });
 }
 
@@ -1128,12 +1172,12 @@ function renderResult(r){
 $('bQuit').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 波波的衣櫃 ---------- */
-const SLOTS = [['species','角色'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['eye','眼睛'],['bottom','裙子・褲子'],['pet','寵物'],['color','顏色'],['bg','背景']];
+const SLOTS = [['species','角色'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['eye','眼睛'],['bottom','裙子・褲子'],['pet','寵物'],['color','顏色'],['bg','背景'],['ear','耳朵顏色'],['doll','娃娃裝']];
 let trying = null, selId = null;
 function openShop(){ trying = Object.assign({}, state.outfit); selId = null; renderShop(); show('vShop'); }
 const bName = id => ((state.badgeList || []).find(b => b.id === id) || {}).name || id;
 const hasBadge = id => (state.badges || []).includes(id);
-const locked = it => (it.stars && state.stars < it.stars) || (it.badges && (state.badges || []).length < it.badges) || (it.need && !hasBadge(it.need));
+const locked = it => !state.isTest && ((it.stars && state.stars < it.stars) || (it.badges && (state.badges || []).length < it.badges) || (it.need && !hasBadge(it.need)));
 const req = it => [it.stars ? '⭐' + it.stars : '', it.badges ? '🏅' + it.badges : '', it.need ? '🎖️' + bName(it.need) : ''].filter(Boolean).join('＋');
 /** 還差什麼：星星、徽章數、指定徽章 */
 const lack = it => {
@@ -1144,6 +1188,21 @@ const lack = it => {
 const reqText = it => [it.stars ? '累積 ' + it.stars + ' 顆星星' : '', it.badges ? '拿到 ' + it.badges + ' 個徽章' : '', it.need ? '拿到「' + bName(it.need) + '」徽章' : ''].filter(Boolean).join('，還要');
 const setPrice = (set, owned) => Math.round(set.items.filter(x => !owned.has(x)).reduce((a, x) => a + state.shop[x].price, 0) * 0.8);
 const setLook = set => { const o = {}; set.items.forEach(x => { o[state.shop[x].slot] = x; }); return o; };
+const WD = '日一二三四五六';
+const md = d => Number(d.slice(5, 7)) + '/' + Number(d.slice(8)) + '（' + WD[new Date(d + 'T00:00:00Z').getUTCDay()] + '）';
+const daysLeft = d => Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(state.shopInfo.day + 'T00:00:00Z')) / 864e5) + 1;
+/** 衣櫃最上面的看板：特價倒數、本週新品、下週預告 */
+function shopBoard(){
+  const f = state.shopInfo; if (!f) return '';
+  const rows = [];
+  if (state.isTest) rows.push('🧪 <b>測試帳號</b>：金幣、星星、徽章都不限，還沒上架的新品也能先拿來穿。');
+  if (f.beforeLaunch) rows.push(`🔥 <b>${md(f.launch)}起限定特價 3 天！</b>衣櫃全部開放。`);
+  if (f.inLaunch) rows.push(`🔥 <b>限定特價中，還剩 ${daysLeft(f.saleLast)} 天！</b>衣櫃全部開放，到 ${md(f.saleLast)}為止。之後恢復原價，新品改成每週一上架（買到的永遠是你的）。`);
+  if (f.drop) rows.push(`🆕 <b>本週新品「${esc(f.drop.name)}」</b>特價到 ${md(f.drop.last)}。`);
+  if (f.next && !f.inLaunch && !f.beforeLaunch) rows.push(`🔜 <b>${md(f.next.day)}上架「${esc(f.next.name)}」</b>：下面標 🔜 的可以先試穿，還不能買。`);
+  return rows.length ? '<div class="notice shopboard">' + rows.map(r => `<div>${r}</div>`).join('') + '</div>' : '';
+}
+const priceTag = it => (it.was ? `<s class="was">${it.was}</s> ` : '') + IC.coin + it.price;
 function renderShop(){
   const shop = state.shop, owned = new Set(state.owned);
   const has = id => shop[id].price === 0 || owned.has(id);
@@ -1157,18 +1216,19 @@ function renderShop(){
     return `<button class="item set${selId === 'set:' + id ? ' sel' : ''}" data-set="${id}">${mascot('happy', pv)}${esc(st.name)}
       <small>${all ? '整套都有了' : locked(key) ? '🔒 ' + req(key) + ' 解鎖' : req(key) + '・' + IC.coin + setPrice(st, owned)}</small></button>`;
   }).join('') + '</div>' : '';
-  $('shopList').innerHTML = setHtml + SLOTS.map(([slot, label]) => `<h3>${label}</h3><div class="items">` +
+  $('shopList').innerHTML = shopBoard() + setHtml + SLOTS.map(([slot, label]) => `<h3>${label}${slot === 'ear' ? ' <small class="gsub">小兔、小狗、大麥町、吉娃娃、柯基、小狐狸才看得到</small>' : slot === 'doll' ? ' <small class="gsub">穿上會蓋住外套和裙子・褲子</small>' : ''}</h3><div class="items">` +
     Object.keys(shop).filter(id => shop[id].slot === slot).map(id => {
       const it = shop[id], wear = state.outfit[slot] === id;
-      const pv = Object.assign({}, DEFAULT_LOOK, {[slot]: id});
+      const pv = Object.assign({}, DEFAULT_LOOK, {[slot]: id}, slot === 'ear' ? {species: LONG_EARS.includes(state.outfit.species) ? state.outfit.species : 'sp_bunny'} : {});
       return `<button class="item${wear ? ' on wear' : ''}${selId === id ? ' sel' : ''}" data-id="${id}">${mascot('happy', pv)}${it.key ? '🔑 ' : ''}${esc(it.name)}${it.set && sets[it.set] ? `<span class="settag">${esc(sets[it.set].name.replace('套裝', ''))}</span>` : ''}
-        <small>${wear ? '穿著中' : has(id) ? '已擁有' : (locked(it) ? '🔒 ' + req(it) + ' 解鎖' : (it.stars || it.badges ? req(it) + '・' : '') + IC.coin + it.price)}</small></button>`;
+        <small>${wear ? '穿著中' : has(id) ? '已擁有' : it.soon && !state.isTest ? '🔜 ' + md(it.soon) + '上架' : state.isTest ? '🧪 直接拿來穿' : (locked(it) ? '🔒 ' + req(it) + ' 解鎖' : (it.stars || it.badges || it.need ? req(it) + '・' : '') + priceTag(it))}</small></button>`;
     }).join('') + '</div>').join('');
   const b = $('bShopAct');
   if (!selId){ b.disabled = true; b.textContent = '選一樣東西'; return; }
   if (selId.startsWith('set:')){
     const st = sets[selId.slice(4)], key = shop[st.key], names = st.items.map(x => shop[x].name).join('、');
     if (st.items.every(has)){ b.disabled = false; b.textContent = '整套穿上'; $('shopMsg').textContent = '「' + st.name + '」你全部都有了：' + names + '。'; }
+    else if (state.isTest){ b.disabled = false; b.textContent = '測試帳號：整套拿來穿'; $('shopMsg').textContent = '「' + st.name + '」有：' + names + '。'; }
     else if (locked(key)){
       b.disabled = true; b.textContent = lack(key);
       $('shopMsg').textContent = '「' + st.name + '」有：' + names + '。整套買要' + reqText(key) + '。其他單品可以先在下面單買，只有關鍵物品 🔑「' + key.name + '」也有一樣的條件。';
@@ -1182,6 +1242,8 @@ function renderShop(){
   const it = shop[selId];
   if (state.outfit[it.slot] === selId){ b.disabled = true; b.textContent = '穿著中'; $('shopMsg').textContent = '波波已經穿著「' + it.name + '」了。'; }
   else if (has(selId)){ b.disabled = false; b.textContent = '穿上'; $('shopMsg').textContent = '這是你的「' + it.name + '」，要幫波波穿上嗎？'; }
+  else if (it.soon && !state.isTest){ b.disabled = true; b.textContent = md(it.soon) + '上架'; $('shopMsg').textContent = '預告：「' + it.name + '」' + md(it.soon) + '上架，先試穿看看吧！'; }
+  else if (state.isTest){ b.disabled = false; b.textContent = '測試帳號：直接拿來穿'; $('shopMsg').textContent = '測試帳號不用金幣、星星和徽章。'; }
   else if (locked(it)){
     b.disabled = true; b.textContent = lack(it);
     $('shopMsg').textContent = it.badges
@@ -1189,10 +1251,10 @@ function renderShop(){
       : it.need && !it.stars
       ? '「' + it.name + '」是徽章限定款：' + reqText(it) + '就能用金幣買。'
       : '「' + it.name + '」是星星特別款：' + reqText(it) + '就能買（星星不會被花掉）。每次過關得 1 顆星星，一天最多 ' + (state.starMax || 5) + ' 顆喔！'; }
-  else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = '「' + it.name + '」很適合波波喔！'; }
+  else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = it.was ? '「' + it.name + '」限定特價 ' + it.price + ' 金幣（原價 ' + it.was + '），特價到 ' + md(it.saleEnd) + '！' : '「' + it.name + '」很適合波波喔！'; }
   else { b.disabled = true; b.textContent = '還差 ' + (it.price - state.coins) + ' 金幣'; $('shopMsg').textContent = '再去島上答對幾題，就能買「' + it.name + '」了。'; }
 }
-const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue', bg:'bg_none'};
+const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue', bg:'bg_none', ear:'ear_same', doll:'doll_none'};
 $('shopList').addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
   if (b.dataset.set){ selId = 'set:' + b.dataset.set; trying = Object.assign({}, state.outfit, setLook(state.sets[b.dataset.set])); renderShop(); return; }

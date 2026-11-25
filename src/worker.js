@@ -175,8 +175,7 @@ const SHOP = {
   bg_reef: { slot: 'bg', name: '珊瑚礁', price: 60 },
   bg_stars: { slot: 'bg', name: '星空', price: 60 },
   bg_lighthouse: { slot: 'bg', name: '燈塔夜景', price: 80 },
-  /* ---- 分批上架：from 是上架日（臺灣日期），上架前在衣櫃顯示預告 ---- */
-  // 第 1 批（跟特價一起上線）
+  /* ---- 新品（上架日見 DROPS） ---- */
   pet_plushbunny: { slot: 'pet', name: '紅絨毛長耳兔', price: 80, stars: 40 },
   ear_same: { slot: 'ear', name: '跟身體同色', price: 0 },
   ear_red: { slot: 'ear', name: '草莓紅耳朵', price: 30 },
@@ -186,19 +185,17 @@ const SHOP = {
   ear_lav: { slot: 'ear', name: '薰衣草耳朵', price: 30 },
   ear_rainbow: { slot: 'ear', name: '彩虹耳朵', price: 80, stars: 40 },
   doll_none: { slot: 'doll', name: '不穿娃娃裝', price: 0 },
-  // 第 2 批
-  pet_popcorn: { slot: 'pet', name: '爆米花娃娃', price: 100, stars: 60, from: '2026-12-01' },
-  doll_popcorn: { slot: 'doll', name: '爆米花桶裝', price: 150, from: '2026-12-01' },
-  doll_cupcake: { slot: 'doll', name: '杯子蛋糕裝', price: 120, from: '2026-12-01' },
-  doll_strawberry: { slot: 'doll', name: '草莓裝', price: 120, from: '2026-12-01' },
-  // 第 3 批
-  doll_carrot: { slot: 'doll', name: '紅蘿蔔裝', price: 120, from: '2026-12-08' },
-  doll_milk: { slot: 'doll', name: '牛奶盒裝', price: 120, from: '2026-12-08' },
-  doll_melon: { slot: 'doll', name: '西瓜裝', price: 150, from: '2026-12-08' },
-  // 第 4 批：畢業袍（學士、碩士、博士用垂布顏色和袖子分出差別）
-  doll_bachelor: { slot: 'doll', name: '學士服', price: 120, from: '2026-12-15' },
-  doll_master: { slot: 'doll', name: '碩士服', price: 160, from: '2026-12-15' },
-  doll_doctor: { slot: 'doll', name: '博士服', price: 200, from: '2026-12-15' }
+  pet_popcorn: { slot: 'pet', name: '爆米花娃娃', price: 100, stars: 60 },
+  doll_popcorn: { slot: 'doll', name: '爆米花桶裝', price: 150 },
+  doll_cupcake: { slot: 'doll', name: '杯子蛋糕裝', price: 120 },
+  doll_strawberry: { slot: 'doll', name: '草莓裝', price: 120 },
+  doll_carrot: { slot: 'doll', name: '紅蘿蔔裝', price: 120 },
+  doll_milk: { slot: 'doll', name: '牛奶盒裝', price: 120 },
+  doll_melon: { slot: 'doll', name: '西瓜裝', price: 150 },
+  // 畢業袍：學士、碩士、博士用垂布顏色和袖子分出差別
+  doll_bachelor: { slot: 'doll', name: '學士服', price: 120 },
+  doll_master: { slot: 'doll', name: '碩士服', price: 160 },
+  doll_doctor: { slot: 'doll', name: '博士服', price: 200 }
 };
 /* 套裝：要先達到關鍵物品的星星＋徽章才能整套買；整套買時，還沒有的單品打 8 折 */
 const SETS = {
@@ -207,11 +204,25 @@ const SETS = {
   set_space: { name: '太空人套裝', key: 'hat_astro', items: ['hat_astro', 'coat_space', 'glove_space', 'pet_robot'] },
   set_magic: { name: '魔法學院套裝', key: 'coat_robe', items: ['hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat'] }
 };
-/* ---- 價格：限定特價 3 天，之後恢復原價 ----
- * 現有物品：從 LAUNCH_DAY 起特價 3 天；分批上架的新品：從上架日起特價 3 天。
+/* ---- 限定特價與每週新品 ----
+ * 特價 3 天（LAUNCH_DAY 起）：衣櫃全部開放，價格是特價。
+ * 特價結束後：原本的 18 樣和免費款一直都在；其他依 DROPS 每週一上架，上架後新品特價 3 天，之後恢復原價。
+ *   學生已經買到的東西永遠是自己的，衣櫃裡一直看得到、可以穿。衣櫃只預告下一週的新品。
  * 原價：150 以下 ×2，151 以上 ×1.5（取 5 的倍數）；基礎色 4 金幣的每一欄只留一色 4 金幣，其他 10 金幣；
- * 免費款與徽章限定款不漲。 */
-const LAUNCH_DAY = '2026-11-25', SALE_DAYS = 3;
+ *   免費款與徽章限定款不漲。 */
+const LAUNCH_DAY = '2026-11-26', SALE_DAYS = 3;
+const DROPS = {
+  '2026-11-30': { name: '動物朋友', items: ['sp_cat', 'sp_bunny', 'sp_bear', 'sp_fox', 'sp_sheep', 'sp_dog', 'sp_pig', 'sp_mouse', 'ear_red', 'ear_yellow', 'ear_mint', 'ear_sky', 'ear_lav', 'ear_rainbow', 'pet_plushbunny', 'pet_chick', 'pet_hamster', 'pet_bunny'] },
+  '2026-12-07': { name: '海洋冒險', items: ['bg_beach', 'bg_reef', 'bg_stars', 'bg_lighthouse', 'pet_gull', 'pet_crab', 'pet_octo', 'pet_lantern', 'pet_turtle', 'pet_fish', 'acc_scope', 'acc_backpack', 'coat_rain', 'hat_captain', 'coat_pirate', 'bottom_pirate', 'pet_parrot', 'acc_ring', 'acc_wheel'] },
+  '2026-12-14': { name: '甜點娃娃', items: ['doll_popcorn', 'doll_cupcake', 'doll_strawberry', 'pet_popcorn', 'cheek_rose', 'cheek_peach', 'cheek_lilac', 'cheek_sky', 'cheek_shy', 'cheek_heart', 'cheek_star', 'cheek_rainbow', 'bottom_jeans', 'bottom_pleat', 'bottom_flower', 'bottom_tutu'] },
+  '2026-12-21': { name: '冬天與運動', items: ['coat_down', 'coat_team', 'coat_denim', 'glove_white', 'glove_red', 'glove_boxing', 'hat_party', 'hat_chef', 'hat_cap', 'coat_jersey', 'bottom_sport', 'acc_trophy', 'pet_kitten', 'pet_puppy', 'eye_brown', 'eye_blue', 'eye_green', 'eye_gray'] },
+  '2026-12-28': { name: '狗狗品種', items: ['sp_shiba', 'sp_husky', 'sp_dalmatian', 'sp_corgi', 'sp_poodle', 'sp_chihuahua', 'sp_schnauzer', 'sp_frog', 'sp_tiger', 'sp_panda', 'acc_headphones', 'acc_lei', 'eye_purple', 'eye_pink', 'eye_gold', 'eye_sparkle', 'eye_odd', 'hat_detective'] },
+  '2027-01-04': { name: '貓咪與星星魔法', items: ['sp_calico', 'sp_tabby', 'sp_siamese', 'sp_scottish', 'sp_persian', 'hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat', 'acc_wand', 'coat_cape', 'glove_star', 'eye_star', 'hat_stars', 'color_night', 'pet_owl', 'pet_sprite'] },
+  '2027-01-11': { name: '蔬果與太空', items: ['doll_carrot', 'doll_milk', 'doll_melon', 'hat_astro', 'coat_space', 'glove_space', 'pet_robot', 'sp_dino', 'hat_dino', 'sp_unicorn', 'pet_dragon', 'color_coral', 'color_cloud', 'bottom_plaid', 'bottom_suspender', 'bottom_grass', 'bottom_rainbow', 'acc_flag'] },
+  '2027-01-18': { name: '畢業典禮與皇家', items: ['doll_bachelor', 'doll_master', 'doll_doctor', 'hat_grad', 'hat_fedora', 'hat_fedora_black', 'hat_tophat', 'hat_starcrown', 'hat_royal', 'coat_royal', 'bottom_gown', 'glove_gold', 'eye_galaxy', 'sp_dragon', 'pet_whale', 'pet_phoenix', 'coat_rainbow'] }
+};
+const DROP_OF = {};
+Object.keys(DROPS).forEach(d => DROPS[d].items.forEach(id => { DROP_OF[id] = d; }));
 const KEEP4 = new Set(['eye_brown', 'cheek_rose']);
 const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 function regularPrice(id) {
@@ -220,22 +231,51 @@ function regularPrice(id) {
   if (p === 4) return KEEP4.has(id) ? 4 : 10;
   return p <= 150 ? p * 2 : Math.round(p * 1.5 / 5) * 5;
 }
-/** 衣櫃用的日期（測試可以用 SHOP_DAY 固定），特價開始日可以用 SALE_LAUNCH 改 */
+/** 衣櫃用的日期（測試可以用 SHOP_DAY 固定）；特價開始日可以用 SALE_LAUNCH 改 */
 const shopDay = ctx => (ctx.env && ctx.env.SHOP_DAY) || today();
 const launchDay = ctx => (ctx.env && ctx.env.SALE_LAUNCH) || LAUNCH_DAY;
-/** 這一天的價格：price 現在的價格、was 原價（特價中才有）、saleEnd 特價最後一天、soon 還沒上架時的上架日 */
-function priceInfo(ctx, id, day) {
-  const it = SHOP[id], from = it.from || launchDay(ctx), end = addDays(from, SALE_DAYS);
-  const reg = regularPrice(id), sale = day >= from && day < end && it.price < reg;
-  return { price: sale ? it.price : reg, was: sale ? reg : 0, saleEnd: sale ? addDays(end, -1) : '', soon: it.from && day < it.from ? it.from : '' };
+/** 特價結束後的第一天 */
+const saleOver = ctx => addDays(launchDay(ctx), SALE_DAYS);
+/** 這一天買得到嗎：特價前（還沒開放給學生）和特價期間全部都在；之後要等上架日 */
+const onShelf = (ctx, id, day) => !DROP_OF[id] || day < saleOver(ctx) || day >= DROP_OF[id];
+/** 下一批（特價結束後才有） */
+function nextDrop(ctx, day) {
+  const d = Object.keys(DROPS).sort().find(x => x > day && x >= saleOver(ctx));
+  return d ? { day: d, name: DROPS[d].name, items: DROPS[d].items } : null;
 }
-/** 下一批上架日（給預告用） */
-const nextDrop = day => Object.values(SHOP).map(x => x.from).filter(f => f && f > day).sort()[0] || '';
-/** 給學生看的衣櫃：已上架的＋下一批預告，價格換成當天的價格 */
-function shopView(ctx) {
-  const day = shopDay(ctx), next = nextDrop(day), out = {};
-  Object.keys(SHOP).forEach(id => { const it = SHOP[id]; if (it.from && it.from > day && it.from !== next) return; out[id] = Object.assign({}, it, priceInfo(ctx, id, day)); });
+/** 最近上架的一批（每週新品公告用） */
+function lastDrop(ctx, day) {
+  const d = Object.keys(DROPS).sort().filter(x => x <= day && x >= saleOver(ctx)).pop();
+  return d ? { day: d, name: DROPS[d].name, items: DROPS[d].items } : null;
+}
+/** 這一天的價格：price 現在的價格、was 原價（特價中才有）、saleEnd 特價最後一天、soon 預告的上架日 */
+function priceInfo(ctx, id, day) {
+  const reg = regularPrice(id), L = launchDay(ctx), D = DROP_OF[id];
+  const inLaunch = day >= L && day < saleOver(ctx), inDrop = !!D && day >= D && day < addDays(D, SALE_DAYS);
+  const sale = (inLaunch || inDrop) && SHOP[id].price < reg;
+  const end = inDrop ? addDays(D, SALE_DAYS - 1) : addDays(saleOver(ctx), -1);
+  return { price: sale ? SHOP[id].price : reg, was: sale ? reg : 0, saleEnd: sale ? end : '', soon: onShelf(ctx, id, day) ? '' : D };
+}
+/** 給學生看的衣櫃：買得到的、自己已經有的、下一週的預告 */
+function shopView(ctx, have, isTest) {
+  const day = shopDay(ctx), nx = nextDrop(ctx, day), mine = new Set(have || []), out = {};
+  Object.keys(SHOP).forEach(id => {
+    if (!isTest && !onShelf(ctx, id, day) && !mine.has(id) && !(nx && DROP_OF[id] === nx.day)) return;
+    out[id] = Object.assign({}, SHOP[id], priceInfo(ctx, id, day));
+    if (mine.has(id) || isTest) out[id].soon = '';
+  });
   return out;
+}
+/** 套裝：每一件都已經上架才顯示 */
+const setsView = (ctx, isTest) => Object.fromEntries(Object.entries(SETS).filter(([, st]) => isTest || st.items.every(x => onShelf(ctx, x, shopDay(ctx)))));
+/** 衣櫃狀態：特價倒數、下一週預告、這週新品 */
+function shopInfo(ctx) {
+  const day = shopDay(ctx), L = launchDay(ctx), over = saleOver(ctx);
+  const ld = lastDrop(ctx, day), nx = nextDrop(ctx, day);
+  return { day, launch: L, saleLast: addDays(over, -1), inLaunch: day >= L && day < over, beforeLaunch: day < L,
+    drop: ld && day < addDays(ld.day, SALE_DAYS) ? { day: ld.day, name: ld.name, last: addDays(ld.day, SALE_DAYS - 1), items: ld.items.map(x => SHOP[x].name) } : null,
+    lastDrop: ld ? { day: ld.day, name: ld.name, items: ld.items.map(x => SHOP[x].name) } : null,
+    next: nx ? { day: nx.day, name: nx.name, items: nx.items.map(x => SHOP[x].name) } : null };
 }
 const setPrice = (ctx, set, have) => Math.round(set.items.filter(x => !have.includes(x)).reduce((a, x) => a + priceInfo(ctx, x, shopDay(ctx)).price, 0) * 0.8);
 const badgeCount = async (ctx, cls, s) => (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
@@ -623,7 +663,7 @@ async function state(ctx, cls, s) {
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: shopView(ctx), sets: SETS, shopDay: shopDay(ctx), nextDrop: nextDrop(shopDay(ctx))
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test
   };
 }
 
@@ -848,7 +888,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
   }
   s.coins += correct; s.earned += correct;
   const starsToday = s.star_day === day ? s.star_today : 0;
-  const gotStar = passed && starsToday < STAR_DAILY_MAX;
+  const gotStar = passed && (starsToday < STAR_DAILY_MAX || !!s.is_test);
   if (gotStar) s.stars += 1;
   s.star_day = day; s.star_today = starsToday + (gotStar ? 1 : 0);
   s.total += total; s.right_count += correct;
@@ -907,6 +947,7 @@ API.buyItem = async (ctx, cred, id) => {
   if (!item) fail('商店沒有這個東西。');
   const have = owned(s);
   if (have.includes(id)) fail('你已經有這個了。');
+  if (s.is_test) return testGet(ctx, cls, s, [id]);
   if (item.stars && s.stars < item.stars) fail('還要再拿 ' + (item.stars - s.stars) + ' 顆星星，才能買「' + item.name + '」。');
   if (item.badges) {
     const n = await badgeCount(ctx, cls, s);
@@ -915,6 +956,7 @@ API.buyItem = async (ctx, cred, id) => {
   await checkNeed(ctx, cls, s, item, item.name);
   const info = priceInfo(ctx, id, shopDay(ctx)), price = info.price;
   if (info.soon) fail('「' + item.name + '」' + Number(info.soon.slice(5, 7)) + '/' + Number(info.soon.slice(8)) + ' 才上架喔！');
+  if (!onShelf(ctx, id, shopDay(ctx))) fail('「' + item.name + '」現在沒有上架。');
   if (s.coins < price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(id);
   const o = outfit(s); o[item.slot] = id;
@@ -925,6 +967,15 @@ API.buyItem = async (ctx, cred, id) => {
   return state(ctx, cls, s);
 };
 
+/** 測試帳號（老師試玩）：金幣、星星、徽章都不限，還沒上架的新品也能直接拿來穿 */
+async function testGet(ctx, cls, s, ids) {
+  const have = owned(s), o = outfit(s);
+  ids.forEach(x => { if (!have.includes(x)) have.push(x); o[SHOP[x].slot] = x; });
+  s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
+  await ctx.run('UPDATE students SET owned = ?, outfit = ? WHERE class_code = ? AND seat = ?', s.owned, s.outfit, cls.code, s.seat);
+  return state(ctx, cls, s);
+}
+
 API.buySet = async (ctx, cred, id) => {
   const { cls, s } = await auth(ctx, cred, false);
   const set = SETS[id];
@@ -932,6 +983,7 @@ API.buySet = async (ctx, cred, id) => {
   const key = SHOP[set.key], have = owned(s);
   const missing = set.items.filter(x => !have.includes(x) && SHOP[x].price > 0);
   if (!missing.length) fail('這個套裝你已經全部都有了。');
+  if (s.is_test) return testGet(ctx, cls, s, set.items);
   if (s.stars < key.stars) fail('還要再拿 ' + (key.stars - s.stars) + ' 顆星星，才能買「' + set.name + '」。');
   const n = await badgeCount(ctx, cls, s);
   if (n < key.badges) fail('還要再拿 ' + (key.badges - n) + ' 個徽章，才能買「' + set.name + '」。');
@@ -1498,7 +1550,7 @@ API.tUploadImage = async (ctx, pw, dataUrl) => {
 /** 學生看完「這次更新了什麼」：記下版本，下次登入就不會再跳出 */
 API.seenNews = async (ctx, cred, ver) => {
   const { cls, s } = await auth(ctx, cred, false);
-  await ctx.run('UPDATE students SET news_seen = ? WHERE class_code = ? AND seat = ?', str(ver, 20), cls.code, s.seat);
+  await ctx.run('UPDATE students SET news_seen = ? WHERE class_code = ? AND seat = ?', str(ver, 30), cls.code, s.seat);
   return true;
 };
 

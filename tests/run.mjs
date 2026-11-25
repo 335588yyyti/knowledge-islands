@@ -15,7 +15,7 @@ const watchdog = setTimeout(() => { console.error('\n測試超時，卡在：' +
 console.log('套用資料表…');
 execSync(`npx wrangler d1 migrations apply DB --local --persist-to ${dir}`, { stdio: ['ignore', 'ignore', 'inherit'], timeout: 120e3 });
 console.log('啟動 wrangler dev…');
-const dev = spawn('npx', ['wrangler', 'dev', '--port', String(PORT), '--ip', '127.0.0.1', '--persist-to', dir, '--var', 'TEACHER_PASSWORD:' + PW, '--var', 'IMPORT_TOKEN:' + IMPORT_TOKEN], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const dev = spawn('npx', ['wrangler', 'dev', '--port', String(PORT), '--ip', '127.0.0.1', '--persist-to', dir, '--var', 'TEACHER_PASSWORD:' + PW, '--var', 'SHOP_DAY:2026-11-27', '--var', 'IMPORT_TOKEN:' + IMPORT_TOKEN], { stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; dev.stdout.on('data', d => log += d); dev.stderr.on('data', d => log += d);
 const stop = () => { try { process.kill(-dev.pid); } catch (e) {} rmSync(dir, { recursive: true, force: true }); };
 
@@ -720,6 +720,13 @@ try {
     assert.ok(m1.units.every(u => u.mastered <= m0.units.find(v => v.key === u.key).mastered));
     assert.equal(await lb(), n0 - 1, '排行榜不列出測試帳號');
     assert.equal((await call('tRedeem', pw, 'DEMO', [2], '')).ok.length, 0, '測試帳號不能換點');
+    // 老師試玩：測試帳號金幣、星星、徽章都不限，高級款和套裝直接拿來穿，不扣金幣
+    const t0 = (await call('studentLogin', c2)).ok;
+    assert.ok(t0.isTest);
+    const got = (await call('buyItem', c2, 'pet_phoenix')).ok;
+    assert.ok(got.owned.includes('pet_phoenix') && got.outfit.pet === 'pet_phoenix');
+    assert.equal(got.coins, t0.coins);
+    assert.ok((await call('buySet', c2, 'set_magic')).ok.owned.includes('coat_robe'));
     await call('tSetTest', pw, 'DEMO', 2, false);
     assert.ok(!(await call('tDashboard', pw, 'DEMO')).ok.students.find(x => x.seat === 2).isTest);
     await t.click('[data-tab="tClass"]');
