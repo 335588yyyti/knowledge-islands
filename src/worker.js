@@ -282,6 +282,14 @@ function shopInfo(ctx) {
     // 上架行事曆：之後每一週上什麼（只給文字，不給圖）
     schedule: Object.keys(DROPS).sort().filter(d => d > day && d >= over).map(d => ({ day: d, name: DROPS[d].name, items: DROPS[d].items.map(x => SHOP[x].name) })) };
 }
+/** 限定特價期間每人限買 SALE_LIMIT 樣（套裝算 1 樣、免費款不算）；active 表示現在在特價期間 */
+const SALE_LIMIT = 5;
+function saleQuota(ctx, s) {
+  const day = shopDay(ctx), L = launchDay(ctx), active = day >= L && day < saleOver(ctx);
+  const used = s.sale_key === L ? s.sale_buys : 0;
+  return { active, used, left: Math.max(0, SALE_LIMIT - used), key: L };
+}
+const SALE_FULL = '特價期間每人限買 ' + SALE_LIMIT + ' 樣，你已經買滿了！其他的可以先試穿，特價結束後再用原價買。';
 const setPrice = (ctx, set, have) => Math.round(set.items.filter(x => !have.includes(x)).reduce((a, x) => a + priceInfo(ctx, x, shopDay(ctx)).price, 0) * 0.8);
 const badgeCount = async (ctx, cls, s) => (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
 /** 指定徽章：物品寫了 need，就要先拿到那個徽章 */
@@ -668,7 +676,7 @@ async function state(ctx, cls, s) {
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, saleLeft: (q => q.active && !s.is_test ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
   };
 }
 
@@ -962,11 +970,14 @@ API.buyItem = async (ctx, cred, id) => {
   const info = priceInfo(ctx, id, shopDay(ctx)), price = info.price;
   if (info.soon) fail('「' + item.name + '」' + Number(info.soon.slice(5, 7)) + '/' + Number(info.soon.slice(8)) + ' 早上 8 點才上架喔！');
   if (!onShelf(ctx, id, shopDay(ctx))) fail('「' + item.name + '」現在沒有上架。');
+  const q = saleQuota(ctx, s), counts = q.active && price > 0;
+  if (counts && q.left <= 0) fail(SALE_FULL);
   if (s.coins < price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(id);
   const o = outfit(s); o[item.slot] = id;
-  const r = await ctx.run('UPDATE students SET coins = coins - ?, owned = ?, outfit = ? WHERE class_code = ? AND seat = ? AND coins >= ?',
-    price, JSON.stringify(have), JSON.stringify(o), cls.code, s.seat, price);
+  if (counts) { s.sale_key = q.key; s.sale_buys = q.used + 1; }
+  const r = await ctx.run('UPDATE students SET coins = coins - ?, owned = ?, outfit = ?, sale_key = ?, sale_buys = ? WHERE class_code = ? AND seat = ? AND coins >= ?',
+    price, JSON.stringify(have), JSON.stringify(o), s.sale_key || '', s.sale_buys || 0, cls.code, s.seat, price);
   if (!r.meta.changes) fail('金幣還不夠，再去島上挑戰吧！');
   s.coins -= price; s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
   return state(ctx, cls, s);
@@ -993,12 +1004,16 @@ API.buySet = async (ctx, cred, id) => {
   const n = await badgeCount(ctx, cls, s);
   if (n < key.badges) fail('還要再拿 ' + (key.badges - n) + ' 個徽章，才能買「' + set.name + '」。');
   await checkNeed(ctx, cls, s, key, set.name);
+  if (!set.items.every(x => onShelf(ctx, x, shopDay(ctx)))) fail('「' + set.name + '」現在沒有上架。');
   const price = setPrice(ctx, set, have);
+  const q = saleQuota(ctx, s);
+  if (q.active && q.left <= 0) fail(SALE_FULL);
   if (s.coins < price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(...missing);
   const o = outfit(s); set.items.forEach(x => { o[SHOP[x].slot] = x; });
-  const r = await ctx.run('UPDATE students SET coins = coins - ?, owned = ?, outfit = ? WHERE class_code = ? AND seat = ? AND coins >= ?',
-    price, JSON.stringify(have), JSON.stringify(o), cls.code, s.seat, price);
+  if (q.active) { s.sale_key = q.key; s.sale_buys = q.used + 1; }  // 套裝算 1 樣
+  const r = await ctx.run('UPDATE students SET coins = coins - ?, owned = ?, outfit = ?, sale_key = ?, sale_buys = ? WHERE class_code = ? AND seat = ? AND coins >= ?',
+    price, JSON.stringify(have), JSON.stringify(o), s.sale_key || '', s.sale_buys || 0, cls.code, s.seat, price);
   if (!r.meta.changes) fail('金幣還不夠，再去島上挑戰吧！');
   s.coins -= price; s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
   return state(ctx, cls, s);

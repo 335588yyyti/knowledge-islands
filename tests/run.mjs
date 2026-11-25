@@ -677,6 +677,11 @@ try {
     assert.equal(last.star, false); assert.equal(last.starFull, true);  // 超過 5 顆：照樣過關、有金幣，只是不加星星
     assert.ok(last.coins > 0);
     assert.equal((await call('studentLogin', c)).ok.starToday, 5);
+    // 特價期間每人限買 5 樣（免費款不算）
+    for (const id of ['eye_brown', 'eye_blue', 'eye_green', 'eye_gray', 'cheek_rose']) assert.ok((await call('buyItem', c, id)).ok, '買 ' + id);
+    assert.match((await call('buyItem', c, 'cheek_peach')).err, /限買 5 樣/);
+    assert.equal((await call('studentLogin', c)).ok.saleLeft, 0);
+    assert.ok((await call('setOutfit', c, { ear: 'ear_same' })).ok, '免費款照樣可以換');
     // 偵探帽要「題目偵探」徽章，金幣夠也買不了
     assert.match((await call('buyItem', c, 'hat_detective')).err, /題目偵探/);
   });
