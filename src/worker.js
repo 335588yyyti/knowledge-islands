@@ -33,7 +33,11 @@ const SHOP = {
   color_mint: { slot: 'color', name: '薄荷綠', price: 50 },
   color_cocoa: { slot: 'color', name: '奶茶色', price: 50 },
   color_lav: { slot: 'color', name: '薰衣草', price: 50 },
-  color_gold: { slot: 'color', name: '閃亮金', price: 150 }
+  color_gold: { slot: 'color', name: '閃亮金', price: 150 },
+  // 星星特別款：累積的星星達到門檻才能買（星星不會被花掉）
+  hat_stars: { slot: 'hat', name: '星星髮箍', price: 40, stars: 20 },
+  acc_wand: { slot: 'acc', name: '星星魔杖', price: 80, stars: 60 },
+  color_night: { slot: 'color', name: '星夜藍', price: 120, stars: 120 }
 };
 const DEFAULT_OUTFIT = { hat: 'hat_sailor', acc: 'acc_none', color: 'color_blue' };
 
@@ -54,6 +58,11 @@ const BADGES = [
   { id: 'week5', group: '好習慣', icon: '🗓️', name: '全勤一週', desc: '同一週的週一到週五都拿到今日印章' },
   { id: 'month15', group: '好習慣', icon: '🌙', name: '月月有你', desc: '同一個月有 15 天拿到今日印章' },
   // 精熟
+  { id: 'star10', series: 'star', tier: 1, group: '好習慣', icon: '⭐', name: '一閃一閃', desc: '累積 10 顆星星（每次過關得 1 顆）' },
+  { id: 'star50', series: 'star', tier: 2, group: '好習慣', icon: '🌟', name: '星光點點', desc: '累積 50 顆星星' },
+  { id: 'star100', series: 'star', tier: 3, group: '好習慣', icon: '💫', name: '滿天星', desc: '累積 100 顆星星' },
+  { id: 'star300', series: 'star', tier: 4, group: '好習慣', icon: '🌠', name: '流星雨', desc: '累積 300 顆星星' },
+  { id: 'star500', series: 'star', tier: 5, group: '好習慣', icon: '🌌', name: '銀河旅人', desc: '累積 500 顆星星' },
   { id: 'master1', series: 'master', tier: 1, group: '精熟', icon: '🌱', name: '第一棵樹', desc: '第一次精熟一個單元' },
   { id: 'master5', series: 'master', tier: 2, group: '精熟', icon: '🌳', name: '小樹林', desc: '精熟 5 個單元' },
   { id: 'master10', series: 'master', tier: 3, group: '精熟', icon: '🌲', name: '森林守護者', desc: '精熟 10 個單元' },
@@ -468,6 +477,7 @@ async function awardBadges(ctx, cls, s, st, ev) {
   const month15 = [...days].filter(d => d.slice(0, 7) === today().slice(0, 7)).length >= 15;
   const ex = st.exam;
   const cond = {
+    star10: s.stars >= 10, star50: s.stars >= 50, star100: s.stars >= 100, star300: s.stars >= 300, star500: s.stars >= 500,
     streak3: s.streak >= 3, streak7: s.streak >= 7, streak14: s.streak >= 14, streak30: s.streak >= 30,
     days10: s.stamps >= 10, days30: s.stamps >= 30, days60: s.stamps >= 60, week5, month15,
     master1: mastered >= 1, master5: mastered >= 5, master10: mastered >= 10, master20: mastered >= 20, master30: mastered >= 30, master50: mastered >= 50,
@@ -667,6 +677,7 @@ API.buyItem = async (ctx, cred, id) => {
   if (!item) fail('商店沒有這個東西。');
   const have = owned(s);
   if (have.includes(id)) fail('你已經有這個了。');
+  if (item.stars && s.stars < item.stars) fail('還要再拿 ' + (item.stars - s.stars) + ' 顆星星，才能買「' + item.name + '」。');
   if (s.coins < item.price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(id);
   const o = outfit(s); o[item.slot] = id;

@@ -360,7 +360,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <h3>🪙 第 4 站：寶物怎麼來</h3>
       <table class="gtable">
         <tr><td>🪙 金幣</td><td>每答對 1 題得 1 枚。</td></tr>
-        <tr><td>⭐ 星星</td><td>一回合答對 7 成以上就「過關」，得 1 顆星星。</td></tr>
+        <tr><td>⭐ 星星</td><td>一回合答對 7 成以上就「過關」，得 1 顆星星（每次過關都有，不像印章一天只有一個）。星星<b>不會被花掉</b>，累積到 10、50、100、300、500 顆可以拿<b>星星徽章</b>，還能解鎖衣櫃的<b>星星特別款</b>。</td></tr>
         <tr><td>🔴 今日印章</td><td>每天<b>第一次過關</b>會蓋 1 個印章，可以跟老師換加點。</td></tr>
         <tr><td>🔥 連續天數</td><td>每天都拿到印章，天數就會一直往上加。</td></tr>
       </table>
@@ -430,6 +430,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <ul>
         <li>用金幣幫波波買帽子、配件、換顏色，可以先試穿再決定。</li>
         <li><b>花掉金幣不會讓老師少加點！</b>老師看的是你「累積賺到」的金幣總數，不是剩下的。</li>
+        <li><b>⭐ 星星特別款</b>：星星髮箍、星星魔杖、星夜藍，要先累積足夠的星星（20、60、120 顆）才能用金幣買。星星不會被花掉喔！</li>
       </ul>
 
       <h3>🧭 船長的小祕訣</h3>
@@ -534,7 +535,7 @@ function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ re
 /* 船長波波：小海豹吉祥物。mood: happy / cheer / oops / sleep；outfit: {hat, acc, color}（可以在金幣商店換） */
 const COLORS = {
   color_blue:['#cfe3f0','#eef6fb','#a9c7dc'], color_pink:['#ffd3dc','#fff0f3','#f2a7b7'], color_mint:['#c5edd9','#eefaf4','#8fd1b2'],
-  color_cocoa:['#ead6c2','#f8efe6','#c8a688'], color_lav:['#ddd3f7','#f5f1fe','#b5a3e6'], color_gold:['#ffe08a','#fff7d9','#e6b33c']
+  color_cocoa:['#ead6c2','#f8efe6','#c8a688'], color_lav:['#ddd3f7','#f5f1fe','#b5a3e6'], color_gold:['#ffe08a','#fff7d9','#e6b33c'], color_night:['#b8c2f2','#eef0ff','#8794dc']
 };
 const HATS = {
   hat_sailor:'<path d="M46 36 Q60 14 74 36 Q60 30 46 36 Z" fill="#fff" stroke="#c9dbe6" stroke-width="2" stroke-linejoin="round"/><path d="M32 44 Q60 22 88 44 L84 50 Q60 38 36 50 Z" fill="#fff" stroke="#c9dbe6" stroke-width="2" stroke-linejoin="round"/><path d="M36 50 Q60 38 84 50 L82 55 Q60 45 38 55 Z" fill="#7cc2ff"/><circle cx="60" cy="26" r="4" fill="#ff8fa3"/>',
@@ -543,6 +544,7 @@ const HATS = {
   hat_straw:'<ellipse cx="60" cy="42" rx="42" ry="8" fill="#f3d58c" stroke="#ddb65e" stroke-width="2"/><path d="M38 42 Q38 18 60 18 Q82 18 82 42 Z" fill="#f3d58c" stroke="#ddb65e" stroke-width="2"/><path d="M39 36 Q60 31 81 36 L81 41 Q60 36 39 41 Z" fill="#ff8fa3"/>',
   hat_pirate:'<path d="M26 44 Q34 20 60 18 Q86 20 94 44 Q60 34 26 44 Z" fill="#4a4566"/><path d="M26 44 Q60 34 94 44" stroke="#ffd66b" stroke-width="3" fill="none"/><circle cx="60" cy="30" r="6" fill="#fff"/><path d="M56 27 L64 33 M64 27 L56 33" stroke="#4a4566" stroke-width="2"/>',
   hat_crown:'<path d="M38 44 L36 20 L48 32 L60 14 L72 32 L84 20 L82 44 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width="2.5" stroke-linejoin="round"/><circle cx="60" cy="34" r="4" fill="#ff8fa3"/><circle cx="46" cy="38" r="3" fill="#7cc2ff"/><circle cx="74" cy="38" r="3" fill="#7fd8b5"/>',
+  hat_stars:'<path d="M34 46 Q60 22 86 46" stroke="#ffd66b" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M60 16 l3.4 6.9 7.6 1.1 -5.5 5.4 1.3 7.6 -6.8 -3.6 -6.8 3.6 1.3 -7.6 -5.5 -5.4 7.6 -1.1 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width="1.5" stroke-linejoin="round"/><path d="M40 26 l2 4 4.4 .6 -3.2 3.1 .8 4.3 -4 -2.1 -4 2.1 .8 -4.3 -3.2 -3.1 4.4 -.6 Z" fill="#ff8fa3"/><path d="M80 26 l2 4 4.4 .6 -3.2 3.1 .8 4.3 -4 -2.1 -4 2.1 .8 -4.3 -3.2 -3.1 4.4 -.6 Z" fill="#7cc2ff"/>',
   hat_wizard:'<ellipse cx="60" cy="44" rx="34" ry="7" fill="#8e72e0"/><path d="M40 44 Q50 20 70 0 Q72 26 80 44 Z" fill="#a98bf0"/><path d="M58 22 l2.5 5 5.5 .8 -4 3.9 1 5.4 -5 -2.6 -5 2.6 1 -5.4 -4 -3.9 5.5 -.8 Z" fill="#ffd66b"/>'
 };
 const ACCS = {
@@ -550,6 +552,7 @@ const ACCS = {
   acc_bowtie:'<path d="M60 88 L46 80 L46 96 Z M60 88 L74 80 L74 96 Z" fill="#ff8fa3" stroke="#e66d84" stroke-width="2" stroke-linejoin="round"/><circle cx="60" cy="88" r="4.5" fill="#e66d84"/>',
   acc_scarf:'<path d="M28 82 Q60 96 92 82 L92 92 Q60 106 28 92 Z" fill="#7fd8b5"/><path d="M74 94 L80 116 L90 112 L84 92 Z" fill="#6cc6a3"/><path d="M34 86 L34 94 M46 90 L46 98 M58 92 L58 100" stroke="#fff" stroke-width="3" opacity=".7"/>',
   acc_glasses:'<circle cx="45" cy="62" r="11" fill="rgba(255,255,255,.25)" stroke="#4a4566" stroke-width="3"/><circle cx="75" cy="62" r="11" fill="rgba(255,255,255,.25)" stroke="#4a4566" stroke-width="3"/><path d="M56 61 Q60 57 64 61" stroke="#4a4566" stroke-width="3" fill="none"/>',
+  acc_wand:'<path d="M90 104 L106 70" stroke="#a98bf0" stroke-width="4" stroke-linecap="round"/><path d="M107 58 l3.4 6.9 7.6 1.1 -5.5 5.4 1.3 7.6 -6.8 -3.6 -6.8 3.6 1.3 -7.6 -5.5 -5.4 7.6 -1.1 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width="1.5" stroke-linejoin="round"/><circle cx="98" cy="60" r="1.8" fill="#ffd66b"/><circle cx="114" cy="84" r="1.6" fill="#ff8fa3"/>',
   acc_medal:'<path d="M50 82 L56 100 L64 100 L70 82" fill="#7cc2ff" stroke="#549fe0" stroke-width="2" stroke-linejoin="round"/><circle cx="60" cy="104" r="10" fill="#ffd66b" stroke="#e6a92a" stroke-width="2.5"/><path d="M60 98 l2 4 4.4 .6 -3.2 3.1 .8 4.3 -4 -2.1 -4 2.1 .8 -4.3 -3.2 -3.1 4.4 -.6 Z" fill="#fff"/>'
 };
 function mascot(mood, outfit){
@@ -890,13 +893,14 @@ function renderShop(){
       const it = shop[id], wear = state.outfit[slot] === id;
       const pv = Object.assign({}, DEFAULT_LOOK, {[slot]: id});
       return `<button class="item${wear ? ' on wear' : ''}${selId === id ? ' sel' : ''}" data-id="${id}">${mascot('happy', pv)}${esc(it.name)}
-        <small>${wear ? '穿著中' : has(id) ? '已擁有' : IC.coin + it.price}</small></button>`;
+        <small>${wear ? '穿著中' : has(id) ? '已擁有' : (it.stars && state.stars < it.stars ? '🔒 ⭐' + it.stars + ' 解鎖' : (it.stars ? '⭐' + it.stars + '・' : '') + IC.coin + it.price)}</small></button>`;
     }).join('') + '</div>').join('');
   const b = $('bShopAct');
   if (!selId){ b.disabled = true; b.textContent = '選一樣東西'; return; }
   const it = shop[selId];
   if (state.outfit[it.slot] === selId){ b.disabled = true; b.textContent = '穿著中'; $('shopMsg').textContent = '波波已經穿著「' + it.name + '」了。'; }
   else if (has(selId)){ b.disabled = false; b.textContent = '穿上'; $('shopMsg').textContent = '這是你的「' + it.name + '」，要幫波波穿上嗎？'; }
+  else if (it.stars && state.stars < it.stars){ b.disabled = true; b.textContent = '還差 ' + (it.stars - state.stars) + ' 顆星星'; $('shopMsg').textContent = '「' + it.name + '」是星星特別款：累積 ' + it.stars + ' 顆星星就能買（星星不會被花掉）。每次過關得 1 顆星星喔！'; }
   else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = '「' + it.name + '」很適合波波喔！'; }
   else { b.disabled = true; b.textContent = '還差 ' + (it.price - state.coins) + ' 金幣'; $('shopMsg').textContent = '再去島上答對幾題，就能買「' + it.name + '」了。'; }
 }
