@@ -41,6 +41,8 @@ const SHOP = {
   hat_party: { slot: 'hat', name: '生日帽', price: 40 },
   hat_chef: { slot: 'hat', name: '廚師帽', price: 50 },
   hat_grad: { slot: 'hat', name: '學士帽', price: 90 },
+  hat_fedora: { slot: 'hat', name: '白色紳士帽', price: 70 },
+  hat_fedora_black: { slot: 'hat', name: '黑色紳士帽', price: 70 },
   acc_lei: { slot: 'acc', name: '花圈', price: 45 },
   acc_headphones: { slot: 'acc', name: '耳機', price: 60 },
   color_coral: { slot: 'color', name: '珊瑚橘', price: 50 },
