@@ -86,16 +86,25 @@ const SHOP = {
   bottom_grass: { slot: 'bottom', name: '草裙', price: 60 },
   bottom_rainbow: { slot: 'bottom', name: '彩虹裙', price: 80, stars: 40 },
   pet_none: { slot: 'pet', name: '不帶寵物', price: 0 },
-  pet_chick: { slot: 'pet', name: '小雞', price: 40 },
-  pet_hamster: { slot: 'pet', name: '倉鼠', price: 60 },
-  pet_turtle: { slot: 'pet', name: '小烏龜', price: 60 },
-  pet_fish: { slot: 'pet', name: '金魚缸', price: 60 },
-  pet_bunny: { slot: 'pet', name: '小白兔', price: 80 },
-  pet_kitten: { slot: 'pet', name: '小貓咪', price: 80 },
-  pet_puppy: { slot: 'pet', name: '小狗狗', price: 80 },
-  pet_owl: { slot: 'pet', name: '貓頭鷹', price: 100 },
+  pet_chick: { slot: 'pet', name: '小雞', price: 40, stars: 10 },
+  pet_hamster: { slot: 'pet', name: '倉鼠', price: 60, stars: 20 },
+  pet_turtle: { slot: 'pet', name: '小烏龜', price: 60, stars: 20 },
+  pet_fish: { slot: 'pet', name: '金魚缸', price: 60, stars: 20 },
+  pet_bunny: { slot: 'pet', name: '小白兔', price: 80, stars: 40 },
+  pet_kitten: { slot: 'pet', name: '小貓咪', price: 80, stars: 40 },
+  pet_puppy: { slot: 'pet', name: '小狗狗', price: 80, stars: 40 },
+  pet_owl: { slot: 'pet', name: '貓頭鷹', price: 100, stars: 60 },
   pet_dragon: { slot: 'pet', name: '小飛龍', price: 150, stars: 80 },
   pet_sprite: { slot: 'pet', name: '星星精靈', price: 150, stars: 150 },
+  /* 高級款：要星星＋徽章（徽章數，老師頒發的也算）才能買 */
+  hat_royal: { slot: 'hat', name: '寶石皇冠', price: 300, stars: 150, badges: 15 },
+  coat_royal: { slot: 'coat', name: '國王披風', price: 300, stars: 120, badges: 12 },
+  glove_gold: { slot: 'glove', name: '黃金手套', price: 200, stars: 100, badges: 10 },
+  bottom_gown: { slot: 'bottom', name: '公主禮服裙', price: 250, stars: 120, badges: 12 },
+  eye_galaxy: { slot: 'eye', name: '銀河眼', price: 200, stars: 100, badges: 10 },
+  sp_dragon: { slot: 'species', name: '小龍', price: 400, stars: 250, badges: 18 },
+  pet_whale: { slot: 'pet', name: '雲朵小鯨魚', price: 300, stars: 200, badges: 15 },
+  pet_phoenix: { slot: 'pet', name: '小鳳凰', price: 400, stars: 300, badges: 20 },
   eye_dark: { slot: 'eye', name: '深紫黑', price: 0 },
   eye_brown: { slot: 'eye', name: '咖啡色', price: 4 },
   eye_blue: { slot: 'eye', name: '藍色', price: 4 },
@@ -770,6 +779,10 @@ API.buyItem = async (ctx, cred, id) => {
   const have = owned(s);
   if (have.includes(id)) fail('你已經有這個了。');
   if (item.stars && s.stars < item.stars) fail('還要再拿 ' + (item.stars - s.stars) + ' 顆星星，才能買「' + item.name + '」。');
+  if (item.badges) {
+    const n = (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
+    if (n < item.badges) fail('還要再拿 ' + (item.badges - n) + ' 個徽章，才能買「' + item.name + '」。');
+  }
   if (s.coins < item.price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(id);
   const o = outfit(s); o[item.slot] = id;
