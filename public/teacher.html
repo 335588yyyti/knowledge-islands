@@ -143,6 +143,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <button role="tab" data-tab="tMastery">精熟總覽</button>
     <button role="tab" data-tab="tBank">題庫管理 <span class="pill p-bad hidden" id="repTab"></span></button>
     <button role="tab" data-tab="tAsks">📮 學生提問 <span class="pill p-bad hidden" id="askTab"></span></button>
+    <button role="tab" data-tab="tWishes">🌠 許願・旗子 <span class="pill p-bad hidden" id="wishTab"></span></button>
     <button role="tab" data-tab="tClass">班級管理</button>
     <button role="tab" data-tab="tGuide">📘 領航員手冊</button>
   </nav>
@@ -386,6 +387,18 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <div id="askList"></div>
       </div>
     </section>
+    <section id="tWishes" class="hidden">
+      <div class="panel">
+        <h2>🚩 旗子審核 <span class="pill p-bad" id="flagCount">0</span></h2>
+        <p class="muted small">學生在衣櫃用 8×8 格子畫旗子送審。按「通過」時才會扣 50 金幣、旗子才會出現在他的波波旁邊；「不通過」不扣錢，可以寫原因讓他重畫。</p>
+        <div id="flagList"></div>
+      </div>
+      <div class="panel">
+        <h2>🌠 衣櫃許願池 <span class="pill p-bad" id="wishCount">0</span></h2>
+        <p class="muted small">學生每週可以許 1 個願望（寫字或畫圖＋說明）。「公開」後全班匿名看得到、可以集氣；做好了按「實現了」；不採用可以寫原因，只有許願的同學看得到。想請 Claude 依願望設計新造型，就在對話裡說「看許願池」。</p>
+        <div id="wishList"></div>
+      </div>
+    </section>
     <section id="tGuide" class="hidden">
       <div class="panel guide">
         <h2>📘 領航員手冊</h2>
@@ -465,6 +478,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <li><b>星星一天最多算 5 顆</b>：同一天過關超過 5 回合，照樣過關、照樣拿金幣（加點不受影響），只是不加星星，避免學生一直刷星星款和星星徽章。延伸冒險的星星不算在內。</li>
           <li>衣櫃的<b>高級款</b>和套裝的<b>關鍵物品 🔑</b>：要星星、徽章數量都夠，還要拿到一個指定徽章（例如小鳳凰要「越挫越勇」）。<b>徽章限定款</b>（偵探帽、救生圈、金色船舵、五島旗）只要拿到指定徽章就能用金幣買。</li>
           <li>衣櫃<b>限定特價 3 天</b>（11/26 早上 8 點～11/29 早上 8 點）：全部開放，價格是特價，<b>每人限買 5 樣</b>（套裝算 1 樣、免費款不算、測試帳號不限）。之後恢復原價（150 以下 ×2、151 以上 ×1.5；眼睛留咖啡色、腮紅留桃紅 4 金幣，其他基礎色 10 金幣；免費款和徽章限定款不漲），新品改成<b>每週一早上 8 點上架一批</b>（到 1/18 共 8 批），上架後特價 3 天，衣櫃只預告下一週。學生買到的東西永遠是自己的。每週一學生登入會跳出「本週新品」。</li>
+          <li><b>🌠 許願・旗子</b>：學生在衣櫃「🚩 我的旗子」畫 8×8 旗子送審，你按「通過」才扣 50 金幣、旗子才出現，「不通過」不扣錢；「🌠 許願池」每人每週 1 個願望（寫字或畫圖），你按「公開集氣」後全班匿名看得到、可以集氣，做好了按「實現了」。想請 Claude 依願望設計，在對話裡說「看許願池」。</li>
+          <li><b>🎁 神秘角色</b>：4 隻完整角色（喵大副、汪舵手、跳跳兔、熊船長）是隱藏商品，分別在 12/14、12/28、1/11、1/18 早上 8 點揭曉；上架前衣櫃和行事曆只有陰影和「？？？」，測試帳號也一樣。價格固定、不打折，要星星、徽章數量和指定徽章。</li>
           <li><b>📮 學生提問</b>：學生在「常見問答・提問」打字時，網頁會先用關鍵字比對常見問答，列出可能的答案；找不到才能附截圖提問（每人每天 3 題）。你在「📮 學生提問」分頁選處理結果並回覆：找到系統問題加金幣、星星和「系統偵探」徽章；亂提問扣金幣餘額（不扣累積金幣、不會變負數）；也可以只提醒。勾「公開給全班」的回覆，全班下次登入會看到（匿名、不顯示截圖）。想請 Claude 先看，就在對話裡說「看學生提問」，它會先寫好草稿（標 🤖），你看過再送出。</li>
           <li><b>更新公告</b>：網站有新功能時，學生下次登入會跳出「這次更新了什麼」，要往下看完才能按「我看完了」關掉；每位學生只會跳一次（換裝置也一樣），之後可以在航海手冊最下面再打開來看。</li>
           <li>同一系列的徽章（例如連續 3、7、14、30 天）在學生的徽章牆會合成一張卡片，顯示銅、銀、金…幾階，以及下一階要做什麼。</li>
@@ -1137,9 +1152,39 @@ let REPORTS = [], fromReport = null;
 function renderReportCount(){
   const n = DASH.openReports || 0;
   $('repTab').textContent = n; $('repTab').classList.toggle('hidden', !n);
+  const fw = (DASH.pendingFlags || 0) + (DASH.pendingWishes || 0);
+  $('wishTab').textContent = fw; $('wishTab').classList.toggle('hidden', !fw);
   const a = DASH.openAsks || 0;
   $('askTab').textContent = a; $('askTab').classList.toggle('hidden', !a);
 }
+/* ---------- 許願池・旗子 ---------- */
+const FLAG_PAL = ['#ffffff', '#2e2a40', '#e84a5f', '#ff8fa3', '#ffb37a', '#ffd66b', '#9be0b8', '#3fae7a', '#7fc6ff', '#4f7fb8', '#b79cf0', '#7a5c50', '#c9c6d6', '#ff6b00', '#00a6a6', '#8e44ad'];
+const flagView = g => `<div style="display:grid;grid-template-columns:repeat(8,16px);gap:1px;background:#8a5a3c;padding:2px;width:max-content;border-radius:4px">${g.split('').map(v => `<i style="display:block;width:16px;height:16px;background:${FLAG_PAL[parseInt(v, 16)]}"></i>`).join('')}</div>`;
+const WISH_ST = { pending: '待審核', public: '已公開', done: '實現了', declined: '沒有採用' };
+async function loadWishes(){
+  try{
+    const [flags, wishes] = await Promise.all([api('tFlags', PW, CUR.code), api('tWishes', PW, CUR.code)]);
+    const fp = flags.filter(f => f.status === 'pending').length, wp = wishes.filter(w => w.status === 'pending').length;
+    $('flagCount').textContent = fp; $('wishCount').textContent = wp; $('wishTab').textContent = fp + wp; $('wishTab').classList.toggle('hidden', !(fp + wp));
+    $('flagList').innerHTML = flags.length ? flags.map(f => `<div class="rep" data-flag="${f.id}"><div class="small muted">${esc(f.ts)}　${f.seat} 號 ${esc(f.nick || '')}　金幣 ${f.coins}</div>${flagView(f.grid)}
+      ${f.status === 'pending' ? `<div class="row" style="margin-top:6px"><input data-fnote placeholder="原因或鼓勵的話（可以不寫）" style="flex:1"><button class="btn2 sm" data-fok>通過（扣 50 金幣）</button><button class="btn2 sm" data-fno>不通過</button></div>`
+        : `<div class="small"><span class="pill p-mute">${f.status === 'approved' ? '已通過' : '沒通過'}</span> ${esc(f.note || '')}</div>`}</div>`).join('') : '<p class="muted">還沒有學生送旗子。</p>';
+    $('wishList').innerHTML = wishes.length ? wishes.map(w => `<div class="rep" data-wish="${w.id}"><div class="small muted">${esc(w.ts)}　${w.seat} 號 ${esc(w.nick || '')}　⭐ ${w.votes}　<span class="pill p-mute">${WISH_ST[w.status] || w.status}</span></div>
+      <div><b>${esc(w.text)}</b></div>${w.image ? `<a href="${w.image}" target="_blank" rel="noopener"><img src="${w.image}" alt="學生畫的圖" loading="lazy" style="max-width:200px;border-radius:10px;margin:6px 0"></a>` : ''}
+      <div class="row" style="margin-top:6px"><input data-wnote placeholder="給許願同學的話（沒採用時建議寫原因）" style="flex:1" value="${esc(w.note || '')}">${w.status !== 'public' ? '<button class="btn2 sm" data-wset="public">公開集氣</button>' : ''}${w.status !== 'done' ? '<button class="btn2 sm" data-wset="done">實現了</button>' : ''}${w.status !== 'declined' ? '<button class="btn2 sm" data-wset="declined">不採用</button>' : ''}</div></div>`).join('') : '<p class="muted">還沒有學生許願。</p>';
+  }catch(e){ toast(e.message); }
+}
+$('flagList').addEventListener('click', async e => {
+  const ok = e.target.closest('[data-fok]'), no = e.target.closest('[data-fno]'); if (!ok && !no) return;
+  const box = e.target.closest('[data-flag]');
+  try{ await api('tReviewFlag', PW, Number(box.dataset.flag), !!ok, box.querySelector('[data-fnote]').value.trim()); toast(ok ? '已通過，扣了 50 金幣' : '已退回，沒有扣錢'); loadWishes(); }catch(err){ toast(err.message); }
+});
+$('wishList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-wset]'); if (!b) return;
+  const box = b.closest('[data-wish]');
+  try{ await api('tWish', PW, Number(box.dataset.wish), b.dataset.wset, box.querySelector('[data-wnote]').value.trim()); toast('已更新'); loadWishes(); }catch(err){ toast(err.message); }
+});
+
 /* ---------- 學生提問 ---------- */
 const ASK_KIND = { answered: '💬 一般回答', bug: '🛠️ 找到系統問題（加獎勵）', warn: '⚠️ 只提醒（不扣）', junk: '🚫 亂提問（扣金幣）' };
 const ASK_DONE = { answered: '💬 已回答', bug: '🛠️ 系統問題', warn: '⚠️ 已提醒', junk: '🚫 亂提問' };
@@ -1361,10 +1406,11 @@ function switchTab(id){
   if (id === 'tMastery' && CUR) loadMastery();
   if (id === 'tBank') loadReports();
   if (id === 'tAsks' && CUR) loadAsks();
+  if (id === 'tWishes' && CUR) loadWishes();
   if (id === 'tUnits') refreshUnits();
   if (id === 'tBank' && DASH){ fillBankFilters(); loadBank(); }
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
-  ['tOverview','tUnits','tImport','tMastery','tBank','tAsks','tClass','tGuide'].forEach(t => $(t).classList.toggle('hidden', t !== id));
+  ['tOverview','tUnits','tImport','tMastery','tBank','tAsks','tWishes','tClass','tGuide'].forEach(t => $(t).classList.toggle('hidden', t !== id));
 }
 document.querySelector('nav').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) switchTab(b.dataset.tab); });
 

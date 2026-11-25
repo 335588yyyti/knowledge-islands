@@ -196,7 +196,31 @@ const SHOP = {
   // 畢業袍：學士、碩士、博士用垂布顏色和袖子分出差別
   doll_bachelor: { slot: 'doll', name: '學士服', price: 120 },
   doll_master: { slot: 'doll', name: '碩士服', price: 160 },
-  doll_doctor: { slot: 'doll', name: '博士服', price: 200 }
+  doll_doctor: { slot: 'doll', name: '博士服', price: 200 },
+  /* 完整角色（不是海豹的身體）：隱藏商品，固定價格，上架前只顯示陰影 */
+  sp_full_cat: { slot: 'species', name: '喵大副', price: 1000, stars: 150, badges: 20, need: 'master20', fixed: true, hidden: true },
+  sp_full_dog: { slot: 'species', name: '汪舵手', price: 1200, stars: 180, badges: 22, need: 'streak30', fixed: true, hidden: true },
+  sp_full_bunny: { slot: 'species', name: '跳跳兔', price: 1500, stars: 220, badges: 25, need: 'rescue100', fixed: true, hidden: true },
+  sp_full_bear: { slot: 'species', name: '熊船長', price: 2000, stars: 250, badges: 28, need: 'reader60', fixed: true, hidden: true },
+  /* 自訂顏色：買一次之後可以一直換 */
+  color_custom: { slot: 'color', name: '自訂顏色', price: 100, stars: 30 },
+  /* 衣服貼圖 */
+  sticker_none: { slot: 'sticker', name: '不貼', price: 0 },
+  sticker_heart: { slot: 'sticker', name: '愛心貼紙', price: 20 },
+  sticker_star: { slot: 'sticker', name: '星星貼紙', price: 20 },
+  sticker_bolt: { slot: 'sticker', name: '閃電貼紙', price: 20 },
+  sticker_rainbow: { slot: 'sticker', name: '彩虹貼紙', price: 20 },
+  sticker_moon: { slot: 'sticker', name: '月亮貼紙', price: 20 },
+  sticker_sun: { slot: 'sticker', name: '太陽貼紙', price: 20 },
+  sticker_flower: { slot: 'sticker', name: '小花貼紙', price: 20 },
+  sticker_note: { slot: 'sticker', name: '音符貼紙', price: 20 },
+  sticker_crown: { slot: 'sticker', name: '皇冠貼紙', price: 20 },
+  sticker_anchor: { slot: 'sticker', name: '船錨貼紙', price: 20 },
+  sticker_clover: { slot: 'sticker', name: '幸運草貼紙', price: 20 },
+  sticker_smile: { slot: 'sticker', name: '笑臉貼紙', price: 20 },
+  /* 自己畫的旗子：flag_mine 要有通過審核的旗子才能用 */
+  flag_none: { slot: 'flag', name: '不插旗子', price: 0 },
+  flag_mine: { slot: 'flag', name: '我的旗子', price: 0, mine: true }
 };
 /* 套裝：要先達到關鍵物品的星星＋徽章才能整套買；整套買時，還沒有的單品打 8 折 */
 const SETS = {
@@ -215,12 +239,13 @@ const LAUNCH_DAY = '2026-11-26', SALE_DAYS = 3;
 const DROPS = {
   '2026-11-30': { name: '動物朋友', items: ['sp_cat', 'sp_bunny', 'sp_bear', 'sp_fox', 'sp_sheep', 'sp_dog', 'sp_pig', 'sp_mouse', 'ear_red', 'ear_yellow', 'ear_mint', 'ear_sky', 'ear_lav', 'ear_rainbow', 'pet_plushbunny', 'pet_chick', 'pet_hamster', 'pet_bunny'] },
   '2026-12-07': { name: '海洋冒險', items: ['bg_beach', 'bg_reef', 'bg_stars', 'bg_lighthouse', 'pet_gull', 'pet_crab', 'pet_octo', 'pet_lantern', 'pet_turtle', 'pet_fish', 'acc_scope', 'acc_backpack', 'coat_rain', 'hat_captain', 'coat_pirate', 'bottom_pirate', 'pet_parrot', 'acc_ring', 'acc_wheel'] },
-  '2026-12-14': { name: '甜點娃娃', items: ['doll_popcorn', 'doll_cupcake', 'doll_strawberry', 'pet_popcorn', 'cheek_rose', 'cheek_peach', 'cheek_lilac', 'cheek_sky', 'cheek_shy', 'cheek_heart', 'cheek_star', 'cheek_rainbow', 'bottom_jeans', 'bottom_pleat', 'bottom_flower', 'bottom_tutu'] },
+  '2026-12-14': { name: '甜點娃娃', items: ['doll_popcorn', 'doll_cupcake', 'doll_strawberry', 'pet_popcorn', 'sp_full_cat', 'cheek_rose', 'cheek_peach', 'cheek_lilac', 'cheek_sky', 'cheek_shy', 'cheek_heart', 'cheek_star', 'cheek_rainbow', 'bottom_jeans', 'bottom_pleat', 'bottom_flower', 'bottom_tutu'] },
   '2026-12-21': { name: '冬天與運動', items: ['coat_down', 'coat_team', 'coat_denim', 'glove_white', 'glove_red', 'glove_boxing', 'hat_party', 'hat_chef', 'hat_cap', 'coat_jersey', 'bottom_sport', 'acc_trophy', 'pet_kitten', 'pet_puppy', 'eye_brown', 'eye_blue', 'eye_green', 'eye_gray'] },
-  '2026-12-28': { name: '狗狗品種', items: ['sp_shiba', 'sp_husky', 'sp_dalmatian', 'sp_corgi', 'sp_poodle', 'sp_chihuahua', 'sp_schnauzer', 'sp_frog', 'sp_tiger', 'sp_panda', 'acc_headphones', 'acc_lei', 'eye_purple', 'eye_pink', 'eye_gold', 'eye_sparkle', 'eye_odd', 'hat_detective'] },
+  '2026-12-28': { name: '狗狗品種', items: ['sp_shiba', 'sp_husky', 'sp_dalmatian', 'sp_corgi', 'sp_poodle', 'sp_chihuahua', 'sp_schnauzer', 'sp_frog', 'sp_tiger', 'sp_panda', 'acc_headphones', 'acc_lei', 'eye_purple', 'eye_pink', 'eye_gold', 'eye_sparkle', 'eye_odd', 'hat_detective', 'sp_full_dog'] },
   '2027-01-04': { name: '貓咪與星星魔法', items: ['sp_calico', 'sp_tabby', 'sp_siamese', 'sp_scottish', 'sp_persian', 'hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat', 'acc_wand', 'coat_cape', 'glove_star', 'eye_star', 'hat_stars', 'color_night', 'pet_owl', 'pet_sprite'] },
-  '2027-01-11': { name: '蔬果與太空', items: ['doll_carrot', 'doll_milk', 'doll_melon', 'hat_astro', 'coat_space', 'glove_space', 'pet_robot', 'sp_dino', 'hat_dino', 'sp_unicorn', 'pet_dragon', 'color_coral', 'color_cloud', 'bottom_plaid', 'bottom_suspender', 'bottom_grass', 'bottom_rainbow', 'acc_flag'] },
-  '2027-01-18': { name: '畢業典禮與皇家', items: ['doll_bachelor', 'doll_master', 'doll_doctor', 'hat_grad', 'hat_fedora', 'hat_fedora_black', 'hat_tophat', 'hat_starcrown', 'hat_royal', 'coat_royal', 'bottom_gown', 'glove_gold', 'eye_galaxy', 'sp_dragon', 'pet_whale', 'pet_phoenix', 'coat_rainbow'] }
+  '2027-01-11': { name: '蔬果與太空', items: ['doll_carrot', 'doll_milk', 'doll_melon', 'hat_astro', 'coat_space', 'glove_space', 'pet_robot', 'sp_dino', 'hat_dino', 'sp_unicorn', 'pet_dragon', 'color_coral', 'color_cloud', 'bottom_plaid', 'bottom_suspender', 'bottom_grass', 'bottom_rainbow', 'acc_flag', 'sp_full_bunny'] },
+  '2027-01-18': { name: '畢業典禮與皇家', items: ['doll_bachelor', 'doll_master', 'doll_doctor', 'hat_grad', 'hat_fedora', 'hat_fedora_black', 'hat_tophat', 'hat_starcrown', 'hat_royal', 'coat_royal', 'bottom_gown', 'glove_gold', 'eye_galaxy', 'sp_dragon', 'pet_whale', 'pet_phoenix', 'coat_rainbow', 'sp_full_bear'] },
+  '2027-01-25': { name: '貼紙與調色盤', items: ['color_custom', 'sticker_heart', 'sticker_star', 'sticker_bolt', 'sticker_rainbow', 'sticker_moon', 'sticker_sun', 'sticker_flower', 'sticker_note', 'sticker_crown', 'sticker_anchor', 'sticker_clover', 'sticker_smile'] }
 };
 const DROP_OF = {};
 Object.keys(DROPS).forEach(d => DROPS[d].items.forEach(id => { DROP_OF[id] = d; }));
@@ -228,7 +253,7 @@ const KEEP4 = new Set(['eye_brown', 'cheek_rose']);
 const addDays = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 function regularPrice(id) {
   const p = SHOP[id].price;
-  if (!p || SHOP[id].need) return p;
+  if (!p || SHOP[id].need || SHOP[id].fixed) return p;
   if (p === 4) return KEEP4.has(id) ? 4 : 10;
   return p <= 150 ? p * 2 : Math.round(p * 1.5 / 5) * 5;
 }
@@ -239,7 +264,7 @@ const launchDay = ctx => (ctx.env && ctx.env.SALE_LAUNCH) || LAUNCH_DAY;
 /** 特價結束後的第一天 */
 const saleOver = ctx => addDays(launchDay(ctx), SALE_DAYS);
 /** 這一天買得到嗎：原本的東西一直都在；新東西特價開始前只能試穿，特價期間全部開放，之後要等上架日 */
-const onShelf = (ctx, id, day) => !DROP_OF[id] || (day >= launchDay(ctx) && day < saleOver(ctx)) || day >= DROP_OF[id];
+const onShelf = (ctx, id, day) => !DROP_OF[id] || (!SHOP[id].hidden && day >= launchDay(ctx) && day < saleOver(ctx)) || day >= DROP_OF[id];
 /** 下一批（特價結束後才有） */
 function nextDrop(ctx, day) {
   const d = Object.keys(DROPS).sort().find(x => x > day && x >= saleOver(ctx));
@@ -257,7 +282,7 @@ function priceInfo(ctx, id, day) {
   const inLaunch = day >= L && day < saleOver(ctx), inDrop = !!D && day >= D && day < addDays(D, SALE_DAYS);
   const sale = (inLaunch || inDrop) && SHOP[id].price < reg;
   const end = inDrop ? addDays(D, SALE_DAYS) : saleOver(ctx);
-  if (day < L) return { price: SHOP[id].price, was: 0, saleEnd: '', soon: DROP_OF[id] ? L : '' };
+  if (day < L) return { price: SHOP[id].price, was: 0, saleEnd: '', soon: DROP_OF[id] ? (SHOP[id].hidden ? D : L) : '' };
   return { price: sale ? SHOP[id].price : reg, was: sale ? reg : 0, saleEnd: sale ? end : '', soon: onShelf(ctx, id, day) ? '' : D };
 }
 /** 給學生看的衣櫃：買得到的、自己已經有的、下一週的預告 */
@@ -267,11 +292,15 @@ function shopView(ctx, have, isTest) {
     if (!isTest && !onShelf(ctx, id, day) && !mine.has(id) && !(nx && DROP_OF[id] === nx.day) && !(day < launchDay(ctx))) return;
     out[id] = Object.assign({}, SHOP[id], priceInfo(ctx, id, day));
     if (mine.has(id)) out[id].soon = '';  // 測試帳號看到的標示跟同學一樣，只是點了就能穿
+    // 隱藏商品上架前：只給陰影，不給名字（測試帳號也一樣）
+    if (SHOP[id].hidden && !onShelf(ctx, id, day) && !mine.has(id)) Object.assign(out[id], { name: '？？？神秘角色', mystery: true, stars: 0, badges: 0, need: '' });
   });
   return out;
 }
 /** 套裝：每一件都已經上架才顯示 */
 const setsView = (ctx, isTest) => Object.fromEntries(Object.entries(SETS).filter(([, st]) => isTest || st.items.every(x => onShelf(ctx, x, shopDay(ctx)))));
+/** 預告用的名字：隱藏商品寫成神秘角色 */
+const dropName = x => SHOP[x].hidden ? '🎁 ？？？神秘角色' : SHOP[x].name;
 /** 衣櫃狀態：特價倒數、下一週預告、這週新品 */
 function shopInfo(ctx) {
   const day = shopDay(ctx), L = launchDay(ctx), over = saleOver(ctx);
@@ -279,9 +308,9 @@ function shopInfo(ctx) {
   return { day, launch: L, saleEnd: over, inLaunch: day >= L && day < over, beforeLaunch: day < L,
     drop: ld && day < addDays(ld.day, SALE_DAYS) ? { day: ld.day, name: ld.name, end: addDays(ld.day, SALE_DAYS), items: ld.items.map(x => SHOP[x].name) } : null,
     lastDrop: ld ? { day: ld.day, name: ld.name, items: ld.items.map(x => SHOP[x].name) } : null,
-    next: nx ? { day: nx.day, name: nx.name, items: nx.items.map(x => SHOP[x].name) } : null,
+    next: nx ? { day: nx.day, name: nx.name, items: nx.items.map(dropName) } : null,
     // 上架行事曆：之後每一週上什麼（只給文字，不給圖）
-    schedule: Object.keys(DROPS).sort().filter(d => d > day && d >= over).map(d => ({ day: d, name: DROPS[d].name, items: DROPS[d].items.map(x => SHOP[x].name) })) };
+    schedule: Object.keys(DROPS).sort().filter(d => d > day && d >= over).map(d => ({ day: d, name: DROPS[d].name, items: DROPS[d].items.map(dropName) })) };
 }
 /** 限定特價期間每人限買 SALE_LIMIT 樣（套裝算 1 樣、免費款不算）；active 表示現在在特價期間 */
 const SALE_LIMIT = 5;
@@ -301,7 +330,7 @@ async function checkNeed(ctx, cls, s, item, label) {
 }
 /** 星星：每天最多算幾顆（過關照樣算，超過只是不加星星） */
 const STAR_DAILY_MAX = 5;
-const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue', bg: 'bg_none', ear: 'ear_same', doll: 'doll_none' };
+const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue', bg: 'bg_none', ear: 'ear_same', doll: 'doll_none', sticker: 'sticker_none', flag: 'flag_none' };
 
 /**
  * 徽章：每一個都要做到一件有意義的事，而且只拿一次。
@@ -679,7 +708,7 @@ async function state(ctx, cls, s) {
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, askNews: await askNews(ctx, cls, s), saleLeft: (q => q.active ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, customColor: s.custom_color || '', saves: { slots: s.save_slots || 0, list: jsonp(s.saved, []), prices: SAVE_PRICES },  saleLeft: (q => q.active ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
   };
 }
 
@@ -728,6 +757,8 @@ const API = {};
 API.studentLogin = async (ctx, cred) => {
   const { cls, s } = await auth(ctx, cred, true);
   const st = await state(ctx, cls, s);
+  // 登入時才讀：老師的新回覆、旗子
+  [st.askNews, st.flag] = await Promise.all([askNews(ctx, cls, s), flagState(ctx, cls, s)]);
   const nb = await awardBadges(ctx, cls, s, st, {});
   if (nb.length) st.badges = st.badges.concat(nb.map(b => b.id));
   return st;
@@ -963,6 +994,8 @@ API.buyItem = async (ctx, cred, id) => {
   if (!item) fail('商店沒有這個東西。');
   const have = owned(s);
   if (have.includes(id)) fail('你已經有這個了。');
+  if (item.hidden && !onShelf(ctx, id, shopDay(ctx))) fail('這是還沒揭曉的神秘角色，上架那天才能買喔！');
+  if (item.mine) fail('旗子要先畫好、通過老師審核。');
   if (s.is_test) return testGet(ctx, cls, s, [id]);
   if (item.stars && s.stars < item.stars) fail('還要再拿 ' + (item.stars - s.stars) + ' 顆星星，才能買「' + item.name + '」。');
   if (item.badges) {
@@ -983,7 +1016,7 @@ API.buyItem = async (ctx, cred, id) => {
     price, JSON.stringify(have), JSON.stringify(o), s.sale_key || '', s.sale_buys || 0, cls.code, s.seat, price);
   if (!r.meta.changes) fail('金幣還不夠，再去島上挑戰吧！');
   s.coins -= price; s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
-  return state(ctx, cls, s);
+  return shopState(ctx, cls, s);
 };
 
 /** 測試帳號（老師試玩）：金幣、星星、徽章都不限，還沒上架的新品也能直接拿來穿 */
@@ -992,7 +1025,7 @@ async function testGet(ctx, cls, s, ids) {
   ids.forEach(x => { if (!have.includes(x)) have.push(x); o[SHOP[x].slot] = x; });
   s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
   await ctx.run('UPDATE students SET owned = ?, outfit = ? WHERE class_code = ? AND seat = ?', s.owned, s.outfit, cls.code, s.seat);
-  return state(ctx, cls, s);
+  return shopState(ctx, cls, s);
 }
 
 API.buySet = async (ctx, cred, id) => {
@@ -1019,7 +1052,7 @@ API.buySet = async (ctx, cred, id) => {
     price, JSON.stringify(have), JSON.stringify(o), s.sale_key || '', s.sale_buys || 0, cls.code, s.seat, price);
   if (!r.meta.changes) fail('金幣還不夠，再去島上挑戰吧！');
   s.coins -= price; s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
-  return state(ctx, cls, s);
+  return shopState(ctx, cls, s);
 };
 
 API.setOutfit = async (ctx, cred, want) => {
@@ -1027,11 +1060,173 @@ API.setOutfit = async (ctx, cred, want) => {
   const have = owned(s), o = outfit(s);
   Object.keys(DEFAULT_OUTFIT).forEach(slot => {
     const id = want && want[slot];
-    if (id && SHOP[id] && SHOP[id].slot === slot && (SHOP[id].price === 0 || have.includes(id))) o[slot] = id;
+    if (id && SHOP[id] && SHOP[id].slot === slot && (SHOP[id].price === 0 || have.includes(id)) && !(SHOP[id].mine && !s.flag)) o[slot] = id;
   });
   s.outfit = JSON.stringify(o);
   await ctx.run('UPDATE students SET outfit = ? WHERE class_code = ? AND seat = ?', s.outfit, cls.code, s.seat);
-  return state(ctx, cls, s);
+  return shopState(ctx, cls, s);
+};
+
+/** 衣櫃動作（買、穿、脫、存檔、旗子）回傳的精簡狀態：只讀徽章和旗子，不重讀學習紀錄，省 D1 讀取 */
+async function shopState(ctx, cls, s) {
+  const [brows, custom, flag] = await Promise.all([
+    ctx.all('SELECT badge FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat), customBadges(ctx), flagState(ctx, cls, s)]);
+  const q = saleQuota(ctx, s);
+  return { coins: s.coins, earned: s.earned, stars: s.stars, badges: brows.map(r => r.badge), badgeList: BADGES.concat(custom),
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx),
+    isTest: !!s.is_test, saleLeft: q.active ? q.left : null, saleLimit: SALE_LIMIT, flag, customColor: s.custom_color || '',
+    saves: { slots: s.save_slots || 0, list: jsonp(s.saved, []), prices: SAVE_PRICES } };
+}
+
+/* ---------- 自訂顏色、造型存檔 ---------- */
+
+API.setCustomColor = async (ctx, cred, hex) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  if (!s.is_test && !owned(s).includes('color_custom')) fail('要先買「自訂顏色」。');
+  hex = String(hex || '').toLowerCase();
+  if (!/^#[0-9a-f]{6}$/.test(hex)) fail('顏色格式不對。');
+  const o = outfit(s); o.color = 'color_custom';
+  s.custom_color = hex; s.outfit = JSON.stringify(o);
+  await ctx.run('UPDATE students SET custom_color = ?, outfit = ? WHERE class_code = ? AND seat = ?', hex, s.outfit, cls.code, s.seat);
+  return shopState(ctx, cls, s);
+};
+
+/** 造型存檔：第 1、2、3 格解鎖價格（照順序解鎖，不算進特價限買） */
+const SAVE_PRICES = [50, 150, 300];
+API.unlockSave = async (ctx, cred) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const n = s.save_slots || 0;
+  if (n >= SAVE_PRICES.length) fail('存檔已經全部解鎖了。');
+  const price = s.is_test ? 0 : SAVE_PRICES[n];
+  if (s.coins < price) fail('金幣還不夠，再去島上挑戰吧！');
+  const r = await ctx.run('UPDATE students SET coins = coins - ?, save_slots = ? WHERE class_code = ? AND seat = ? AND coins >= ? AND save_slots = ?', price, n + 1, cls.code, s.seat, price, n);
+  if (!r.meta.changes) fail('金幣還不夠，再去島上挑戰吧！');
+  s.coins -= price; s.save_slots = n + 1;
+  return shopState(ctx, cls, s);
+};
+API.saveOutfit = async (ctx, cred, idx) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  idx = Math.floor(num(idx));
+  if (idx < 0 || idx >= (s.save_slots || 0)) fail('這一格還沒解鎖。');
+  const list = jsonp(s.saved, []); list[idx] = outfit(s);
+  for (let i = 0; i < list.length; i++) if (!list[i]) list[i] = null;
+  s.saved = JSON.stringify(list);
+  await ctx.run('UPDATE students SET saved = ? WHERE class_code = ? AND seat = ?', s.saved, cls.code, s.seat);
+  return shopState(ctx, cls, s);
+};
+API.loadOutfit = async (ctx, cred, idx) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const one = jsonp(s.saved, [])[Math.floor(num(idx))];
+  if (!one) fail('這一格還沒有存造型。');
+  return API.setOutfit(ctx, cred, one);
+};
+
+/* ---------- 自己畫的旗子 ---------- */
+const FLAG_PRICE = 50;
+/** 學生的旗子：通過的、審核中的、最近一次還沒看過的審核結果 */
+async function flagState(ctx, cls, s) {
+  const rows = await ctx.all("SELECT * FROM flags WHERE class_code = ? AND seat = ? AND (status = 'pending' OR seen = 0) ORDER BY id DESC LIMIT 3", cls.code, s.seat);
+  const p = rows.find(r => r.status === 'pending'), d = rows.find(r => r.status !== 'pending');
+  return { grid: s.flag || '', price: FLAG_PRICE, pending: p ? p.grid : '', result: d ? { id: d.id, status: d.status, note: d.note } : null };
+}
+API.submitFlag = async (ctx, cred, grid) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  grid = String(grid || '').toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(grid)) fail('旗子的格子不對，請重新畫。');
+  if (!s.is_test && s.coins < FLAG_PRICE) fail('要有 ' + FLAG_PRICE + ' 金幣才能送審（通過時才會扣）。');
+  const p = await ctx.first("SELECT id FROM flags WHERE class_code = ? AND seat = ? AND status = 'pending'", cls.code, s.seat);
+  if (p) await ctx.run('UPDATE flags SET grid = ?, ts = ? WHERE id = ?', grid, stampNow(), p.id);
+  else await ctx.run('INSERT INTO flags (ts, class_code, seat, grid) VALUES (?,?,?,?)', stampNow(), cls.code, s.seat, grid);
+  return shopState(ctx, cls, s);
+};
+API.tFlags = async (ctx, pw, code) => {
+  await checkPw(ctx, pw);
+  const cls = await findClass(ctx, code);
+  return ctx.all(`SELECT f.id, f.ts, f.seat, f.grid, f.status, f.note, st.nick, st.coins FROM flags f LEFT JOIN students st ON st.class_code = f.class_code AND st.seat = f.seat
+    WHERE f.class_code = ? ORDER BY f.status = 'pending' DESC, f.id DESC LIMIT 40`, cls.code);
+};
+/** 審核旗子：通過時才扣金幣、換上旗子；不通過不扣錢 */
+API.tReviewFlag = async (ctx, pw, id, ok, note) => {
+  await checkPw(ctx, pw);
+  const f = await ctx.first("SELECT * FROM flags WHERE id = ? AND status = 'pending'", Math.floor(num(id)));
+  if (!f) fail('找不到待審核的旗子。');
+  if (!ok) {
+    await ctx.run("UPDATE flags SET status = 'rejected', note = ?, decided = ? WHERE id = ?", str(note, 100), stampNow(), f.id);
+    return true;
+  }
+  const st = await ctx.first('SELECT coins, is_test, outfit FROM students WHERE class_code = ? AND seat = ?', f.class_code, f.seat);
+  const price = st.is_test ? 0 : FLAG_PRICE;
+  if (st.coins < price) fail('這位同學現在金幣不到 ' + FLAG_PRICE + '，先不要通過，或請他存夠再審。');
+  const o = jsonp(st.outfit, {}); o.flag = 'flag_mine';
+  await ctx.db.batch([
+    ctx.stmt('UPDATE students SET coins = coins - ?, flag = ?, outfit = ? WHERE class_code = ? AND seat = ? AND coins >= ?', price, f.grid, JSON.stringify(o), f.class_code, f.seat, price),
+    ctx.stmt("UPDATE flags SET status = 'approved', note = ?, decided = ? WHERE id = ?", str(note, 100), stampNow(), f.id)
+  ]);
+  return true;
+};
+
+/* ---------- 衣櫃許願池 ----------
+ * 學生每週可以許 1 個願望：寫字，或畫圖＋說明。老師審核後公開給全班（匿名）集氣，
+ * 也可以標「實現了」或「沒有採用」。Claude 可以用匯入鑰匙讀願望清單（xWishes）幫忙設計。 */
+const monday = () => { const d = new Date(today() + 'T00:00:00Z'); return new Date(d.getTime() - ((d.getUTCDay() + 6) % 7) * 864e5).toISOString().slice(0, 10); };
+const wishOut = (w, mine) => ({ id: w.id, ts: w.ts, week: mine ? w.week : '', text: w.text, image: w.image ? '/img/' + w.image : '', status: w.status, note: mine ? w.note : '', votes: w.votes });
+API.makeWish = async (ctx, cred, text, dataUrl) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  text = str(text, 50);
+  if (text.length < 2) fail('寫一下你想要什麼造型吧！');
+  const wk = monday();
+  if (await ctx.first('SELECT id FROM wishes WHERE class_code = ? AND seat = ? AND week = ?', cls.code, s.seat, wk)) fail('這週已經許過願了，下週一再來！');
+  let img = '';
+  if (dataUrl) {
+    const m = /^data:(image\/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl));
+    if (!m || m[2].length > 4e5) fail('圖畫得太大了，請重畫。');
+    img = 'W' + Date.now().toString(36).toUpperCase() + [...crypto.getRandomValues(new Uint8Array(8))].map(b => (b % 36).toString(36)).join('').toUpperCase();
+    await ctx.run('INSERT INTO images (id, mime, data, created) VALUES (?,?,?,?)', img, m[1], m[2], today());
+  }
+  await ctx.run('INSERT INTO wishes (ts, week, class_code, seat, text, image) VALUES (?,?,?,?,?,?)', stampNow(), wk, cls.code, s.seat, text, img);
+  return true;
+};
+API.wishes = async (ctx, cred) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const [mine, pub, voted] = await Promise.all([
+    ctx.all('SELECT * FROM wishes WHERE class_code = ? AND seat = ? ORDER BY id DESC LIMIT 10', cls.code, s.seat),
+    ctx.all("SELECT * FROM wishes WHERE class_code = ? AND status IN ('public', 'done') ORDER BY status = 'done', votes DESC, id DESC LIMIT 40", cls.code),
+    ctx.all('SELECT wish_id FROM wish_votes WHERE class_code = ? AND seat = ?', cls.code, s.seat)
+  ]);
+  const v = new Set(voted.map(r => r.wish_id));
+  return { mine: mine.map(w => wishOut(w, true)), pub: pub.map(w => Object.assign(wishOut(w), { voted: v.has(w.id), own: w.seat === s.seat })), canWish: !mine.some(w => w.week === monday()) };
+};
+API.voteWish = async (ctx, cred, id) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  id = Math.floor(num(id));
+  const w = await ctx.first("SELECT id FROM wishes WHERE id = ? AND class_code = ? AND status = 'public'", id, cls.code);
+  if (!w) fail('找不到這個願望。');
+  const had = await ctx.first('SELECT wish_id FROM wish_votes WHERE wish_id = ? AND class_code = ? AND seat = ?', id, cls.code, s.seat);
+  await ctx.db.batch(had
+    ? [ctx.stmt('DELETE FROM wish_votes WHERE wish_id = ? AND class_code = ? AND seat = ?', id, cls.code, s.seat), ctx.stmt('UPDATE wishes SET votes = MAX(0, votes - 1) WHERE id = ?', id)]
+    : [ctx.stmt('INSERT INTO wish_votes (wish_id, class_code, seat) VALUES (?,?,?)', id, cls.code, s.seat), ctx.stmt('UPDATE wishes SET votes = votes + 1 WHERE id = ?', id)]);
+  return !had;
+};
+API.tWishes = async (ctx, pw, code) => {
+  await checkPw(ctx, pw);
+  const cls = await findClass(ctx, code);
+  const rows = await ctx.all(`SELECT w.*, st.nick FROM wishes w LEFT JOIN students st ON st.class_code = w.class_code AND st.seat = w.seat
+    WHERE w.class_code = ? ORDER BY w.status = 'pending' DESC, w.votes DESC, w.id DESC LIMIT 100`, cls.code);
+  return rows.map(w => Object.assign(wishOut(w, true), { seat: w.seat, nick: w.nick || '' }));
+};
+/** 老師處理願望：public 公開集氣、done 實現了、declined 沒有採用（只有許願的同學看得到原因） */
+API.tWish = async (ctx, pw, id, status, note) => {
+  await checkPw(ctx, pw);
+  if (!['public', 'done', 'declined'].includes(status)) fail('請選處理方式。');
+  const r = await ctx.run('UPDATE wishes SET status = ?, note = ? WHERE id = ?', status, str(note, 100), Math.floor(num(id)));
+  if (!r.meta.changes) fail('找不到這個願望。');
+  return true;
+};
+/** Claude 用：公開和實現的願望（依集氣數），幫老師設計新造型 */
+API.xWishes = async ctx => {
+  checkImport(ctx);
+  const rows = await ctx.all("SELECT * FROM wishes WHERE status IN ('pending', 'public') ORDER BY votes DESC, id DESC LIMIT 60");
+  return rows.map(w => ({ id: w.id, class: w.class_code, text: w.text, image: w.image ? '/img/' + w.image : '', status: w.status, votes: w.votes }));
 };
 
 /* ---------- 老師 ---------- */
@@ -1136,6 +1331,8 @@ API.tDashboard = async (ctx, pw, code) => {
     cls: classOut(cls), rate: rt, badgeTotal: BADGES.length + Object.keys(cMap).length,
     openReports: (await ctx.first("SELECT COUNT(DISTINCT qid) AS n FROM reports WHERE status = 'open'")).n,
     openAsks: (await ctx.first("SELECT COUNT(*) AS n FROM asks WHERE class_code = ? AND status = 'open'", cls.code)).n,
+    pendingFlags: (await ctx.first("SELECT COUNT(*) AS n FROM flags WHERE class_code = ? AND status = 'pending'", cls.code)).n,
+    pendingWishes: (await ctx.first("SELECT COUNT(*) AS n FROM wishes WHERE class_code = ? AND status = 'pending'", cls.code)).n,
     students: students.map(s => {
       const stamps = s.stamps - s.stamps_redeemed, coinsPending = s.earned - s.coins_redeemed;
       const coinPts = rt.coinsPerPoint > 0 ? Math.floor(coinsPending / rt.coinsPerPoint) : 0;
@@ -1609,7 +1806,7 @@ async function askNews(ctx, cls, s) {
     ctx.all("SELECT id, text, reply FROM asks WHERE class_code = ? AND public = 1 AND id > ? AND status <> 'open' ORDER BY id LIMIT 10", cls.code, s.asks_seen || 0),
     ctx.all("SELECT * FROM asks WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0 ORDER BY id LIMIT 10", cls.code, s.seat)
   ]);
-  return { pub: pub.map(a => ({ id: a.id, text: a.text, reply: a.reply })), mine: mine.map(askOut) };
+  return { pub: pub.map(a => ({ id: a.id, text: a.text, reply: a.reply })), mine: mine.map(askOut) };  // 旗子的審核結果在 flag.result
 }
 
 /** 回覆滿 30 天的提問：刪掉截圖（文字和回覆留著）。老師打開提問分頁、學生送出提問時順便清 */
@@ -1656,7 +1853,8 @@ API.seenAsks = async (ctx, cred, pubMax) => {
   const { cls, s } = await auth(ctx, cred, false);
   await ctx.db.batch([
     ctx.stmt('UPDATE students SET asks_seen = MAX(asks_seen, ?) WHERE class_code = ? AND seat = ?', Math.floor(num(pubMax)), cls.code, s.seat),
-    ctx.stmt("UPDATE asks SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat)
+    ctx.stmt("UPDATE asks SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat),
+    ctx.stmt("UPDATE flags SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'pending' AND seen = 0", cls.code, s.seat)
   ]);
   return true;
 };

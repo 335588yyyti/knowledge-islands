@@ -788,6 +788,43 @@ try {
     assert.ok(got.owned.includes('pet_phoenix') && got.outfit.pet === 'pet_phoenix');
     assert.equal(got.coins, t0.coins);
     assert.ok((await call('buySet', c2, 'set_magic')).ok.owned.includes('coat_robe'));
+    // 神秘角色：上架前只有陰影、不給名字，誰都不能買（測試帳號也一樣）；行事曆只寫「神秘角色」
+    const sh = (await call('studentLogin', c2)).ok;
+    assert.equal(sh.shop.sp_full_cat.mystery, true); assert.match(sh.shop.sp_full_cat.name, /神秘/);
+    assert.match((await call('buyItem', c2, 'sp_full_cat')).err, /神秘角色/);
+    assert.ok(sh.shopInfo.schedule.some(w => w.items.includes('🎁 ？？？神秘角色')));
+    assert.ok(!JSON.stringify(sh.shopInfo.schedule).includes('喵大副'), '行事曆不能透露神秘角色的名字');
+    // 造型存檔：照順序解鎖，存起來再換上（測試帳號不扣金幣）
+    assert.match((await call('saveOutfit', c2, 0)).err, /還沒解鎖/);
+    assert.equal((await call('unlockSave', c2)).ok.saves.slots, 1);
+    assert.equal((await call('saveOutfit', c2, 0)).ok.saves.list[0].pet, 'pet_blackcat');
+    await call('setOutfit', c2, { pet: 'pet_none' });
+    assert.equal((await call('loadOutfit', c2, 0)).ok.outfit.pet, 'pet_blackcat');
+    // 自訂顏色
+    assert.equal((await call('setCustomColor', c2, '#7ad0a0')).ok.customColor, '#7ad0a0');
+    // 旗子：送審 → 老師不通過（不扣錢）→ 重送 → 通過才換上
+    const g1 = '2'.repeat(32) + '5'.repeat(32);
+    assert.ok((await call('submitFlag', c2, g1)).ok.flag.pending);
+    const fl = (await call('tFlags', pw, 'DEMO')).ok;
+    assert.ok((await call('tReviewFlag', pw, fl[0].id, false, '再畫大一點')).ok);
+    assert.equal((await call('studentLogin', c2)).ok.flag.result.status, 'rejected');
+    await call('submitFlag', c2, g1);
+    const fl2 = (await call('tFlags', pw, 'DEMO')).ok.find(f => f.status === 'pending');
+    assert.ok((await call('tReviewFlag', pw, fl2.id, true, '好漂亮')).ok);
+    const af = (await call('studentLogin', c2)).ok;
+    assert.equal(af.flag.grid, g1); assert.equal(af.outfit.flag, 'flag_mine');
+    // 許願池：每週 1 個 → 老師公開 → 別人集氣；Claude 用匯入鑰匙讀得到
+    const c1w = { code: 'DEMO', seat: 1, pin: '1234' }, c3w = { code: 'DEMO', seat: 3, pin: '3333' };
+    assert.ok((await call('makeWish', c1w, '想要太空貓的頭盔', '')).ok);
+    assert.match((await call('makeWish', c1w, '再一個', '')).err, /這週已經許過願/);
+    const wl = (await call('tWishes', pw, 'DEMO')).ok;
+    assert.equal(wl[0].status, 'pending');
+    assert.equal((await call('wishes', c3w)).ok.pub.length, 0, '審核前全班看不到');
+    assert.ok((await call('tWish', pw, wl[0].id, 'public', '')).ok);
+    assert.equal((await call('voteWish', c3w, wl[0].id)).ok, true);
+    assert.equal((await call('wishes', c3w)).ok.pub[0].votes, 1);
+    const xw = (await (await fetch(BASE + '/api/xWishes', { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args: [] }) })).json()).ok;
+    assert.ok(xw.some(w => w.text === '想要太空貓的頭盔'));
     await call('tSetTest', pw, 'DEMO', 2, false);
     assert.ok(!(await call('tDashboard', pw, 'DEMO')).ok.students.find(x => x.seat === 2).isTest);
     await t.click('[data-tab="tClass"]');
