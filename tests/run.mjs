@@ -165,6 +165,14 @@ try {
     assert.equal(Number(await s.textContent('#shopCoins')), coins - 20);
     await s.click('.item[data-id="hat_sailor"]'); await s.click('#bShopAct');
     await s.waitForFunction(() => document.querySelector('#shopMsg').textContent.includes('換好了'));
+    // 脫下：穿著的東西按鈕變「脫下」，再點一次那件也能脫掉；「全部脫下」一次脫光
+    assert.equal((await s.textContent('#bShopAct')).trim(), '脫下');
+    await s.click('.item[data-id="hat_sailor"]');
+    await s.waitForFunction(() => document.querySelector('#shopMsg').textContent.includes('脫下「水手帽」'));
+    assert.equal((await call('studentLogin', { code: 'DEMO', seat: 1, pin: '1234' })).ok.outfit.hat, 'hat_none');
+    await s.click('#bShopBare'); await s.waitForFunction(() => document.querySelector('#shopMsg').textContent.includes('都脫下了'));
+    // 耳朵顏色：海豹試穿時借小兔給大家看
+    await s.click('.item[data-id="ear_red"]'); assert.match(await s.textContent('#shopMsg'), /借小兔/);
     // 背景：新的欄位，試穿時舞台上看得到；還沒買的不能穿
     await s.click('.item[data-id="bg_beach"]'); assert.ok(await s.locator('#shopStage clipPath').count() >= 1, '試穿背景沒有畫出來');
     assert.equal((await call('setOutfit', { code: 'DEMO', seat: 1, pin: '1234' }, { bg: 'bg_beach' })).ok.outfit.bg, 'bg_none');

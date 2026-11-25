@@ -17,6 +17,7 @@ const TEACHER_MAX_FAILS = 10; // 老師密碼：同一個網路位址錯 10 次�
 /** 金幣商店：幫船長波波換裝。價格只在這裡設定 */
 const SHOP = {
   hat_sailor: { slot: 'hat', name: '水手帽', price: 0 },
+  hat_none: { slot: 'hat', name: '不戴帽子', price: 0 },
   hat_flower: { slot: 'hat', name: '小花髮夾', price: 20 },
   hat_bow: { slot: 'hat', name: '蝴蝶結', price: 25 },
   hat_straw: { slot: 'hat', name: '草帽', price: 30 },
@@ -265,7 +266,7 @@ function shopView(ctx, have, isTest) {
   Object.keys(SHOP).forEach(id => {
     if (!isTest && !onShelf(ctx, id, day) && !mine.has(id) && !(nx && DROP_OF[id] === nx.day) && !(day < launchDay(ctx))) return;
     out[id] = Object.assign({}, SHOP[id], priceInfo(ctx, id, day));
-    if (mine.has(id) || isTest) out[id].soon = '';
+    if (mine.has(id)) out[id].soon = '';  // 測試帳號看到的標示跟同學一樣，只是點了就能穿
   });
   return out;
 }
@@ -678,7 +679,7 @@ async function state(ctx, cls, s) {
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, askNews: await askNews(ctx, cls, s), saleLeft: (q => q.active && !s.is_test ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, askNews: await askNews(ctx, cls, s), saleLeft: (q => q.active ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
   };
 }
 
@@ -1611,6 +1612,14 @@ async function askNews(ctx, cls, s) {
   return { pub: pub.map(a => ({ id: a.id, text: a.text, reply: a.reply })), mine: mine.map(askOut) };
 }
 
+/** 回覆滿 30 天的提問：刪掉截圖（文字和回覆留著）。老師打開提問分頁、學生送出提問時順便清 */
+async function cleanShots(ctx) {
+  const before = new Date(Date.now() + 8 * 3600e3 - 30 * 864e5).toISOString().slice(0, 19).replace('T', ' ');
+  const old = await ctx.all("SELECT id, image FROM asks WHERE image <> '' AND status <> 'open' AND replied <> '' AND replied < ? LIMIT 50", before);
+  if (!old.length) return;
+  await ctx.db.batch(old.flatMap(a => [ctx.stmt('DELETE FROM images WHERE id = ?', a.image), ctx.stmt("UPDATE asks SET image = '' WHERE id = ?", a.id)]));
+}
+
 API.askQuestion = async (ctx, cred, text, dataUrl) => {
   const { cls, s } = await auth(ctx, cred, false);
   text = str(text, 200);
@@ -1627,6 +1636,7 @@ API.askQuestion = async (ctx, cred, text, dataUrl) => {
     ctx.stmt('INSERT INTO images (id, mime, data, created) VALUES (?,?,?,?)', img, m[1], m[2], day),
     ctx.stmt('INSERT INTO asks (ts, day, class_code, seat, text, image) VALUES (?,?,?,?,?,?)', stampNow(), day, cls.code, s.seat, text, img)
   ]);
+  await cleanShots(ctx);
   return { left: ASK_DAILY - n - 1 };
 };
 
@@ -1653,6 +1663,7 @@ API.seenAsks = async (ctx, cred, pubMax) => {
 
 API.tAsks = async (ctx, pw, code, all) => {
   await checkPw(ctx, pw);
+  await cleanShots(ctx);
   const cls = await findClass(ctx, code);
   const rows = await ctx.all(`SELECT a.*, st.nick FROM asks a LEFT JOIN students st ON st.class_code = a.class_code AND st.seat = a.seat
     WHERE a.class_code = ? ${all ? '' : "AND a.status = 'open'"} ORDER BY a.status = 'open' DESC, a.id DESC LIMIT 100`, cls.code);
