@@ -367,7 +367,9 @@ const BADGES = [
   { id: 'prepared90', series: 'prepared', tier: 2, group: '挑戰', icon: '🎓', name: '滿分準備', desc: '段考前，考試範圍有 9 成題目最近一次答對' },
   // AI 素養
   { id: 'detective1', series: 'detective', tier: 1, group: 'AI 素養', icon: '🕵️', name: '題目偵探', desc: '回報的題目被老師確認真的有問題（老師修改或停用了那題）' },
-  { id: 'detective3', series: 'detective', tier: 2, group: 'AI 素養', icon: '🔍', name: '細心查證員', desc: '被老師確認的回報累積 3 次' }
+  { id: 'detective3', series: 'detective', tier: 2, group: 'AI 素養', icon: '🔍', name: '細心查證員', desc: '被老師確認的回報累積 3 次' },
+  { id: 'bughunt1', series: 'bughunt', tier: 1, group: 'AI 素養', icon: '🛠️', name: '系統偵探', desc: '提問時找到網站真的有問題，被老師確認' },
+  { id: 'bughunt3', series: 'bughunt', tier: 2, group: 'AI 素養', icon: '🧰', name: '除錯小幫手', desc: '找到網站的問題，被老師確認累積 3 次' }
 ];
 const BADGE_MAP = Object.fromEntries(BADGES.map(b => [b.id, b]));
 
@@ -676,7 +678,7 @@ async function state(ctx, cls, s) {
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, saleLeft: (q => q.active && !s.is_test ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, askNews: await askNews(ctx, cls, s), saleLeft: (q => q.active && !s.is_test ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
   };
 }
 
@@ -765,7 +767,7 @@ async function awardBadges(ctx, cls, s, st, ev) {
     prepared: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.7, prepared90: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.9,
     litfive: SUBJECTS.every(sj => st.literacy && st.literacy[sj] && st.literacy[sj].allRight >= 1),
     explorer5: explored >= 5, explorer15: explored >= 15,
-    detective1: detective >= 1, detective3: detective >= 3,
+    detective1: detective >= 1, detective3: detective >= 3, bughunt1: (s.bugs || 0) >= 1, bughunt3: (s.bugs || 0) >= 3,
     comeback: !!ev.comeback, review: !!ev.review, perfect: !!ev.perfect, exam: !!ev.exam,
     climb: !!ev.climb, clearwrong: !!ev.clearwrong, concept: !!ev.concept, groupall: !!ev.groupall, lighthouse: !!ev.lighthouse
   };
@@ -1132,6 +1134,7 @@ API.tDashboard = async (ctx, pw, code) => {
   return {
     cls: classOut(cls), rate: rt, badgeTotal: BADGES.length + Object.keys(cMap).length,
     openReports: (await ctx.first("SELECT COUNT(DISTINCT qid) AS n FROM reports WHERE status = 'open'")).n,
+    openAsks: (await ctx.first("SELECT COUNT(*) AS n FROM asks WHERE class_code = ? AND status = 'open'", cls.code)).n,
     students: students.map(s => {
       const stamps = s.stamps - s.stamps_redeemed, coinsPending = s.earned - s.coins_redeemed;
       const coinPts = rt.coinsPerPoint > 0 ? Math.floor(coinsPending / rt.coinsPerPoint) : 0;
@@ -1589,6 +1592,111 @@ API.reportQuestion = async (ctx, cred, qid, reason, note) => {
   if (dup) return { already: true };
   await ctx.run('INSERT INTO reports (ts, class_code, seat, qid, reason, note) VALUES (?,?,?,?,?,?)', stampNow(), cls.code, s.seat, qid, reason, str(note, 100));
   return { ok: true };
+};
+
+/* ---------- 學生提問 ----------
+ * 學生上傳截圖＋文字提問（每天最多 ASK_DAILY 題）。老師回覆時選：
+ *   answered 一般回答、bug 找到系統問題（加金幣、星星，算進「系統偵探」徽章）、warn 只提醒、junk 亂提問（扣金幣，不會扣成負數）。
+ * 回覆可以公開給全班（匿名、不給截圖），全班下次登入會看到；也可以只給提問的同學。
+ * Claude 可以用匯入鑰匙讀待處理的提問、寫回覆草稿；草稿要老師在後台按送出，學生才看得到。 */
+const ASK_DAILY = 3, ASK_KINDS = ['answered', 'bug', 'warn', 'junk'];
+const askOut = a => ({ id: a.id, ts: a.ts, text: a.text, status: a.status, reply: a.reply, reward: a.reward, public: !!a.public });
+
+/** 登入時要跳出的：全班公開的新回覆、自己提問的新回覆 */
+async function askNews(ctx, cls, s) {
+  const [pub, mine] = await Promise.all([
+    ctx.all("SELECT id, text, reply FROM asks WHERE class_code = ? AND public = 1 AND id > ? AND status <> 'open' ORDER BY id LIMIT 10", cls.code, s.asks_seen || 0),
+    ctx.all("SELECT * FROM asks WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0 ORDER BY id LIMIT 10", cls.code, s.seat)
+  ]);
+  return { pub: pub.map(a => ({ id: a.id, text: a.text, reply: a.reply })), mine: mine.map(askOut) };
+}
+
+API.askQuestion = async (ctx, cred, text, dataUrl) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  text = str(text, 200);
+  if (text.length < 4) fail('請把問題寫清楚一點（至少 4 個字）。');
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m) fail('請附上一張截圖。');
+  if (m[2].length > 1.4e6) fail('截圖太大了，請重新截一張。');
+  const day = today();
+  const n = (await ctx.first('SELECT COUNT(*) AS n FROM asks WHERE class_code = ? AND seat = ? AND day = ?', cls.code, s.seat, day)).n;
+  if (n >= ASK_DAILY) fail('一天最多問 ' + ASK_DAILY + ' 題，明天再問吧！');
+  const rnd = [...crypto.getRandomValues(new Uint8Array(10))].map(b => (b % 36).toString(36)).join('').toUpperCase();
+  const img = 'S' + Date.now().toString(36).toUpperCase() + rnd;
+  await ctx.db.batch([
+    ctx.stmt('INSERT INTO images (id, mime, data, created) VALUES (?,?,?,?)', img, m[1], m[2], day),
+    ctx.stmt('INSERT INTO asks (ts, day, class_code, seat, text, image) VALUES (?,?,?,?,?,?)', stampNow(), day, cls.code, s.seat, text, img)
+  ]);
+  return { left: ASK_DAILY - n - 1 };
+};
+
+/** 學生的提問頁：自己的提問（含截圖）、全班公開的回覆 */
+API.myAsks = async (ctx, cred) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const [mine, pub, n] = await Promise.all([
+    ctx.all('SELECT * FROM asks WHERE class_code = ? AND seat = ? ORDER BY id DESC LIMIT 20', cls.code, s.seat),
+    ctx.all("SELECT * FROM asks WHERE class_code = ? AND public = 1 AND status <> 'open' ORDER BY id DESC LIMIT 30", cls.code),
+    ctx.first('SELECT COUNT(*) AS n FROM asks WHERE class_code = ? AND seat = ? AND day = ?', cls.code, s.seat, today())
+  ]);
+  return { mine: mine.map(a => Object.assign(askOut(a), { image: a.image ? '/img/' + a.image : '' })), pub: pub.map(askOut), left: Math.max(0, ASK_DAILY - n.n), daily: ASK_DAILY };
+};
+
+/** 學生看過回覆：公開的記到最大 id，自己的標成看過 */
+API.seenAsks = async (ctx, cred, pubMax) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  await ctx.db.batch([
+    ctx.stmt('UPDATE students SET asks_seen = MAX(asks_seen, ?) WHERE class_code = ? AND seat = ?', Math.floor(num(pubMax)), cls.code, s.seat),
+    ctx.stmt("UPDATE asks SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat)
+  ]);
+  return true;
+};
+
+API.tAsks = async (ctx, pw, code, all) => {
+  await checkPw(ctx, pw);
+  const cls = await findClass(ctx, code);
+  const rows = await ctx.all(`SELECT a.*, st.nick FROM asks a LEFT JOIN students st ON st.class_code = a.class_code AND st.seat = a.seat
+    WHERE a.class_code = ? ${all ? '' : "AND a.status = 'open'"} ORDER BY a.status = 'open' DESC, a.id DESC LIMIT 100`, cls.code);
+  return rows.map(a => Object.assign(askOut(a), { seat: a.seat, nick: a.nick || '', image: a.image ? '/img/' + a.image : '', draft: a.draft, draftKind: a.draft_kind, draftNote: a.draft_note, replied: a.replied }));
+};
+
+/** 老師處理提問：kind 處理結果、reply 回覆、pub 公開給全班、coins／stars 加（bug）或扣（junk）的數量 */
+API.tAnswerAsk = async (ctx, pw, id, data) => {
+  await checkPw(ctx, pw);
+  data = data || {};
+  const a = await ctx.first('SELECT * FROM asks WHERE id = ?', Math.floor(num(id)));
+  if (!a) fail('找不到這則提問。');
+  if (a.status !== 'open') fail('這則提問已經處理過了。');
+  const kind = ASK_KINDS.includes(data.kind) ? data.kind : 'answered';
+  const reply = str(data.reply, 300);
+  if (!reply) fail('請寫回覆。');
+  const coins = Math.max(0, Math.min(200, Math.floor(num(data.coins)))), stars = Math.max(0, Math.min(10, Math.floor(num(data.stars))));
+  const stmts = [];
+  let reward = '';
+  if (kind === 'bug') {
+    reward = [coins ? '+' + coins + ' 金幣' : '', stars ? '+' + stars + ' 星星' : ''].filter(Boolean).join('、');
+    stmts.push(ctx.stmt('UPDATE students SET coins = coins + ?, earned = earned + ?, stars = stars + ?, bugs = bugs + 1 WHERE class_code = ? AND seat = ?', coins, coins, stars, a.class_code, a.seat));
+  } else if (kind === 'junk' && coins) {
+    reward = '-' + coins + ' 金幣';
+    stmts.push(ctx.stmt('UPDATE students SET coins = MAX(0, coins - ?) WHERE class_code = ? AND seat = ?', coins, a.class_code, a.seat));
+  }
+  stmts.push(ctx.stmt('UPDATE asks SET status = ?, reply = ?, public = ?, reward = ?, replied = ? WHERE id = ?', kind, reply, data.pub && kind !== 'junk' && kind !== 'warn' ? 1 : 0, reward, stampNow(), a.id));
+  await ctx.db.batch(stmts);
+  return true;
+};
+
+/** Claude 用：待處理的提問（截圖用網址讀） */
+API.xAsks = async ctx => {
+  checkImport(ctx);
+  const rows = await ctx.all("SELECT * FROM asks WHERE status = 'open' ORDER BY id LIMIT 50");
+  return rows.map(a => ({ id: a.id, ts: a.ts, class: a.class_code, seat: a.seat, text: a.text, image: a.image ? '/img/' + a.image : '', draft: a.draft, draftKind: a.draft_kind }));
+};
+/** Claude 用：寫回覆草稿（老師在後台看過、按送出才會給學生） */
+API.xDraftAsk = async (ctx, id, kind, reply, note) => {
+  checkImport(ctx);
+  const r = await ctx.run("UPDATE asks SET draft = ?, draft_kind = ?, draft_note = ? WHERE id = ? AND status = 'open'",
+    str(reply, 300), ASK_KINDS.includes(kind) ? kind : 'answered', str(note, 300), Math.floor(num(id)));
+  if (!r.meta.changes) fail('找不到這則待處理的提問。');
+  return true;
 };
 
 API.tReports = async (ctx, pw) => {

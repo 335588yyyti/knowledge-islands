@@ -225,6 +225,11 @@ label{display:block;font-weight:800;margin-bottom:6px}
 #news .nw>span{font-size:26px;line-height:1.2}#news .nw b{display:block}#news .nw p{margin:2px 0 0;line-height:1.55;font-weight:600}
 #news .nsec{margin:6px 0 0;font-size:17px}#news .nw.brief{padding:6px 12px;font-weight:600;line-height:1.5}#news .nw.brief>span{font-size:20px}#news .nw.brief b{display:inline}
 #vShop .shopboard{display:grid;gap:6px;margin:4px 0 10px}#vShop .sched summary{cursor:pointer}#vShop .sched ul{margin:6px 0 0;padding-left:20px;display:grid;gap:4px;font-weight:600;line-height:1.55}#vShop s.was{opacity:.6;font-weight:600}
+.faq{display:grid;gap:8px;margin:6px 0 14px}.faq details,.faq .fa{border:3px solid #f1e3c8;background:#fffaf0;border-radius:16px;padding:8px 12px}
+.faq summary{cursor:pointer;font-weight:800}.faq details p,.faq .fa p{margin:6px 0 0;line-height:1.6;font-weight:600}.faq .fcat{font-size:13px;color:var(--muted);font-weight:800;margin:4px 0 -2px}
+.faq .fa img{max-width:100%;border-radius:10px;margin-top:6px}.faq .st{font-size:13px;font-weight:800;color:var(--muted)}
+#vFaq input[type=search],#vFaq textarea{width:100%;font:inherit;padding:10px 14px;border-radius:16px;border:3px solid #f1e3c8;background:#fff;box-sizing:border-box}
+#askHint .faq{margin:8px 0}#askHint>p{margin:8px 0 0;font-weight:800}.askrow{display:flex;align-items:center;gap:10px;margin:8px 0}#askPrev{max-height:90px;border-radius:10px}.askchk{display:flex!important;align-items:center;gap:8px;margin:6px 0 10px}.askchk input{width:auto!important;margin:0;flex:none}
 #news .nhint{text-align:center;color:var(--muted);font-weight:700;margin:0}
 .bpop .bbig{font-size:64px;text-align:center;line-height:1.1}.bpop .bbig.off{filter:grayscale(1);opacity:.4}
 .bpop .bp{border:3px dashed #ddd6e8;background:#f4f2f6;border-radius:16px;padding:8px 12px;display:grid;gap:2px}
@@ -313,6 +318,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <span class="chip" title="星星"><span class="ic-star"></span><span id="cStars">0</span></span>
         <span class="chip" title="連續天數"><span class="ic-fire"></span><span><span id="cStreak">0</span> 天</span></span>
         <button class="wardrobe-btn" id="bGuide2"><span class="tree">📘</span>航海手冊</button>
+        <button class="wardrobe-btn" id="bFaq"><span class="tree">❓</span>常見問答・提問</button>
         <button class="wardrobe-btn" id="bBadges"><span class="tree">🏅</span>徽章牆 <b id="badgeCount" class="bc"></b></button>
         <button class="wardrobe-btn hidden" id="bLinks"><span class="tree">🧭</span>延伸冒險</button>
         <button class="wardrobe-btn" id="bMastery"><span class="tree">🌳</span>精熟圖鑑</button>
@@ -337,6 +343,26 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <div id="qBody"></div>
       <div id="qFb"></div>
       <div class="actions"><button class="btn hidden" id="bNext">下一題</button></div>
+    </div>
+  </section>
+
+  <section id="vFaq" class="shop hidden">
+    <div class="qtop"><h2 style="flex:1">❓ 常見問答・提問</h2><button class="btn soft small" id="bFaqBack">回去</button></div>
+    <div class="guide">
+      <input id="faqQ" type="search" placeholder="打字找答案，例如：星星、買不了、發芽" autocomplete="off">
+      <div id="faqList" class="faq"></div>
+      <h3>📮 同學問、老師答</h3>
+      <div id="faqPub" class="faq"></div>
+      <h3>✍️ 我要提問</h3>
+      <p class="small">先在上面找找看，也可以看<a href="#" id="faqGuide">航海手冊</a>。找不到再提問：<b>附一張截圖</b>，把「在哪個畫面、發生什麼事」寫清楚。一天最多 <span id="askDaily">3</span> 題。找到網站真的有問題，老師會給金幣、星星和「系統偵探」徽章；<b>亂提問會被扣金幣</b>。</p>
+      <textarea id="askText" maxlength="200" rows="3" placeholder="例如：我在衣櫃按「買下」，畫面一直轉圈圈"></textarea>
+      <div id="askHint"></div>
+      <div class="askrow"><label class="btn soft small" for="askFile">📷 選截圖</label><input type="file" id="askFile" accept="image/*" hidden><img id="askPrev" class="hidden" alt="截圖預覽"></div>
+      <label class="small askchk"><input type="checkbox" id="askChk"> 我看過上面的答案和航海手冊了，還是找不到</label>
+      <button class="btn" id="bAsk" disabled>送出提問</button>
+      <p id="askMsg" class="small"></p>
+      <h3>🗂️ 我的提問</h3>
+      <div id="myAsks" class="faq"></div>
     </div>
   </section>
 
@@ -442,6 +468,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>新徽章：<b>完美單元</b>（一個單元每一題都記住）、<b>素養五島</b>（五科素養島都有一組題組全對）、<b>小小探險家・探險隊長</b>（完成 5、15 個延伸冒險）、<b>滿分準備</b>（段考範圍 9 成答對），還有連續 60 天、累積 100 天、長期記憶 10 題、救回 200 題這些更高階的系列徽章。</li>
         <li>有些衣服要拿到<b>指定的徽章</b>才能買（例如偵探帽要「題目偵探」），在衣櫃點一下就會寫出需要哪一個。</li>
         <li>老師也會頒發特別的徽章給表現好的同學喔！</li>
+        <li>有問題先看地圖上的「<b>❓ 常見問答・提問</b>」。找不到答案再提問：附一張截圖、把問題寫清楚，一天最多 3 題。找到網站真的有問題，老師會給金幣、星星和「系統偵探」徽章；亂提問會被扣金幣。</li>
         <li>徽章牆裡有「全班徽章排行榜」，比的是誰收集的徽章多。</li>
       </ul>
 
@@ -551,7 +578,7 @@ async function api(fn, ...args){
   return j.ok;
 }
 const $ = id => document.getElementById(id);
-function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery','vGuide','vBadges','vAbout','vLinks'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
+function show(v){ ['vLogin','vMap','vQuiz','vResult','vLoading','vShop','vMastery','vGuide','vBadges','vAbout','vLinks','vFaq'].forEach(x => $(x).classList.toggle('hidden', x !== v)); window.scrollTo(0,0); }
 function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function store(k, v){ try{ v === undefined ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
 function load(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } }
@@ -884,6 +911,77 @@ function sparkle(el){
 }
 
 /* ---------- 地圖 ---------- */
+/* ---------- 常見問答・提問 ---------- */
+const FAQ = [
+  ['🛍️ 衣櫃', '為什麼有些東西不能買？', '點一下那樣東西，下面的按鈕會寫「還差什麼」：可能是金幣不夠、要累積星星（⭐）、要拿到幾個徽章（🏅）或指定的徽章（🎖️）、還沒上架（🔜），或是特價期間已經買滿 5 樣。', '不能買 買不了 買不到 鎖 還差 解鎖 不能點 按不下去 灰色'],
+  ['🛍️ 衣櫃', '特價到什麼時候？之後多少錢？', '11/26（四）早上 8 點到 11/29（日）早上 8 點全部特價，每人限買 5 樣（整套套裝算 1 樣）。之後恢復原價，大部分是特價的 2 倍。新品每週一早上 8 點上架，上架後也特價 3 天。', '特價 原價 漲價 價錢 價格 多少錢 便宜 貴 限買 5樣 五樣'],
+  ['🛍️ 衣櫃', '衣櫃收起來，我買的會不見嗎？', '不會！買到的東西永遠是你的，就算衣櫃把那一批收起來，你的衣櫃裡還是看得到、可以穿。', '不見 消失 收起來 下架 買過 被收回'],
+  ['🛍️ 衣櫃', '🔜 是什麼意思？新品什麼時候上架？', '標 🔜 的是下週的新品，可以先試穿，還不能買。每週一早上 8 點上架。之後每週會上什麼，看衣櫃最上面的「📅 上架行事曆」。', '預告 上架 新品 什麼時候 行事曆 下週 試穿'],
+  ['🛍️ 衣櫃', '為什麼看不到耳朵顏色？', '耳朵顏色只有小兔、小狗、大麥町、吉娃娃、柯基、小狐狸看得到。換成這些角色，耳朵就會變色。', '耳朵 換色'],
+  ['🛍️ 衣櫃', '穿上娃娃裝，外套和裙子怎麼不見了？', '娃娃裝會蓋住外套和裙子・褲子。選「不穿娃娃裝」，原本的外套和裙子就會出現，不用重買。', '娃娃裝 外套 裙子 褲子 蓋住 不見'],
+  ['🛍️ 衣櫃', '套裝怎麼買？', '要先達到關鍵物品 🔑 的條件，才能整套買，還沒有的單品一起買打 8 折。不想整套的話，其他單品可以一件一件買。', '套裝 整套 8折 八折 關鍵'],
+  ['⭐ 星星金幣', '為什麼過關了卻沒加星星？', '星星一天最多 5 顆。同一天過關超過 5 回合，照樣過關、照樣拿金幣，只是不再加星星。每天練一點最好！', '星星 沒加星 沒有星 過關'],
+  ['⭐ 星星金幣', '金幣怎麼來？「金幣」和「累積金幣」差在哪？', '每答對 1 題得 1 枚金幣。金幣餘額可以在衣櫃花掉；累積金幣只會增加、不會變少，老師換加點看的是累積金幣，所以買東西不會讓你少加點。', '金幣 錢 累積 餘額 加點 怎麼賺'],
+  ['⭐ 星星金幣', '為什麼金幣變少了？', '在衣櫃買東西會花金幣。另外，亂提問的話，老師可能會扣金幣。', '變少 扣 少了 不見了'],
+  ['⭐ 星星金幣', '印章怎麼拿？為什麼今天沒有印章？', '每天第一次過關會蓋 1 個印章，同一天只有 1 個。連續每天都有印章，連續天數就會增加。', '印章 蓋章 連續 天數'],
+  ['🌳 精熟', '都答對了，為什麼還是「發芽」？', '「記住」要在兩個不同的日子都答對，而且最近一次是答對。今天答對的題目，要隔天以後再答對一次才算記住。詳細請看航海手冊第 5 站。', '發芽 精熟 答對了 等級 長葉 茁壯 記住 升級'],
+  ['🌳 精熟', '精熟以後答錯，會掉級嗎？', '不會！精熟過就一直是精熟，只會提醒你還有幾題要再答對。', '掉級 降級 答錯 退步'],
+  ['🌳 精熟', '錯題礁的題目怎麼才會不見？', '在錯題礁或各科島把那一題重新答對，就會從錯題礁移除。', '錯題 錯題礁 移除'],
+  ['🌳 精熟', '題目的答案好像錯了怎麼辦？', '答題時按「這題怪怪的？」回報那一題。老師確認真的有錯，你會拿到「題目偵探」徽章！', '答案錯 題目錯 怪怪 看不懂 回報 錯字'],
+  ['🏅 徽章', '我做到了，為什麼還沒拿到徽章？', '徽章在交卷或登入時檢查，重新登入看看。也可以在徽章牆點一下那個徽章，看條件有沒有真的達到（例如要「連續」或「同一週」）。', '徽章 沒拿到 沒有徽章 條件'],
+  ['🏅 徽章', '「指定徽章」是什麼？', '高級款、套裝的關鍵物品和徽章限定款，要先拿到某一個徽章才能買。點那樣東西，會寫要哪一個徽章。', '指定 限定款 高級款 指定徽章'],
+  ['🔐 帳號', '忘記密碼怎麼辦？', '請老師幫你重設密碼，下次登入時再自己設定新的 4 位數字密碼。', '密碼 忘記'],
+  ['🔐 帳號', '為什麼被鎖住了？', '密碼連續錯 5 次會鎖住 10 分鐘。等一下再試，或請老師幫你重設。', '鎖住 錯太多 進不去 登不進去 登入'],
+  ['📮 提問', '提問要注意什麼？', '附一張截圖，把在哪個畫面、發生什麼事寫清楚。一天最多 3 題。找到網站真的有問題，老師會給金幣、星星和「系統偵探」徽章；亂提問會被扣金幣。', '提問 獎勵 截圖 扣']
+];
+/** 用關鍵字比對常見問答，回傳最像的幾題 */
+function faqMatch(text, max){
+  const t = String(text || '').replace(/\s+/g, '').toLowerCase();
+  if (t.length < 2) return [];
+  return FAQ.map((f, i) => ({ i, n: f[3].split(' ').filter(k => k && t.includes(k.toLowerCase())).length + (t.includes(f[1].slice(0, 4)) ? 1 : 0) }))
+    .filter(x => x.n > 0).sort((a, b) => b.n - a.n).slice(0, max || 3).map(x => FAQ[x.i]);
+}
+const faqItem = f => `<details><summary>${esc(f[1])}</summary><p>${esc(f[2])}</p></details>`;
+function renderFaq(){
+  const q = $('faqQ').value.trim();
+  const list = q ? faqMatch(q, 8) : FAQ;
+  let html = '', cat = '';
+  list.forEach(f => { if (!q && f[0] !== cat){ cat = f[0]; html += `<div class="fcat">${esc(cat)}</div>`; } html += faqItem(f); });
+  $('faqList').innerHTML = html || '<p class="small">找不到相關的答案，可以看看航海手冊，或在下面提問。</p>';
+}
+const ASK_ST = { open: '⏳ 老師還沒回覆', answered: '💬 老師回覆了', bug: '🛠️ 找到網站的問題，謝謝你！', warn: '⚠️ 老師提醒', junk: '🚫 亂提問' };
+let askImg = '';
+async function openFaq(){
+  $('faqQ').value = ''; renderFaq(); $('askMsg').textContent = ''; show('vFaq');
+  try{
+    const r = await api('myAsks', cred);
+    $('askDaily').textContent = r.daily;
+    $('faqPub').innerHTML = r.pub.length ? r.pub.map(a => `<details><summary>有同學問：${esc(a.text)}</summary><p>👩‍🏫 ${esc(a.reply)}</p></details>`).join('') : '<p class="small">還沒有公開的回覆。</p>';
+    $('myAsks').innerHTML = r.mine.length ? r.mine.map(a => `<div class="fa"><span class="st">${a.ts.slice(5, 16)}　${ASK_ST[a.status] || ''}</span><p>${esc(a.text)}</p>${a.image ? `<img src="${a.image}" alt="我的截圖" loading="lazy">` : ''}${a.reply ? `<p>👩‍🏫 ${esc(a.reply)}${a.reward ? `（${esc(a.reward)}）` : ''}</p>` : ''}</div>`).join('') : '<p class="small">你還沒有提問過。</p>';
+    $('bAsk').dataset.left = r.left; askCheck();
+  }catch(e){ $('askMsg').textContent = e.message; }
+}
+function askCheck(){
+  const t = $('askText').value.trim(), left = Number($('bAsk').dataset.left || 0);
+  const m = faqMatch(t, 3);
+  $('askHint').innerHTML = m.length ? '<p>🔎 這些可能是你要的答案，先看看：</p><div class="faq">' + m.map(faqItem).join('') + '</div>' : '';
+  $('bAsk').disabled = !(t.length >= 4 && askImg && $('askChk').checked && left > 0);
+  $('bAsk').textContent = left > 0 ? '送出提問' : '今天的提問用完了';
+}
+function shrinkShot(file){
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1000 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = () => rej(new Error('讀不到這張圖片，請換一張。'));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 /* ---------- 這次更新了什麼（每個學生看完一次就不再跳出） ---------- */
 const NEWS = {
   ver: 'launch-2026-11-26',
@@ -904,7 +1002,8 @@ const NEWS = {
     ['👑', '高級款要指定徽章', '高級款和套裝的關鍵物品 🔑，還要拿到一個指定的徽章。'],
     ['🎖️', '徽章限定款', '偵探帽、救生圈、金色船舵、五島旗：拿到指定徽章就能買。'],
     ['🏅', '新徽章', '完美單元、素養五島、探險家、滿分準備、星星系列……徽章牆點一下就能看怎麼拿。'],
-    ['🌱', '精熟有五個等級', '發芽 🌱 → 長葉 🌿 → 茁壯 🪴 → 精熟 🌳，看記住幾成。']
+    ['🌱', '精熟有五個等級', '發芽 🌱 → 長葉 🌿 → 茁壯 🪴 → 精熟 🌳，看記住幾成。'],
+    ['📮', '常見問答・提問', '有問題先看地圖上的「❓ 常見問答・提問」；找不到再附截圖提問。找到網站的問題有獎勵，亂提問會扣金幣。']
   ] }]
 };
 /** 每週新品公告：每週一上架後跳出一次 */
@@ -921,7 +1020,17 @@ function pendingNews(){
   if (state && state.shopInfo && state.shopInfo.beforeLaunch) return null;  // 特價開始（早上 8 點）前先不跳公告
   if (seen !== NEWS.ver && !seen.startsWith('drop:')) return NEWS;
   const dn = dropNews();
-  return dn && seen !== dn.ver ? dn : null;
+  if (dn && seen !== dn.ver) return dn;
+  return askPopup();
+}
+/** 老師的新回覆：自己的提問、全班公開的「同學問、老師答」 */
+function askPopup(){
+  const an = state && state.askNews;
+  if (!an || (!an.pub.length && !an.mine.length)) return null;
+  const secs = [];
+  if (an.mine.length) secs.push({ title: '📮 老師回覆你的提問', items: an.mine.map(a => [a.status === 'bug' ? '🛠️' : a.status === 'junk' ? '🚫' : '💬', '你問：' + a.text, a.reply + (a.reward ? '（' + a.reward + '）' : '')]) });
+  if (an.pub.length) secs.push({ title: '💬 同學問、老師答', items: an.pub.map(a => ['❓', '有同學問：' + a.text, '老師：' + a.reply]) });
+  return { ver: 'asks', sections: secs, onSeen: () => { const mx = Math.max(0, ...an.pub.map(a => a.id)); state.askNews = { pub: [], mine: [] }; api('seenAsks', cred, mx).catch(() => {}); } };
 }
 function showNews(force){
   if ($('news')) return;
@@ -940,7 +1049,11 @@ function showNews(force){
   box.addEventListener('scroll', check); check();
   ok.addEventListener('click', () => {
     d.remove();
-    if (!force && state && cred && state.newsSeen !== N.ver){ state.newsSeen = N.ver; api('seenNews', cred, N.ver).catch(() => {}); showNews(); }
+    if (!force && state && cred){
+      if (N.onSeen) N.onSeen();
+      else if (state.newsSeen !== N.ver){ state.newsSeen = N.ver; api('seenNews', cred, N.ver).catch(() => {}); }
+      showNews();
+    }
   });
 }
 
@@ -1416,6 +1529,26 @@ $('bGuide2').addEventListener('click', openGuide);
 $('bGuideBack').addEventListener('click', closeGuide);
 $('bGuideDone').addEventListener('click', closeGuide);
 $('bNewsAgain').addEventListener('click', () => showNews(true));
+$('bFaq').addEventListener('click', openFaq);
+$('bFaqBack').addEventListener('click', () => { renderMap(); show('vMap'); });
+$('faqGuide').addEventListener('click', e => { e.preventDefault(); openGuide(); });
+$('faqQ').addEventListener('input', renderFaq);
+$('askText').addEventListener('input', askCheck);
+$('askChk').addEventListener('change', askCheck);
+$('askFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try{ askImg = await shrinkShot(f); $('askPrev').src = askImg; $('askPrev').classList.remove('hidden'); }catch(err){ askImg = ''; $('askMsg').textContent = err.message; }
+  askCheck();
+});
+$('bAsk').addEventListener('click', async () => {
+  $('bAsk').disabled = true; $('askMsg').textContent = '送出中…';
+  try{
+    await api('askQuestion', cred, $('askText').value.trim(), askImg);
+    $('askText').value = ''; askImg = ''; $('askPrev').classList.add('hidden'); $('askChk').checked = false;
+    $('askMsg').textContent = '✅ 送出了！老師回覆後，你下次登入就會看到。';
+    await openFaq(); $('askMsg').textContent = '✅ 送出了！老師回覆後，你下次登入就會看到。';
+  }catch(e){ $('askMsg').textContent = e.message; askCheck(); }
+});
 
 $('bMastery').addEventListener('click', () => { renderMastery(); show('vMastery'); });
 $('bMasteryBack').addEventListener('click', () => { renderMap(); show('vMap'); });

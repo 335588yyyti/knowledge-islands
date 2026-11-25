@@ -398,7 +398,7 @@ try {
     assert.ok(r.badges.some(b => b.id === 'exam'));
     const st = (await call('studentLogin', c4)).ok;
     assert.ok(st.badges.includes('comeback') && st.badges.includes('exam'));
-    assert.equal(st.badgeList.length, 55);
+    assert.equal(st.badgeList.length, 57);
     const d = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 3);
     assert.ok(d.badges.length >= 2);
   });
@@ -410,7 +410,7 @@ try {
     await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
     assert.ok(await p.locator('.bcard.got').count() >= 2);
-    assert.equal(await p.locator('.bcard').count(), 29);  // 55 個徽章，系列合成一張卡片後是 29 張
+    assert.equal(await p.locator('.bcard').count(), 30);  // 57 個徽章，系列合成一張卡片後是 30 張
     assert.ok(await p.locator('.bcard.series .pips i.on').count() >= 1);
     // 點徽章跳出說明，系列徽章列出每一階
     await p.click('.bcard.series.got'); await p.waitForSelector('.bpop');
@@ -462,7 +462,7 @@ try {
   });
   await step('徽章排行榜：只比徽章數，老師可以關掉', async () => {
     const r = (await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
-    assert.equal(r.total, 55);
+    assert.equal(r.total, 57);
     assert.ok(r.rows.some(x => x.me));
     assert.ok(r.rows.every((x, i) => i === 0 || r.rows[i - 1].n >= x.n));
     const p = await page('/?c=DEMO');
@@ -491,7 +491,7 @@ try {
     const st = (await call('studentLogin', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
     const cid = st.badges.find(x => x.startsWith('c:'));
     assert.ok(cid); assert.equal(st.badgeNotes[cid], '幫忙整理圖書角');
-    assert.equal(st.badgeList.length, 56);
+    assert.equal(st.badgeList.length, 58);
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
@@ -684,6 +684,44 @@ try {
     assert.ok((await call('setOutfit', c, { ear: 'ear_same' })).ok, '免費款照樣可以換');
     // 偵探帽要「題目偵探」徽章，金幣夠也買不了
     assert.match((await call('buyItem', c, 'hat_detective')).err, /題目偵探/);
+  });
+  await step('常見問答與學生提問：先找答案、附截圖提問、老師回覆（公開、獎勵、扣分）', async () => {
+    const c3 = { code: 'DEMO', seat: 3, pin: '3333' }, c1 = { code: 'DEMO', seat: 1, pin: '1234' };
+    const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    const f = await page('/?c=demo');
+    await f.fill('#iSeat', '3'); await f.fill('#iPin', '3333'); await f.click('#bLogin'); await f.waitForSelector('#vMap:not(.hidden)'); await closeNews(f);
+    await f.click('#bFaq'); await f.waitForSelector('#vFaq:not(.hidden)');
+    assert.ok(await f.locator('#faqList details').count() >= 15, '常見問答有列出來');
+    await f.fill('#askText', '我今天過關星星沒加');
+    assert.match(await f.textContent('#askHint'), /沒加星星/);   // 提問前先找到相關答案
+    assert.ok(await f.locator('#bAsk').isDisabled(), '沒有截圖、沒勾「找不到」不能送出');
+    // 提問：一天最多 3 題，要附截圖
+    assert.match((await call('askQuestion', c3, '衣櫃按買下沒反應', '')).err, /截圖/);
+    for (let i = 0; i < 3; i++) assert.ok((await call('askQuestion', c3, '衣櫃按買下沒反應 ' + i, PNG)).ok);
+    assert.match((await call('askQuestion', c3, '再問一題可以嗎', PNG)).err, /最多問 3 題/);
+    // Claude 用匯入鑰匙讀提問、寫草稿
+    const x = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
+    const open = (await x('xAsks')).ok;
+    assert.equal(open.length, 3); assert.match(open[0].image, /^\/img\/S/);
+    assert.ok((await x('xDraftAsk', open[0].id, 'bug', '謝謝你找到問題！已經修好了。', '衣櫃按鈕的問題')).ok);
+    const ta = (await call('tAsks', PW, 'DEMO')).ok;
+    assert.equal(ta.find(a => a.id === open[0].id).draftKind, 'bug');
+    // 老師處理：系統問題（公開＋獎勵）、亂提問（扣金幣）
+    const before = (await call('studentLogin', c3)).ok;
+    assert.ok((await call('tAnswerAsk', PW, open[0].id, { kind: 'bug', reply: '謝謝你找到問題！已經修好了。', pub: true, coins: 20, stars: 1 })).ok);
+    assert.ok((await call('tAnswerAsk', PW, open[1].id, { kind: 'junk', reply: '請不要重複問一樣的問題喔。', coins: 10 })).ok);
+    assert.match((await call('tAnswerAsk', PW, open[1].id, { kind: 'answered', reply: '再一次' })).err, /處理過/);
+    const after = (await call('studentLogin', c3)).ok;
+    assert.equal(after.coins, before.coins + 20 - 10);
+    assert.equal(after.stars, before.stars + 1);
+    assert.ok(after.badges.includes('bughunt1'), '系統偵探徽章');
+    assert.equal(after.askNews.mine.length, 2);
+    // 全班下次登入看到公開的回覆（匿名），看過就不再跳
+    const n1 = (await call('studentLogin', c1)).ok.askNews;
+    assert.equal(n1.pub.length, 1); assert.equal(n1.mine.length, 0); assert.ok(!('seat' in n1.pub[0]));
+    await call('seenAsks', c1, n1.pub[0].id);
+    assert.equal((await call('studentLogin', c1)).ok.askNews.pub.length, 0);
+    await f.close();
   });
   await step('系統設定與修改密碼', async () => {
     await t.click('[data-tab="tClass"]'); await t.waitForFunction(() => document.querySelector('#sRound').value !== '');

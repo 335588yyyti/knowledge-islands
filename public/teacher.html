@@ -142,6 +142,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <button role="tab" data-tab="tImport">題庫匯入</button>
     <button role="tab" data-tab="tMastery">精熟總覽</button>
     <button role="tab" data-tab="tBank">題庫管理 <span class="pill p-bad hidden" id="repTab"></span></button>
+    <button role="tab" data-tab="tAsks">📮 學生提問 <span class="pill p-bad hidden" id="askTab"></span></button>
     <button role="tab" data-tab="tClass">班級管理</button>
     <button role="tab" data-tab="tGuide">📘 領航員手冊</button>
   </nav>
@@ -378,6 +379,13 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         </div>
       </div>
     </section>
+    <section id="tAsks" class="hidden">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between"><h2 style="margin:0">學生提問 <span class="pill p-bad" id="askCount">0</span></h2><label class="small"><input type="checkbox" id="askAll"> 也顯示處理過的</label></div>
+        <p class="muted small">學生在「常見問答・提問」附截圖提問（每人每天最多 3 題）。選處理結果、寫回覆再按「送出」：<b>找到系統問題</b>會加金幣和星星（不算進每日星星上限），並算進「系統偵探」徽章；<b>亂提問</b>會扣金幣餘額（不扣累積金幣、不會扣成負數）；<b>只提醒</b>不扣。勾「公開給全班」，全班下次登入會看到（匿名，不顯示截圖）。標 🤖 的是 Claude 先寫好的草稿，看過再送出才會給學生。</p>
+        <div id="askList"></div>
+      </div>
+    </section>
     <section id="tGuide" class="hidden">
       <div class="panel guide">
         <h2>📘 領航員手冊</h2>
@@ -453,10 +461,11 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
 
         <h3>六、徽章</h3>
         <ul>
-          <li>系統徽章共 55 個，分成五類：<b>好習慣</b>（連續或累積拿到今日印章、累積星星 10～500 顆、全勤一週、月月有你）、<b>精熟</b>（精熟單元數、島主、五島通航、完美單元、長期記憶、一步一腳印）、<b>成長</b>（救回錯題、錯題清零、觀念突破、越挫越勇、溫故知新）、<b>挑戰</b>（素養題、題組全對、素養五島、延伸冒險、百發百中、燈塔全對、段考）、<b>AI 素養</b>（題目偵探：回報的題目被老師確認真的有錯）。</li>
+          <li>系統徽章共 57 個，分成五類：<b>好習慣</b>（連續或累積拿到今日印章、累積星星 10～500 顆、全勤一週、月月有你）、<b>精熟</b>（精熟單元數、島主、五島通航、完美單元、長期記憶、一步一腳印）、<b>成長</b>（救回錯題、錯題清零、觀念突破、越挫越勇、溫故知新）、<b>挑戰</b>（素養題、題組全對、素養五島、延伸冒險、百發百中、燈塔全對、段考）、<b>AI 素養</b>（題目偵探：回報的題目被老師確認真的有錯；系統偵探：提問時找到網站真的有問題）。</li>
           <li><b>星星一天最多算 5 顆</b>：同一天過關超過 5 回合，照樣過關、照樣拿金幣（加點不受影響），只是不加星星，避免學生一直刷星星款和星星徽章。延伸冒險的星星不算在內。</li>
           <li>衣櫃的<b>高級款</b>和套裝的<b>關鍵物品 🔑</b>：要星星、徽章數量都夠，還要拿到一個指定徽章（例如小鳳凰要「越挫越勇」）。<b>徽章限定款</b>（偵探帽、救生圈、金色船舵、五島旗）只要拿到指定徽章就能用金幣買。</li>
           <li>衣櫃<b>限定特價 3 天</b>（11/26 早上 8 點～11/29 早上 8 點）：全部開放，價格是特價，<b>每人限買 5 樣</b>（套裝算 1 樣、免費款不算、測試帳號不限）。之後恢復原價（150 以下 ×2、151 以上 ×1.5；眼睛留咖啡色、腮紅留桃紅 4 金幣，其他基礎色 10 金幣；免費款和徽章限定款不漲），新品改成<b>每週一早上 8 點上架一批</b>（到 1/18 共 8 批），上架後特價 3 天，衣櫃只預告下一週。學生買到的東西永遠是自己的。每週一學生登入會跳出「本週新品」。</li>
+          <li><b>📮 學生提問</b>：學生在「常見問答・提問」打字時，網頁會先用關鍵字比對常見問答，列出可能的答案；找不到才能附截圖提問（每人每天 3 題）。你在「📮 學生提問」分頁選處理結果並回覆：找到系統問題加金幣、星星和「系統偵探」徽章；亂提問扣金幣餘額（不扣累積金幣、不會變負數）；也可以只提醒。勾「公開給全班」的回覆，全班下次登入會看到（匿名、不顯示截圖）。想請 Claude 先看，就在對話裡說「看學生提問」，它會先寫好草稿（標 🤖），你看過再送出。</li>
           <li><b>更新公告</b>：網站有新功能時，學生下次登入會跳出「這次更新了什麼」，要往下看完才能按「我看完了」關掉；每位學生只會跳一次（換裝置也一樣），之後可以在航海手冊最下面再打開來看。</li>
           <li>同一系列的徽章（例如連續 3、7、14、30 天）在學生的徽章牆會合成一張卡片，顯示銅、銀、金…幾階，以及下一階要做什麼。</li>
           <li><b>老師頒發的徽章</b>：在「學生與加點」下方建立，例如「熱心助人」，選學生頒發並寫一句原因。頒錯了可以收回。</li>
@@ -1128,7 +1137,46 @@ let REPORTS = [], fromReport = null;
 function renderReportCount(){
   const n = DASH.openReports || 0;
   $('repTab').textContent = n; $('repTab').classList.toggle('hidden', !n);
+  const a = DASH.openAsks || 0;
+  $('askTab').textContent = a; $('askTab').classList.toggle('hidden', !a);
 }
+/* ---------- 學生提問 ---------- */
+const ASK_KIND = { answered: '💬 一般回答', bug: '🛠️ 找到系統問題（加獎勵）', warn: '⚠️ 只提醒（不扣）', junk: '🚫 亂提問（扣金幣）' };
+const ASK_DONE = { answered: '💬 已回答', bug: '🛠️ 系統問題', warn: '⚠️ 已提醒', junk: '🚫 亂提問' };
+async function loadAsks(){
+  try{
+    const list = await api('tAsks', PW, CUR.code, $('askAll').checked);
+    const open = list.filter(a => a.status === 'open').length;
+    $('askCount').textContent = open; $('askTab').textContent = open; $('askTab').classList.toggle('hidden', !open);
+    $('askList').innerHTML = list.length ? list.map(a => {
+      const head = `<div class="small muted">${esc(a.ts)}　${a.seat} 號 ${esc(a.nick)}</div><div><b>${esc(a.text)}</b></div>${a.image ? `<a href="${a.image}" target="_blank" rel="noopener"><img src="${a.image}" alt="學生截圖" loading="lazy" style="max-width:100%;max-height:260px;border-radius:10px;margin:6px 0"></a>` : ''}`;
+      if (a.status !== 'open') return `<div class="rep">${head}<div class="small"><span class="pill p-mute">${ASK_DONE[a.status] || a.status}</span>${a.public ? ' <span class="pill p-ok">公開給全班</span>' : ''} ${a.reward ? esc(a.reward) : ''}</div><div class="small">回覆：${esc(a.reply)}</div></div>`;
+      const k = a.draftKind || 'answered';
+      return `<div class="rep" data-ask="${a.id}">${head}
+        ${a.draft ? `<div class="small" style="background:#f4f2fb;border-radius:10px;padding:6px 10px;margin:4px 0">🤖 Claude 建議：<b>${ASK_KIND[k] || ''}</b>${a.draftNote ? '<br>' + esc(a.draftNote) : ''}</div>` : ''}
+        <div class="row" style="margin-top:6px">${Object.keys(ASK_KIND).map(x => `<label class="small"><input type="radio" name="ak${a.id}" value="${x}"${x === k ? ' checked' : ''}> ${ASK_KIND[x]}</label>`).join(' ')}</div>
+        <textarea rows="2" maxlength="300" style="width:100%" placeholder="回覆給學生">${esc(a.draft || '')}</textarea>
+        <div class="row small"><label><input type="checkbox" data-pub> 公開給全班（匿名）</label>　<label>金幣 <input type="number" data-coins min="0" max="200" style="width:64px" value="${k === 'junk' ? 10 : 20}"></label>　<label>星星 <input type="number" data-stars min="0" max="10" style="width:56px" value="1"></label>
+          <button class="btn2 sm" data-ask-send>送出</button></div></div>`;
+    }).join('') : '<p class="muted">目前沒有學生提問。</p>';
+  }catch(e){ toast(e.message); }
+}
+$('askAll').addEventListener('change', loadAsks);
+$('askList').addEventListener('change', e => {
+  const r = e.target.closest('input[type=radio]'); if (!r) return;
+  const box = r.closest('[data-ask]'); box.querySelector('[data-coins]').value = r.value === 'junk' ? 10 : 20;
+});
+$('askList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-ask-send]'); if (!b) return;
+  const box = b.closest('[data-ask]'), kind = (box.querySelector('input[type=radio]:checked') || {}).value || 'answered';
+  b.disabled = true;
+  try{
+    await api('tAnswerAsk', PW, Number(box.dataset.ask), { kind, reply: box.querySelector('textarea').value.trim(), pub: box.querySelector('[data-pub]').checked,
+      coins: Number(box.querySelector('[data-coins]').value), stars: kind === 'bug' ? Number(box.querySelector('[data-stars]').value) : 0 });
+    toast({ bug: '已送出，獎勵已發給學生', junk: '已送出，已扣金幣', warn: '已送出提醒', answered: '已送出回覆' }[kind]);
+    loadAsks();
+  }catch(err){ toast(err.message); b.disabled = false; }
+});
 async function loadReports(){
   try{
     REPORTS = await api('tReports', PW);
@@ -1312,10 +1360,11 @@ $('bLogout').addEventListener('click', () => {
 function switchTab(id){
   if (id === 'tMastery' && CUR) loadMastery();
   if (id === 'tBank') loadReports();
+  if (id === 'tAsks' && CUR) loadAsks();
   if (id === 'tUnits') refreshUnits();
   if (id === 'tBank' && DASH){ fillBankFilters(); loadBank(); }
   document.querySelectorAll('nav button').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === id));
-  ['tOverview','tUnits','tImport','tMastery','tBank','tClass','tGuide'].forEach(t => $(t).classList.toggle('hidden', t !== id));
+  ['tOverview','tUnits','tImport','tMastery','tBank','tAsks','tClass','tGuide'].forEach(t => $(t).classList.toggle('hidden', t !== id));
 }
 document.querySelector('nav').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) switchTab(b.dataset.tab); });
 
