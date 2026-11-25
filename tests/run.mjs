@@ -439,10 +439,11 @@ try {
     assert.match(await p.textContent('#map .island:first-child'), /老師的任務/);
     // 公告可以設定顯示到哪一天：過期就自動不顯示
     const c3n = { code: 'DEMO', seat: 3, pin: '3333' };
-    await t.fill('#nUntil', '2020-01-01'); await t.click('#bSaveNotice'); await toastHas(t, '公告與任務已儲存');
-    assert.match(await t.textContent('#nUntilMsg'), /已經過期/);
+    await t.fill('#nUntil', '2020-01-01'); await t.click('#bSaveNotice');
+    await t.waitForFunction(() => document.querySelector('#nUntilMsg').textContent.includes('已經過期'));
     assert.equal((await call('studentLogin', c3n)).ok.notice, '');
-    await t.fill('#nUntil', '2099-12-31'); await t.click('#bSaveNotice'); await toastHas(t, '公告與任務已儲存');
+    await t.fill('#nUntil', '2099-12-31'); await t.click('#bSaveNotice');
+    await t.waitForFunction(() => document.querySelector('#nUntilMsg').textContent === '');
     assert.match((await call('studentLogin', c3n)).ok.notice, /本週先練數學/);
   });
   await step('學生回報題目，老師在待檢查題目處理', async () => {
