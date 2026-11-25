@@ -328,6 +328,27 @@ async function checkNeed(ctx, cls, s, item, label) {
   const got = await ctx.first('SELECT 1 AS ok FROM badges WHERE class_code = ? AND seat = ? AND badge = ?', cls.code, s.seat, item.need);
   if (!got) fail('要先拿到「' + ((BADGE_MAP[item.need] || {}).name || item.need) + '」徽章，才能買「' + label + '」。');
 }
+/* ---------- 主力島 ----------
+ * 老師在系統設定勾選主力科目（預設國語、數學）：
+ *   主力科目的題目答對 1 題得 1.5 枚金幣（一回合合計後四捨五入）；
+ *   每日任務：每個主力科目各過關 1 回合，額外得 FOCUS_BONUS 金幣，累積天數算「國數雙修」徽章；
+ *   focus_stamp 開著時，今日印章只在主力島過關才拿得到。
+ * 算「在主力島過關」的島：主力科目的科目島、該科的單課練習、該科的素養島（素養:國語 這種）。 */
+const FOCUS_RATE = 1.5, FOCUS_BONUS = 5;
+async function focusConf(ctx) {
+  const set = await ctx.settings();
+  const subj = jsonp(set.focus_subjects, null);
+  return { subjects: Array.isArray(subj) ? subj.filter(x => SUBJECTS.includes(x)) : ['國語', '數學'], stamp: set.focus_stamp !== '0' };
+}
+/** 這座島是哪一科的主力島（不是就回傳空字串） */
+function focusOf(island, subjects) {
+  const x = String(island || '');
+  const sj = SUBJECTS.includes(x) ? x : x.startsWith('單元:') ? x.slice(3).split('｜')[2] : x.startsWith('素養:') ? x.slice(3) : '';
+  return sj && subjects.includes(sj) ? sj : '';
+}
+/** 今天的每日任務進度 */
+const focusToday = s => s.focus_day === today() ? jsonp(s.focus_done, []) : [];
+
 /** 星星：每天最多算幾顆（過關照樣算，超過只是不加星星） */
 const STAR_DAILY_MAX = 5;
 const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue', bg: 'bg_none', ear: 'ear_same', doll: 'doll_none', sticker: 'sticker_none', flag: 'flag_none' };
@@ -348,6 +369,9 @@ const BADGES = [
   { id: 'days30', series: 'days', tier: 2, group: '好習慣', icon: '📅', name: '三十日水手', desc: '累積 30 天拿到今日印章' },
   { id: 'days60', series: 'days', tier: 3, group: '好習慣', icon: '🧭', name: '老練水手', desc: '累積 60 天拿到今日印章' },
   { id: 'days100', series: 'days', tier: 4, group: '好習慣', icon: '🏝️', name: '百日水手', desc: '累積 100 天拿到今日印章' },
+  { id: 'focus3', series: 'focus', tier: 1, group: '好習慣', icon: '🎯', name: '國數雙修', desc: '完成 3 天每日任務（主力島都過關）' },
+  { id: 'focus10', series: 'focus', tier: 2, group: '好習慣', icon: '🎯', name: '雙島常客', desc: '完成 10 天每日任務（主力島都過關）' },
+  { id: 'focus30', series: 'focus', tier: 3, group: '好習慣', icon: '🏹', name: '雙島霸主', desc: '完成 30 天每日任務（主力島都過關）' },
   { id: 'week5', group: '好習慣', icon: '🗓️', name: '全勤一週', desc: '同一週的週一到週五都拿到今日印章' },
   { id: 'month15', group: '好習慣', icon: '🌙', name: '月月有你', desc: '同一個月有 15 天拿到今日印章' },
   // 精熟
@@ -720,7 +744,7 @@ async function state(ctx, cls, s) {
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, customColor: s.custom_color || '', saves: { slots: s.save_slots || 0, list: jsonp(s.saved, []), prices: SAVE_PRICES },  saleLeft: (q => q.active ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
+    owned: owned(s), outfit: outfit(s), shop: shopView(ctx, owned(s), !!s.is_test), sets: setsView(ctx, !!s.is_test), shopInfo: shopInfo(ctx), isTest: !!s.is_test, focus: Object.assign(await focusConf(ctx), { done: focusToday(s), bonus: FOCUS_BONUS, rate: FOCUS_RATE, days: s.focus_days || 0 }), customColor: s.custom_color || '', saves: { slots: s.save_slots || 0, list: jsonp(s.saved, []), prices: SAVE_PRICES },  saleLeft: (q => q.active ? q.left : null)(saleQuota(ctx, s)), saleLimit: SALE_LIMIT
   };
 }
 
@@ -801,6 +825,7 @@ async function awardBadges(ctx, cls, s, st, ev) {
   const cond = {
     star10: s.stars >= 10, star50: s.stars >= 50, star100: s.stars >= 100, star300: s.stars >= 300, star500: s.stars >= 500,
     streak3: s.streak >= 3, streak7: s.streak >= 7, streak14: s.streak >= 14, streak30: s.streak >= 30, streak60: s.streak >= 60,
+    focus3: (s.focus_days || 0) >= 3, focus10: (s.focus_days || 0) >= 10, focus30: (s.focus_days || 0) >= 30,
     days10: s.stamps >= 10, days30: s.stamps >= 30, days60: s.stamps >= 60, days100: s.stamps >= 100, week5, month15,
     master1: mastered >= 1, master5: mastered >= 5, master10: mastered >= 10, master20: mastered >= 20, master30: mastered >= 30, master50: mastered >= 50,
     longmem1: s.longmem >= 1, longmem10: s.longmem >= 10, longmem30: s.longmem >= 30,
@@ -907,7 +932,8 @@ API.submitRound = async (ctx, cred, island, responses) => {
   const longAgo = new Date(Date.now() + 8 * 3600e3 - 21 * 864e5).toISOString().slice(0, 10);
   const gotOk = {};
   const passageOk = {};   // 每一段情境：答了幾題、對了幾題（題組全對用）
-  let correct = 0, rescued = 0, passageRight = 0, reviewDone = false, longmem = 0;
+  const fc = await focusConf(ctx);
+  let correct = 0, coinW = 0, rescued = 0, passageRight = 0, reviewDone = false, longmem = 0;
   list.forEach(r => {
     const q = qmap[str(r && r.id, 40)];
     if (!q || seen.has(q.id)) return;  // 同一題只算一次
@@ -915,7 +941,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     const ok = grade(q, r.answer);
     gotOk[q.id] = ok;
     if (ok) {
-      correct++;
+      correct++; coinW += fc.subjects.includes(q.subject) ? FOCUS_RATE : 1;
       if (before[q.id] && !before[q.id].last) rescued++;   // 之前答錯，這次答對
       if (q.passage) passageRight++;
       if (reviewUnits.has(q.unit_key)) reviewDone = true;
@@ -938,14 +964,22 @@ API.submitRound = async (ctx, cred, island, responses) => {
   if (!total) fail('沒有收到作答。');
   const passed = correct / total >= (num(set.pass_ratio) || 0.7);
   let gotStamp = false;
-  if (passed && s.last_day !== day) {
+  const fIsland = focusOf(island, fc.subjects);
+  const stampNeedFocus = passed && s.last_day !== day && fc.stamp && !fIsland;  // 過關了，但不是主力島，不蓋章
+  if (passed && s.last_day !== day && !stampNeedFocus) {
     gotStamp = true;
     s.streak = s.last_day === yesterday() ? s.streak + 1 : 1;
     s.last_day = day;
     s.stamps += 1;
     s.stamp_days = JSON.stringify(jsonp(s.stamp_days, []).concat(day).slice(-62));
   }
-  s.coins += correct; s.earned += correct;
+  // 每日任務：主力科目各過關 1 回合
+  let fDone = focusToday(s), focusBonus = 0;
+  if (passed && fIsland && !fDone.includes(fIsland)) fDone = fDone.concat(fIsland);
+  if (fc.subjects.length && fc.subjects.every(x => fDone.includes(x)) && !fDone.includes('★')) { fDone = fDone.concat('★'); focusBonus = FOCUS_BONUS; s.focus_days = (s.focus_days || 0) + 1; }
+  s.focus_day = day; s.focus_done = JSON.stringify(fDone);
+  const coins = Math.round(coinW) + focusBonus;
+  s.coins += coins; s.earned += coins;
   const starsToday = s.star_day === day ? s.star_today : 0;
   const gotStar = passed && (starsToday < STAR_DAILY_MAX || !!s.is_test);
   if (gotStar) s.stars += 1;
@@ -957,8 +991,8 @@ API.submitRound = async (ctx, cred, island, responses) => {
   stmts.push(ctx.stmt('UPDATE students SET rescued = rescued + ?, passage_right = passage_right + ?, longmem = longmem + ?, last_fail_day = ?, stamp_days = ? WHERE class_code = ? AND seat = ?',
     rescued, passageRight, longmem, s.last_fail_day, s.stamp_days || '[]', cls.code, s.seat));
   stmts.push(ctx.stmt(`UPDATE students SET coins = coins + ?, earned = earned + ?, stars = stars + ?, stamps = stamps + ?,
-      streak = ?, last_day = ?, total = total + ?, right_count = right_count + ?, star_day = ?, star_today = ? WHERE class_code = ? AND seat = ?`,
-    correct, correct, gotStar ? 1 : 0, gotStamp ? 1 : 0, s.streak, s.last_day, total, correct, s.star_day, s.star_today, cls.code, s.seat));
+      streak = ?, last_day = ?, total = total + ?, right_count = right_count + ?, star_day = ?, star_today = ?, focus_day = ?, focus_done = ?, focus_days = ? WHERE class_code = ? AND seat = ?`,
+    coins, coins, gotStar ? 1 : 0, gotStamp ? 1 : 0, s.streak, s.last_day, total, correct, s.star_day, s.star_today, s.focus_day, s.focus_done, s.focus_days || 0, cls.code, s.seat));
   await ctx.db.batch(stmts);
   // 記憶體裡的作答紀錄也照資料庫的規則更新，後面算等級時不用再讀一次
   Object.entries(gotOk).forEach(([id, ok]) => {
@@ -997,7 +1031,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     lighthouse: island === '綜合' && total >= 5 && correct === total
   });
   st.badges = st.badges.concat(nb.map(b => b.id));
-  return { correct, total, passed, coins: correct, star: gotStar, starFull: passed && !gotStar, starMax: STAR_DAILY_MAX, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
+  return { correct, total, passed, coins, focusBonus, focusCoins: Math.round(coinW) - correct, stampNeedFocus, focusSubjects: fc.subjects, star: gotStar, starFull: passed && !gotStar, starMax: STAR_DAILY_MAX, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
     badges: nb.map(b => ({ id: b.id, icon: b.icon, name: b.name, desc: b.desc })), state: st };
 };
 
@@ -2069,7 +2103,7 @@ API.leaderboard = async (ctx, cred) => {
 API.tGetSettings = async (ctx, pw) => {
   await checkPw(ctx, pw);
   const s = await ctx.settings();
-  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), perMastery: num(s.per_mastery), showLeaderboard: s.show_leaderboard !== '0', credit: s.credit || '', customPw: !!s.teacher_pw_hash };
+  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), perMastery: num(s.per_mastery), showLeaderboard: s.show_leaderboard !== '0', credit: s.credit || '', customPw: !!s.teacher_pw_hash, focusSubjects: (await focusConf(ctx)).subjects, focusStamp: s.focus_stamp !== '0', subjects: SUBJECTS };
 };
 
 API.tSaveSettings = async (ctx, pw, data) => {
@@ -2083,6 +2117,8 @@ API.tSaveSettings = async (ctx, pw, data) => {
   if (data.coinsPerPoint !== undefined) stmts.push(put('coins_per_point', Math.min(10000, Math.max(0, Math.floor(num(data.coinsPerPoint))))));
   if (data.credit !== undefined) stmts.push(put('credit', str(data.credit, 80)));
   if (data.showLeaderboard !== undefined) stmts.push(put('show_leaderboard', data.showLeaderboard ? '1' : '0'));
+  if (Array.isArray(data.focusSubjects)) stmts.push(put('focus_subjects', JSON.stringify(data.focusSubjects.filter(x => SUBJECTS.includes(x)))));
+  if (data.focusStamp !== undefined) stmts.push(put('focus_stamp', data.focusStamp ? '1' : '0'));
   if (data.perMastery !== undefined) stmts.push(put('per_mastery', Math.min(100, Math.max(0, Math.floor(num(data.perMastery))))));
   if (data.newPw !== undefined) {
     const np = String(data.newPw);

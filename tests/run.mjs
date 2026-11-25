@@ -116,7 +116,8 @@ try {
     await call('studentLogin', { code: 'DEMO', seat: 1, pin: '1234' });
     const t = await play(s, '數學', [0]);
     assert.match(t, /過關/); assert.match(t, /今日印章/);
-    const m = t.match(/(\d+) \/ (\d+) 金幣\+(\d+)/); assert.ok(m); assert.equal(Number(m[3]), Number(m[2]) - 1);  // 錯 1 題
+    const m = t.match(/(\d+) \/ (\d+) 金幣\+(\d+)/); assert.ok(m); assert.equal(Number(m[3]), Math.round((Number(m[2]) - 1) * 1.5));  // 錯 1 題；數學是主力島，金幣 ×1.5
+    assert.match(t, /主力島加成/);
     assert.equal(await s.textContent('#cStreak'), '1');
     assert.match(await s.textContent('[data-island="錯題"] .meta'), /1 題/);
   });
@@ -406,7 +407,7 @@ try {
     assert.ok(r.badges.some(b => b.id === 'exam'));
     const st = (await call('studentLogin', c4)).ok;
     assert.ok(st.badges.includes('comeback') && st.badges.includes('exam'));
-    assert.equal(st.badgeList.length, 57);
+    assert.equal(st.badgeList.length, 60);
     const d = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 3);
     assert.ok(d.badges.length >= 2);
   });
@@ -418,7 +419,7 @@ try {
     await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
     assert.ok(await p.locator('.bcard.got').count() >= 2);
-    assert.equal(await p.locator('.bcard').count(), 30);  // 57 個徽章，系列合成一張卡片後是 30 張
+    assert.equal(await p.locator('.bcard').count(), 31);  // 60 個徽章，系列合成一張卡片後是 31 張
     assert.ok(await p.locator('.bcard.series .pips i.on').count() >= 1);
     // 點徽章跳出說明，系列徽章列出每一階
     await p.click('.bcard.series.got'); await p.waitForSelector('.bpop');
@@ -470,7 +471,7 @@ try {
   });
   await step('徽章排行榜：只比徽章數，老師可以關掉', async () => {
     const r = (await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
-    assert.equal(r.total, 57);
+    assert.equal(r.total, 60);
     assert.ok(r.rows.some(x => x.me));
     assert.ok(r.rows.every((x, i) => i === 0 || r.rows[i - 1].n >= x.n));
     const p = await page('/?c=DEMO');
@@ -499,7 +500,7 @@ try {
     const st = (await call('studentLogin', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
     const cid = st.badges.find(x => x.startsWith('c:'));
     assert.ok(cid); assert.equal(st.badgeNotes[cid], '幫忙整理圖書角');
-    assert.equal(st.badgeList.length, 58);
+    assert.equal(st.badgeList.length, 61);
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
@@ -737,6 +738,31 @@ try {
     await call('seenAsks', c1, n1.pub[0].id);
     assert.equal((await call('studentLogin', c1)).ok.askNews.pub.length, 0);
     await f.close();
+  });
+  await step('主力島：今日印章只在主力島拿得到、國數金幣 1.5 倍、每日任務', async () => {
+    const st0 = (await call('tDashboard', PW, 'DEMO')).ok.students;
+    await call('tAddStudents', PW, 'DEMO', 1);
+    const seat = Math.max(...(await call('tDashboard', PW, 'DEMO')).ok.students.filter(x => !x.isTest).map(x => x.seat));
+    assert.ok(!st0.some(x => x.seat === seat));
+    const c = { code: 'DEMO', seat, pin: '7777' };
+    await call('studentLogin', c);
+    const right = q => q.type === '選擇' ? q.options['ABCD'.indexOf(q.answer)] : String(q.answer).split('|')[0];
+    const play1 = async isl => { const qs = (await call('getRound', c, isl)).ok; return (await call('submitRound', c, isl, qs.map(q => ({ id: q.id, answer: right(q) })))).ok; };
+    const e = await play1('英文');
+    assert.ok(e.passed && !e.stamp && e.stampNeedFocus, '英文島過關不蓋印章');
+    assert.equal(e.coins, e.correct, '英文題金幣不加成');
+    const z = await play1('國語');
+    assert.ok(z.stamp, '國語島過關蓋印章'); assert.equal(z.focusBonus, 0);
+    assert.equal(z.coins, Math.round(z.correct * 1.5));
+    const m = await play1('數學');
+    assert.equal(m.focusBonus, 5, '國語、數學都過關：每日任務 +5');
+    assert.equal(m.coins, Math.round(m.correct * 1.5) + 5);
+    assert.deepEqual(m.state.focus.done.sort(), ['★', '國語', '數學'].sort());
+    // 老師可以關掉「印章只算主力島」、換主力科目
+    await call('tSaveSettings', PW, { focusSubjects: ['自然'], focusStamp: false });
+    const g = (await call('tGetSettings', PW)).ok;
+    assert.deepEqual(g.focusSubjects, ['自然']); assert.equal(g.focusStamp, false);
+    await call('tSaveSettings', PW, { focusSubjects: ['國語', '數學'], focusStamp: true });
   });
   await step('系統設定與修改密碼', async () => {
     await t.click('[data-tab="tClass"]'); await t.waitForFunction(() => document.querySelector('#sRound').value !== '');

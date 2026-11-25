@@ -357,6 +357,8 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
             <label class="small">累積金幣每 <input id="sCoin" type="number" min="0" style="width:70px"> 枚換 1 點</label>
             <label class="small">每精熟 1 個單元換 <input id="sMastery" type="number" min="0" style="width:60px"> 點</label></div>
           <div class="row" style="margin-top:8px"><label class="small" style="flex:1 1 100%">版權署名（顯示在學生端「關於與版權」）<input id="sCredit" maxlength="80" placeholder="例如：○○國小 ○○○老師" style="width:100%;margin-top:4px"></label></div>
+          <div class="row" style="margin-top:8px"><span class="small"><b>⭐ 主力島</b>（金幣 ×1.5、每日任務）：</span><span id="sFocus" class="row small"></span></div>
+          <div class="row"><label class="small"><input type="checkbox" id="sFocusStamp"> 今日印章只在主力島過關才拿得到（含主力科目的素養島、單課練習）</label></div>
           <div class="row" style="margin-top:8px"><label class="small"><input type="checkbox" id="sRank"> 學生可以看「全班徽章排行榜」（只比徽章數，顯示暱稱或座號）</label></div>
           <p class="muted small">換點比例填 0，代表那一項不換點。</p>
           <div class="row"><button class="btn2" id="bSaveSet">儲存設定</button></div>
@@ -466,7 +468,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
 
         <h3>五、加點</h3>
         <ul>
-          <li>學生每天第一次過關得 1 個印章；每答對 1 題得 1 枚金幣。</li>
+          <li>學生每天第一次在<b>主力島</b>過關得 1 個印章（預設國語、數學，含這兩科的素養島和單課練習）；每答對 1 題得 1 枚金幣，主力科目的題目 1.5 枚。每日任務「國數雙修」：主力科目各過關 1 回合，多拿 5 金幣。主力科目、「印章只算主力島」都在「系統設定」切換，例如段考前改成自然、社會。</li>
           <li>預設換算：1 個印章 = 1 點、累積金幣每 20 枚 = 1 點（不足的留到下次）、精熟單元預設不換點。三個比例都在「系統設定」調整，填 0 代表不換。</li>
           <li>金幣有兩個數字：<b>金幣餘額</b>（學生在衣櫃花）和<b>累積金幣</b>（只增不減）。加點只看累積金幣，學生買東西不會被少算。</li>
           <li>「學生與加點」勾選學生 → 換成點數 → 「複製清單」貼到你的集點系統。每次換點都會留下紀錄，可以匯出。</li>
@@ -474,7 +476,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
 
         <h3>六、徽章</h3>
         <ul>
-          <li>系統徽章共 57 個，分成五類：<b>好習慣</b>（連續或累積拿到今日印章、累積星星 10～500 顆、全勤一週、月月有你）、<b>精熟</b>（精熟單元數、島主、五島通航、完美單元、長期記憶、一步一腳印）、<b>成長</b>（救回錯題、錯題清零、觀念突破、越挫越勇、溫故知新）、<b>挑戰</b>（素養題、題組全對、素養五島、延伸冒險、百發百中、燈塔全對、段考）、<b>AI 素養</b>（題目偵探：回報的題目被老師確認真的有錯；系統偵探：提問時找到網站真的有問題）。</li>
+          <li>系統徽章共 60 個，分成五類：<b>好習慣</b>（連續或累積拿到今日印章、國數雙修 3／10／30 天、累積星星 10～500 顆、全勤一週、月月有你）、<b>精熟</b>（精熟單元數、島主、五島通航、完美單元、長期記憶、一步一腳印）、<b>成長</b>（救回錯題、錯題清零、觀念突破、越挫越勇、溫故知新）、<b>挑戰</b>（素養題、題組全對、素養五島、延伸冒險、百發百中、燈塔全對、段考）、<b>AI 素養</b>（題目偵探：回報的題目被老師確認真的有錯；系統偵探：提問時找到網站真的有問題）。</li>
           <li><b>星星一天最多算 5 顆</b>：同一天過關超過 5 回合，照樣過關、照樣拿金幣（加點不受影響），只是不加星星，避免學生一直刷星星款和星星徽章。延伸冒險的星星不算在內。</li>
           <li>衣櫃的<b>高級款</b>和套裝的<b>關鍵物品 🔑</b>：要星星、徽章數量都夠，還要拿到一個指定徽章（例如小鳳凰要「越挫越勇」）。<b>徽章限定款</b>（偵探帽、救生圈、金色船舵、五島旗）只要拿到指定徽章就能用金幣買。</li>
           <li>衣櫃<b>限定特價 3 天</b>（11/26 早上 8 點～11/29 早上 8 點）：全部開放，價格是特價，<b>每人限買 5 樣</b>（套裝算 1 樣、免費款不算、測試帳號不限）。之後恢復原價（150 以下 ×2、151 以上 ×1.5；眼睛留咖啡色、腮紅留桃紅 4 金幣，其他基礎色 10 金幣；免費款和徽章限定款不漲），新品改成<b>每週一早上 8 點上架一批</b>（到 1/18 共 8 批），上架後特價 3 天，衣櫃只預告下一週。學生買到的東西永遠是自己的。每週一學生登入會跳出「本週新品」。</li>
@@ -1383,11 +1385,11 @@ $('bExpQ').addEventListener('click', () => exportData('questions'));
 
 /* ---------- 系統設定 ---------- */
 async function loadSettings(){
-  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; $('sMastery').value = s.perMastery; $('sRank').checked = s.showLeaderboard; $('sCredit').value = s.credit || ''; }catch(e){}
+  try{ const s = await api('tGetSettings', PW); $('sRound').value = s.perRound; $('sPass').value = Math.round(s.passRatio * 100); $('sStamp').value = s.perStamp; $('sCoin').value = s.coinsPerPoint; $('sMastery').value = s.perMastery; $('sRank').checked = s.showLeaderboard; $('sCredit').value = s.credit || ''; $('sFocus').innerHTML = (s.subjects || []).map(x => `<label><input type="checkbox" data-focus="${esc(x)}"${s.focusSubjects.includes(x) ? ' checked' : ''}> ${esc(x)}</label>`).join(' '); $('sFocusStamp').checked = s.focusStamp; }catch(e){}
 }
 $('bSaveSet').addEventListener('click', async () => {
   $('setErr').textContent = '';
-  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value, perMastery:$('sMastery').value, showLeaderboard:$('sRank').checked, credit:$('sCredit').value.trim()}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
+  try{ await api('tSaveSettings', PW, {perRound:$('sRound').value, passRatio:Number($('sPass').value) / 100, perStamp:$('sStamp').value, coinsPerPoint:$('sCoin').value, perMastery:$('sMastery').value, showLeaderboard:$('sRank').checked, credit:$('sCredit').value.trim(), focusSubjects:[...document.querySelectorAll('#sFocus [data-focus]:checked')].map(x => x.dataset.focus), focusStamp:$('sFocusStamp').checked}); toast('設定已儲存'); loadSettings(); loadClass(CUR.code); }
   catch(e){ $('setErr').textContent = e.message; }
 });
 $('bSavePw').addEventListener('click', async () => {

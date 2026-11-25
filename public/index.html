@@ -246,6 +246,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .notice{background:#fff;border:3px solid var(--butter);border-radius:22px;padding:10px 16px;margin-bottom:14px;font-weight:600;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
 .notice b{color:#c98d12;white-space:nowrap}
 .island{position:relative}
+.island.focus{background:rgba(255,246,214,.85);box-shadow:0 0 0 3px #ffd66b inset;transform:scale(1.04)}.fribbon{position:absolute;top:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#ffd66b;color:#4a4566;font-size:12px;font-weight:800;border-radius:999px;padding:2px 10px;z-index:1}
 .island.mission{background:rgba(255,255,255,.75);box-shadow:0 0 0 4px var(--butter)}
 .ribbon{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:var(--peach);color:#fff;font-size:13px;font-weight:800;border-radius:999px;padding:2px 12px;white-space:nowrap;z-index:1}
 .qimg.big{max-height:none;cursor:zoom-out}
@@ -410,7 +411,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <table class="gtable">
         <tr><td>🪙 金幣</td><td>每答對 1 題得 1 枚。</td></tr>
         <tr><td>⭐ 星星</td><td>一回合答對 7 成以上就「過關」，得 1 顆星星（每次過關都有，不像印章一天只有一個；<b>一天最多 5 顆</b>，超過照樣過關、有金幣，只是不加星星）。星星<b>不會被花掉</b>，累積到 10、50、100、300、500 顆可以拿<b>星星徽章</b>，還能解鎖衣櫃的<b>星星特別款</b>。</td></tr>
-        <tr><td>🔴 今日印章</td><td>每天<b>第一次過關</b>會蓋 1 個印章，可以跟老師換加點。</td></tr>
+        <tr><td>🔴 今日印章</td><td>每天<b>第一次在主力島（國語、數學）過關</b>會蓋 1 個印章，可以跟老師換加點。國語、數學的素養島和單課練習也算；在其他島過關不會蓋章。</td></tr>
+        <tr><td>⭐ 主力島</td><td>國語、數學島答對 1 題得 <b>1.5 枚</b>金幣。<b>🎯 每日任務</b>：國語、數學各過關 1 回合，多拿 5 枚金幣，累積 3、10、30 天有「國數雙修」徽章。</td></tr>
         <tr><td>🔥 連續天數</td><td>每天都拿到印章，天數就會一直往上加。</td></tr>
       </table>
 
@@ -987,7 +989,8 @@ const FAQ = [
   ['⭐ 星星金幣', '為什麼過關了卻沒加星星？', '星星一天最多 5 顆。同一天過關超過 5 回合，照樣過關、照樣拿金幣，只是不再加星星。每天練一點最好！', '星星 沒加星 沒有星 過關'],
   ['⭐ 星星金幣', '金幣怎麼來？「金幣」和「累積金幣」差在哪？', '每答對 1 題得 1 枚金幣。金幣餘額可以在衣櫃花掉；累積金幣只會增加、不會變少，老師換加點看的是累積金幣，所以買東西不會讓你少加點。', '金幣 錢 累積 餘額 加點 怎麼賺'],
   ['⭐ 星星金幣', '為什麼金幣變少了？', '在衣櫃買東西會花金幣。另外，亂提問的話，老師可能會扣金幣。', '變少 扣 少了 不見了'],
-  ['⭐ 星星金幣', '印章怎麼拿？為什麼今天沒有印章？', '每天第一次過關會蓋 1 個印章，同一天只有 1 個。連續每天都有印章，連續天數就會增加。', '印章 蓋章 連續 天數'],
+  ['⭐ 星星金幣', '印章怎麼拿？為什麼今天沒有印章？', '每天第一次在主力島（國語、數學，含這兩科的素養島和單課練習）過關，會蓋 1 個印章，同一天只有 1 個。在其他島過關照樣有金幣和星星，但不會蓋章。連續每天都有印章，連續天數就會增加。', '印章 蓋章 連續 天數 沒有印章'],
+  ['⭐ 星星金幣', '什麼是主力島？每日任務是什麼？', '國語島和數學島是主力島：答對 1 題得 1.5 枚金幣，今日印章也只在主力島拿得到。每日任務是國語、數學各過關 1 回合，完成多拿 5 枚金幣，累積天數有「國數雙修」徽章。國語、數學的素養島也算主力島喔！', '主力島 主力 每日任務 任務 國數 1.5 加成 雙修'],
   ['🌳 精熟', '都答對了，為什麼還是「發芽」？', '「記住」要在兩個不同的日子都答對，而且最近一次是答對。今天答對的題目，要隔天以後再答對一次才算記住。詳細請看航海手冊第 5 站。', '發芽 精熟 答對了 等級 長葉 茁壯 記住 升級'],
   ['🌳 精熟', '精熟以後答錯，會掉級嗎？', '不會！精熟過就一直是精熟，只會提醒你還有幾題要再答對。', '掉級 降級 答錯 退步'],
   ['🌳 精熟', '錯題礁的題目怎麼才會不見？', '在錯題礁或各科島把那一題重新答對，就會從錯題礁移除。', '錯題 錯題礁 移除'],
@@ -1056,7 +1059,11 @@ function shrinkShot(file){
 const NEWS = {
   ver: 'launch-2026-11-26',
   // 每一段：標題、項目（圖示、標題、說明）；brief 的段落每項只顯示一行
-  sections: [{ title: '🔥 限定特價 3 天：11/26（四）早上 8 點～11/29（日）早上 8 點', items: [
+  sections: [{ title: '⭐ 最重要：國語、數學是主力島', items: [
+    ['📌', '今日印章只在主力島拿得到！', '從現在起，每天的印章要在國語島或數學島過關才拿得到（國語、數學的素養島和單課練習也算）。在其他島過關，照樣有金幣和星星，但不會蓋印章，連續天數也不會增加喔！'],
+    ['🪙', '主力島金幣 1.5 倍', '國語、數學的題目答對 1 題得 1.5 枚金幣（一回合加起來四捨五入），在燈塔挑戰、錯題礁答對國數題目也算。'],
+    ['🎯', '每日任務：國數雙修', '每天國語、數學各過關 1 回合，額外多拿 5 枚金幣；累積 3、10、30 天還有「國數雙修」系列徽章。地圖上方會顯示今天的進度。']
+  ] }, { title: '🔥 限定特價 3 天：11/26（四）早上 8 點～11/29（日）早上 8 點', items: [
     ['🛍️', '衣櫃全部開放', '角色、帽子、配件、外套、手套、腮紅、眼睛、裙子・褲子、寵物、背景、耳朵顏色、娃娃裝……這 3 天全部用特價買得到！'],
     ['🎟️', '每人限買 5 樣', '特價期間每個人最多買 5 樣（整套套裝算 1 樣），好好挑最喜歡的！衣櫃最上面會顯示你還可以買幾樣。'],
     ['📈', '11/29 早上 8 點起恢復原價', '大部分是現在的 2 倍，最貴的是 1.5 倍。買到的東西永遠是你的。'],
@@ -1148,22 +1155,28 @@ function renderMap(){
       <div class="info"><b>${esc(ex.name)}</b>　<span class="small">${esc(ex.date.slice(5).replace('-', '/'))}</span><br>
       <span style="font-size:14px;font-weight:600">考試範圍最近答對 ${ex.mastered} / ${ex.total} 題</span><div class="bar"><i style="width:${pct}%"></i></div></div>`;
   }
-  $('todayText').textContent = s.todayDone
+  const fo = s.focus || { subjects: [], done: [] }, fs = fo.subjects.join('、');
+  const task = fo.subjects.length ? '<br><b>🎯 今日任務</b>：' + fo.subjects.map(x => esc(x) + (fo.done.includes(x) ? ' ✅' : ' ⬜')).join('　') + (fo.done.includes('★') ? '　完成了，好棒！' : '　都過關再 +' + fo.bonus + ' 金幣') : '';
+  $('todayText').innerHTML = (s.todayDone
     ? '今天的印章拿到了，好棒！還想玩的話可以繼續賺金幣喔。'
-    : '選一座島出發吧！答對 ' + Math.ceil(s.perRound * 0.7) + ' 題以上，就能蓋今天的印章。';
+    : fo.stamp && fs ? '今天要在<b>主力島（' + esc(fs) + '）</b>過關才能蓋印章！答對 ' + Math.ceil(s.perRound * 0.7) + ' 題以上就過關。'
+    : '選一座島出發吧！答對 ' + Math.ceil(s.perRound * 0.7) + ' 題以上，就能蓋今天的印章。') + task;
   const cards = [];
   if (ex) cards.push(`<button class="island" data-island="段考">${islandSvg({c:'#ff8fa3', d:'#e66d84', ch:'考'}, 2, false)}<div class="name">段考衝刺島</div><div class="meta">只出考試範圍</div><div class="bar"><i style="width:${ex.total ? Math.round(ex.mastered / ex.total * 100) : 0}%;background:#ff8fa3"></i></div></button>`);
+  const focusCards = [], otherCards = [];
   SUBJ.forEach((sj, i) => {
+    const cards = fo.subjects.includes(sj.k) ? focusCards : otherCards, isF = cards === focusCards;
     const it = s.islands[sj.k] || {total:0, mastered:0};
     const locked = !(it.practice ?? it.total);
     const pct = it.total ? Math.round(it.mastered / it.total * 100) : 0;
-    cards.push(`<button class="island${locked?' locked':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
-      ${islandSvg(sj, i, locked)}<div class="name">${sj.k}島</div>
+    cards.push(`<button class="island${locked?' locked':''}${isF?' focus':''}" data-island="${sj.k}" ${locked?'aria-disabled="true"':''}>
+      ${isF ? '<span class="fribbon">⭐ 主力島・金幣×' + fo.rate + '</span>' : ''}${islandSvg(sj, i, locked)}<div class="name">${sj.k}島</div>
       <div class="meta">${locked ? '還在睡覺，等老師開放' : '記住 ' + it.mastered + ' / ' + it.total + ' 題'}</div>
       ${locked ? '' : '<div class="meta">🌳 精熟 ' + (it.masteredUnits || 0) + ' / ' + (it.units || 0) + ' 單元</div>'}
       ${!locked && it.links ? '<div class="meta">🧭 ' + it.links + ' 個延伸冒險</div>' : ''}
       <div class="bar"><i style="width:${pct}%;background:${sj.c}"></i></div></button>`);
   });
+  cards.push(...focusCards, ...otherCards);
   // 素養島：各科有閱讀情境的題組集中在這裡，進去再選科目
   const lit = s.literacy || {}, litGroups = SUBJ.reduce((a, sj) => a + ((lit[sj.k] || {}).groups || 0), 0);
   const litTot = SUBJ.reduce((a, sj) => a + ((lit[sj.k] || {}).total || 0), 0), litOk = SUBJ.reduce((a, sj) => a + ((lit[sj.k] || {}).mastered || 0), 0);
@@ -1218,8 +1231,9 @@ function pickUnit(sj){
 function pickLiteracy(){
   const lit = state.literacy || {};
   const subs = SUBJ.filter(sj => (lit[sj.k] || {}).groups);
-  openPick('📖 素養島：想讀哪一科？', subs.map(sj => ({ v: '素養:' + sj.k, label: sj.k, small: lit[sj.k].groups + ' 組・記住 ' + lit[sj.k].mastered + ' / ' + lit[sj.k].total + ' 題' }))
-    .concat(subs.length > 1 ? [{ v: '素養', label: '全部科目混合', small: '各科題組隨機出' }] : []));
+  const fo = state.focus || { subjects: [] };
+  openPick('📖 素養島：想讀哪一科？', subs.map(sj => ({ v: '素養:' + sj.k, label: (fo.subjects.includes(sj.k) ? '⭐ ' : '') + sj.k, small: (fo.subjects.includes(sj.k) ? '主力島：金幣×' + fo.rate + '、算印章和每日任務・' : '') + lit[sj.k].groups + ' 組・記住 ' + lit[sj.k].mastered + ' / ' + lit[sj.k].total + ' 題' }))
+    .concat(subs.length > 1 ? [{ v: '素養', label: '全部科目混合', small: '各科題組隨機出（不算主力島的印章和每日任務）' }] : []));
 }
 
 async function startRound(island){
@@ -1347,6 +1361,9 @@ function renderResult(r){
       ${r.stamp ? `<div class="gain"><div class="seal on stampin" style="margin:0 auto 4px">已蓋章</div>今日印章</div>` : ''}
     </div>
     ${r.stamp ? '<p>連續完成 <b>' + r.state.streak + '</b> 天！印章可以跟老師換加點喔。</p>' : ''}
+    ${r.focusCoins > 0 ? '<p>⭐ 主力島加成：多拿 <b>' + r.focusCoins + '</b> 枚金幣（已算在上面）</p>' : ''}
+    ${r.focusBonus ? '<div class="badge newb"><span>🎯</span><div><b>今日任務完成！</b><br>' + esc((r.focusSubjects || []).join('、')) + '都過關，多拿 ' + r.focusBonus + ' 枚金幣（已算在上面）</div></div>' : ''}
+    ${r.stampNeedFocus ? '<p>📌 今天的印章要在<b>主力島（' + esc((r.focusSubjects || []).join('、')) + '）</b>過關才拿得到喔！去主力島挑戰吧！</p>' : ''}
     ${(r.badges || []).map(b => `<div class="badge newb"><span>${b.icon}</span><div><b>新徽章：${esc(b.name)}</b><br>${esc(b.desc)}</div></div>`).join('')}
     ${r.mastered && r.mastered.length ? '<div class="badge"><span>🌳</span><div><b>精熟徽章！</b><br>' + r.mastered.map(esc).join('、') + '</div></div>' : ''}
     ${r.missed && r.missed.length ? '<p class="tips">波波建議多練習：<b>' + r.missed.map(esc).join('、') + '</b></p>' : ''}
