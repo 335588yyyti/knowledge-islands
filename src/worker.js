@@ -739,7 +739,7 @@ async function state(ctx, cls, s) {
   brows.forEach(r => { if (r.note) badgeNotes[r.badge] = r.note; badgeDays[r.badge] = r.day; });
   return {
     units, badges, badgeNotes, badgeDays, badgeList: BADGES.concat(custom), credit: set.credit || '',
-    notice: cls.notice || '', mission: cls.mission || '', showLeaderboard: set.show_leaderboard !== '0',
+    notice: cls.notice && (!cls.notice_until || today() <= cls.notice_until) ? cls.notice : '', mission: cls.mission || '', showLeaderboard: set.show_leaderboard !== '0',
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
@@ -1291,7 +1291,7 @@ function cleanVersions(v) {
 }
 
 function classOut(c) {
-  return { code: c.code, name: c.name, grade: c.grade, sem: c.sem, version: c.version || COMMON, versions: subjectVersions(c), status: c.status, units: jsonp(c.units, []), exam: { name: c.exam_name, date: c.exam_date, units: jsonp(c.exam_units, []) }, notice: c.notice || '', mission: c.mission || '' };
+  return { code: c.code, name: c.name, grade: c.grade, sem: c.sem, version: c.version || COMMON, versions: subjectVersions(c), status: c.status, units: jsonp(c.units, []), exam: { name: c.exam_name, date: c.exam_date, units: jsonp(c.exam_units, []) }, notice: c.notice || '', noticeUntil: c.notice_until || '', mission: c.mission || '' };
 }
 
 async function versions(ctx) {
@@ -1423,9 +1423,10 @@ API.tSaveClass = async (ctx, pw, code, data) => {
     c.exam_units = JSON.stringify((data.exam.units || []).map(x => str(x, 200)).slice(0, 500));
   }
   if (data.notice !== undefined) c.notice = str(data.notice, 120);
+  if (data.noticeUntil !== undefined) { const d = str(data.noticeUntil, 10); c.notice_until = /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : ''; }
   if (data.mission !== undefined) c.mission = SUBJECTS.concat(['素養', '錯題', '綜合', '段考']).includes(data.mission) ? data.mission : '';
-  await ctx.run('UPDATE classes SET name=?, grade=?, sem=?, version=?, versions=?, units=?, status=?, exam_name=?, exam_date=?, exam_units=?, notice=?, mission=? WHERE code=?',
-    c.name, c.grade, c.sem, c.version, c.versions || '{}', c.units, c.status, c.exam_name, c.exam_date, c.exam_units, c.notice || '', c.mission || '', c.code);
+  await ctx.run('UPDATE classes SET name=?, grade=?, sem=?, version=?, versions=?, units=?, status=?, exam_name=?, exam_date=?, exam_units=?, notice=?, notice_until=?, mission=? WHERE code=?',
+    c.name, c.grade, c.sem, c.version, c.versions || '{}', c.units, c.status, c.exam_name, c.exam_date, c.exam_units, c.notice || '', c.notice_until || '', c.mission || '', c.code);
   return classOut(c);
 };
 

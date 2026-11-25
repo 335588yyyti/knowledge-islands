@@ -184,6 +184,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
         <h2>給學生的公告與任務</h2>
         <p class="muted small">公告會顯示在學生地圖的最上方。指定任務的島會排到第一個，並標上「老師的任務」。不需要時清空、選「沒有任務」就好。</p>
         <textarea id="nText" maxlength="120" placeholder="例如：本週重點是分數除法，先去錯題礁把錯題救回來！（最多 120 字）" style="min-height:70px;font-family:var(--f-body)"></textarea>
+        <div class="row" style="margin-top:6px"><label class="small">公告顯示到 <input type="date" id="nUntil"> 這天為止（空白代表一直顯示）</label> <span class="small muted" id="nUntilMsg"></span></div>
         <div class="row" style="margin-top:8px"><label class="small">指定任務島 <select id="nMission"><option value="">沒有任務</option><option>國語</option><option>數學</option><option>自然</option><option>社會</option><option>英文</option><option value="素養">素養島</option><option value="錯題">錯題礁</option><option value="綜合">燈塔挑戰</option><option value="段考">段考衝刺島</option></select></label>
           <button class="btn" id="bSaveNotice">儲存公告與任務</button></div>
       </div>
@@ -924,9 +925,11 @@ $('lkList').addEventListener('click', async e => {
   }
 });
 
-function renderNotice(){ $('nText').value = CUR.notice || ''; $('nMission').value = CUR.mission || ''; }
+function renderNotice(){ $('nText').value = CUR.notice || ''; $('nUntil').value = CUR.noticeUntil || ''; $('nMission').value = CUR.mission || '';
+  const tw = new Date(Date.now() + 8 * 3600e3).toISOString().slice(0, 10);
+  $('nUntilMsg').textContent = CUR.noticeUntil && CUR.noticeUntil < tw ? '（已經過期，學生現在看不到這則公告）' : ''; }
 $('bSaveNotice').addEventListener('click', async () => {
-  try{ CUR = await api('tSaveClass', PW, CUR.code, {notice:$('nText').value.trim(), mission:$('nMission').value}); toast('公告與任務已儲存，學生重新整理就會看到'); }catch(e){ toast(e.message); }
+  try{ CUR = await api('tSaveClass', PW, CUR.code, {notice:$('nText').value.trim(), noticeUntil:$('nUntil').value, mission:$('nMission').value}); renderNotice(); toast('公告與任務已儲存，學生重新整理就會看到'); }catch(e){ toast(e.message); }
 });
 
 function renderUnits(){
