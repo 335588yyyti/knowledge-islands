@@ -639,6 +639,21 @@ try {
     await t.check('.cQ'); await t.click('#bQDel'); await t.click('#bQDel');
     await t.waitForFunction(() => document.querySelectorAll('#bankTbl tbody tr').length === 0);
   });
+  await step('星星一天最多 5 顆、徽章限定款要拿到指定徽章', async () => {
+    const c = { code: 'DEMO', seat: 2, pin: '2222' };
+    const right = q => q.type === '選擇' ? q.options['ABCD'.indexOf(q.answer)] : String(q.answer).split('|')[0];
+    let last;
+    for (let i = 0; i < 7; i++) {
+      const qs = (await call('getRound', c, '綜合')).ok;
+      last = (await call('submitRound', c, '綜合', qs.map(q => ({ id: q.id, answer: right(q) })))).ok;
+      assert.ok(last.passed, '全對應該過關');
+    }
+    assert.equal(last.star, false); assert.equal(last.starFull, true);  // 超過 5 顆：照樣過關、有金幣，只是不加星星
+    assert.ok(last.coins > 0);
+    assert.equal((await call('studentLogin', c)).ok.starToday, 5);
+    // 偵探帽要「題目偵探」徽章，金幣夠也買不了
+    assert.match((await call('buyItem', c, 'hat_detective')).err, /題目偵探/);
+  });
   await step('系統設定與修改密碼', async () => {
     await t.click('[data-tab="tClass"]'); await t.waitForFunction(() => document.querySelector('#sRound').value !== '');
     await t.fill('#sCoin', '10'); await t.click('#bSaveSet'); await toastHas(t, '設定已儲存');

@@ -48,6 +48,13 @@ const SHOP = {
   acc_headphones: { slot: 'acc', name: '耳機', price: 60 },
   acc_scope: { slot: 'acc', name: '望遠鏡', price: 50 },
   acc_backpack: { slot: 'acc', name: '探險背包', price: 60 },
+  hat_starcrown: { slot: 'hat', name: '星星皇冠', price: 100, stars: 60 },
+  hat_dino: { slot: 'hat', name: '恐龍帽', price: 70 },
+  // 徽章限定款：拿到指定的徽章就能用金幣買
+  hat_detective: { slot: 'hat', name: '偵探帽', price: 80, need: 'detective1' },
+  acc_ring: { slot: 'acc', name: '救生圈', price: 100, need: 'rescue100' },
+  acc_wheel: { slot: 'acc', name: '金色船舵', price: 120, need: 'streak30' },
+  acc_flag: { slot: 'acc', name: '五島旗', price: 120, need: 'allfive' },
   color_coral: { slot: 'color', name: '珊瑚橘', price: 50 },
   color_cloud: { slot: 'color', name: '雲朵灰', price: 50 },
   // 角色：換成其他動物（顏色跟著「顏色」走）
@@ -103,28 +110,28 @@ const SHOP = {
   pet_octo: { slot: 'pet', name: '小章魚', price: 80, stars: 40 },
   pet_lantern: { slot: 'pet', name: '小燈籠魚', price: 100, stars: 60 },
   /* 高級款：要星星＋徽章（徽章數，老師頒發的也算）才能買 */
-  hat_royal: { slot: 'hat', name: '寶石皇冠', price: 300, stars: 150, badges: 15 },
-  coat_royal: { slot: 'coat', name: '國王披風', price: 300, stars: 120, badges: 12 },
-  glove_gold: { slot: 'glove', name: '黃金手套', price: 200, stars: 100, badges: 10 },
-  bottom_gown: { slot: 'bottom', name: '公主禮服裙', price: 250, stars: 120, badges: 12 },
-  eye_galaxy: { slot: 'eye', name: '銀河眼', price: 200, stars: 100, badges: 10 },
-  sp_dragon: { slot: 'species', name: '小龍', price: 400, stars: 250, badges: 18 },
-  pet_whale: { slot: 'pet', name: '雲朵小鯨魚', price: 300, stars: 200, badges: 15 },
-  pet_phoenix: { slot: 'pet', name: '小鳳凰', price: 400, stars: 300, badges: 20 },
+  hat_royal: { slot: 'hat', name: '寶石皇冠', price: 300, stars: 150, badges: 15, need: 'master20' },
+  coat_royal: { slot: 'coat', name: '國王披風', price: 300, stars: 120, badges: 12, need: 'master10' },
+  glove_gold: { slot: 'glove', name: '黃金手套', price: 200, stars: 100, badges: 10, need: 'rescue50' },
+  bottom_gown: { slot: 'bottom', name: '公主禮服裙', price: 250, stars: 120, badges: 12, need: 'week5' },
+  eye_galaxy: { slot: 'eye', name: '銀河眼', price: 200, stars: 100, badges: 10, need: 'reader10' },
+  sp_dragon: { slot: 'species', name: '小龍', price: 400, stars: 250, badges: 18, need: 'streak30' },
+  pet_whale: { slot: 'pet', name: '雲朵小鯨魚', price: 300, stars: 200, badges: 15, need: 'streak14' },
+  pet_phoenix: { slot: 'pet', name: '小鳳凰', price: 400, stars: 300, badges: 20, need: 'comeback' },
   /* 套裝的單品：可以單買（不用徽章）；key 是套裝的關鍵物品，要星星＋徽章 */
-  hat_astro: { slot: 'hat', name: '太空頭盔', price: 150, stars: 80, badges: 8, set: 'set_space', key: true },
+  hat_astro: { slot: 'hat', name: '太空頭盔', price: 150, stars: 80, badges: 8, need: 'allfive', set: 'set_space', key: true },
   coat_space: { slot: 'coat', name: '太空衣', price: 60, set: 'set_space' },
   glove_space: { slot: 'glove', name: '太空手套', price: 40, set: 'set_space' },
   pet_robot: { slot: 'pet', name: '小機器人', price: 80, stars: 20, set: 'set_space' },
-  hat_captain: { slot: 'hat', name: '船長帽', price: 120, stars: 60, badges: 6, set: 'set_pirate', key: true },
+  hat_captain: { slot: 'hat', name: '船長帽', price: 120, stars: 60, badges: 6, need: 'streak7', set: 'set_pirate', key: true },
   coat_pirate: { slot: 'coat', name: '船長外套', price: 60, set: 'set_pirate' },
   bottom_pirate: { slot: 'bottom', name: '條紋水手褲', price: 40, set: 'set_pirate' },
   pet_parrot: { slot: 'pet', name: '鸚鵡', price: 80, stars: 20, set: 'set_pirate' },
-  coat_robe: { slot: 'coat', name: '星空魔法袍', price: 150, stars: 100, badges: 10, set: 'set_magic', key: true },
+  coat_robe: { slot: 'coat', name: '星空魔法袍', price: 150, stars: 100, badges: 10, need: 'concept', set: 'set_magic', key: true },
   hat_witch: { slot: 'hat', name: '魔法學院尖帽', price: 60, set: 'set_magic' },
   glove_magic: { slot: 'glove', name: '魔法手套', price: 40, set: 'set_magic' },
   pet_blackcat: { slot: 'pet', name: '黑貓使魔', price: 80, stars: 20, set: 'set_magic' },
-  acc_trophy: { slot: 'acc', name: '冠軍獎盃', price: 120, stars: 50, badges: 5, set: 'set_sport', key: true },
+  acc_trophy: { slot: 'acc', name: '冠軍獎盃', price: 120, stars: 50, badges: 5, need: 'perfect', set: 'set_sport', key: true },
   hat_cap: { slot: 'hat', name: '棒球帽', price: 40, set: 'set_sport' },
   coat_jersey: { slot: 'coat', name: '球衣', price: 50, set: 'set_sport' },
   eye_dark: { slot: 'eye', name: '深紫黑', price: 0 },
@@ -178,6 +185,14 @@ const SETS = {
 };
 const setPrice = (set, have) => Math.round(set.items.filter(x => !have.includes(x)).reduce((a, x) => a + SHOP[x].price, 0) * 0.8);
 const badgeCount = async (ctx, cls, s) => (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
+/** 指定徽章：物品寫了 need，就要先拿到那個徽章 */
+async function checkNeed(ctx, cls, s, item, label) {
+  if (!item.need) return;
+  const got = await ctx.first('SELECT 1 AS ok FROM badges WHERE class_code = ? AND seat = ? AND badge = ?', cls.code, s.seat, item.need);
+  if (!got) fail('要先拿到「' + ((BADGE_MAP[item.need] || {}).name || item.need) + '」徽章，才能買「' + label + '」。');
+}
+/** 星星：每天最多算幾顆（過關照樣算，超過只是不加星星） */
+const STAR_DAILY_MAX = 5;
 const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue', bg: 'bg_none' };
 
 /**
@@ -552,7 +567,7 @@ async function state(ctx, cls, s) {
     notice: cls.notice || '', mission: cls.mission || '', showLeaderboard: set.show_leaderboard !== '0',
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
-    streak: liveStreak(s), todayDone: s.last_day === today(),
+    streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX,
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
     owned: owned(s), outfit: outfit(s), shop: SHOP, sets: SETS
   };
@@ -778,7 +793,10 @@ API.submitRound = async (ctx, cred, island, responses) => {
     s.stamp_days = JSON.stringify(jsonp(s.stamp_days, []).concat(day).slice(-62));
   }
   s.coins += correct; s.earned += correct;
-  if (passed) s.stars += 1;
+  const starsToday = s.star_day === day ? s.star_today : 0;
+  const gotStar = passed && starsToday < STAR_DAILY_MAX;
+  if (gotStar) s.stars += 1;
+  s.star_day = day; s.star_today = starsToday + (gotStar ? 1 : 0);
   s.total += total; s.right_count += correct;
   const comeback = passed && s.last_fail_day === day;
   s.rescued += rescued; s.passage_right += passageRight; s.longmem += longmem;
@@ -786,8 +804,8 @@ API.submitRound = async (ctx, cred, island, responses) => {
   stmts.push(ctx.stmt('UPDATE students SET rescued = rescued + ?, passage_right = passage_right + ?, longmem = longmem + ?, last_fail_day = ?, stamp_days = ? WHERE class_code = ? AND seat = ?',
     rescued, passageRight, longmem, s.last_fail_day, s.stamp_days || '[]', cls.code, s.seat));
   stmts.push(ctx.stmt(`UPDATE students SET coins = coins + ?, earned = earned + ?, stars = stars + ?, stamps = stamps + ?,
-      streak = ?, last_day = ?, total = total + ?, right_count = right_count + ? WHERE class_code = ? AND seat = ?`,
-    correct, correct, passed ? 1 : 0, gotStamp ? 1 : 0, s.streak, s.last_day, total, correct, cls.code, s.seat));
+      streak = ?, last_day = ?, total = total + ?, right_count = right_count + ?, star_day = ?, star_today = ? WHERE class_code = ? AND seat = ?`,
+    correct, correct, gotStar ? 1 : 0, gotStamp ? 1 : 0, s.streak, s.last_day, total, correct, s.star_day, s.star_today, cls.code, s.seat));
   await ctx.db.batch(stmts);
   // 記憶體裡的作答紀錄也照資料庫的規則更新，後面算等級時不用再讀一次
   Object.entries(gotOk).forEach(([id, ok]) => {
@@ -825,7 +843,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     lighthouse: island === '綜合' && total >= 5 && correct === total
   });
   st.badges = st.badges.concat(nb.map(b => b.id));
-  return { correct, total, passed, coins: correct, star: passed, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
+  return { correct, total, passed, coins: correct, star: gotStar, starFull: passed && !gotStar, starMax: STAR_DAILY_MAX, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
     badges: nb.map(b => ({ id: b.id, icon: b.icon, name: b.name, desc: b.desc })), state: st };
 };
 
@@ -840,6 +858,7 @@ API.buyItem = async (ctx, cred, id) => {
     const n = await badgeCount(ctx, cls, s);
     if (n < item.badges) fail('還要再拿 ' + (item.badges - n) + ' 個徽章，才能買「' + item.name + '」。');
   }
+  await checkNeed(ctx, cls, s, item, item.name);
   if (s.coins < item.price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(id);
   const o = outfit(s); o[item.slot] = id;
@@ -860,6 +879,7 @@ API.buySet = async (ctx, cred, id) => {
   if (s.stars < key.stars) fail('還要再拿 ' + (key.stars - s.stars) + ' 顆星星，才能買「' + set.name + '」。');
   const n = await badgeCount(ctx, cls, s);
   if (n < key.badges) fail('還要再拿 ' + (key.badges - n) + ' 個徽章，才能買「' + set.name + '」。');
+  await checkNeed(ctx, cls, s, key, set.name);
   const price = setPrice(set, have);
   if (s.coins < price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(...missing);
