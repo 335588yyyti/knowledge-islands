@@ -58,6 +58,9 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .bob{animation:bob 2.6s ease-in-out infinite;transform-origin:50% 100%}
 @keyframes bob{50%{transform:translateY(-5px) rotate(-2deg)}}
 .blink{animation:blink 4s infinite;transform-origin:center;transform-box:fill-box}
+.pet{animation:petHop 1.8s ease-in-out infinite;transform-origin:center bottom;transform-box:fill-box}
+@keyframes petHop{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.talk svg.mascot.withpet{width:125px}.result svg.mascot.withpet{width:169px}.loading svg.withpet{width:143px}.shop-head .stage svg.withpet{width:100%}
 @keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.1)}}
 
 /* 登入 */
@@ -258,7 +261,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .spark{position:fixed;pointer-events:none;z-index:9;width:18px;height:18px;animation:pop .9s ease-out forwards}
 @keyframes pop{to{transform:translate(var(--dx),var(--dy)) rotate(200deg) scale(.4);opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media (max-width:420px){.logo h1{font-size:38px}.qtext{font-size:20px}.talk svg.mascot{width:72px}}
+@media (max-width:420px){.logo h1{font-size:38px}.qtext{font-size:20px}.talk svg.mascot{width:72px}.talk svg.mascot.withpet{width:94px}}
 </style>
 </head>
 <body>
@@ -428,10 +431,10 @@ label{display:block;font-weight:800;margin-bottom:6px}
 
       <h3>👕 第 7 站：波波的衣櫃</h3>
       <ul>
-        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊、小狗、星星品種狗（柴犬、哈士奇、大麥町、柯基、貴賓狗、吉娃娃、雪納瑞）、星星品種貓（三花貓、虎斑貓、暹羅貓、折耳貓、波斯貓），品種狗和品種貓要先拿到 20～60 顆星星才能買、小豬、小老鼠、小青蛙、小老虎、貓熊、小恐龍，還有要 100 顆星星才能買的獨角獸）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>眼睛</b>（基礎色咖啡、藍、綠、灰各 4 金幣）、<b>顏色</b>。</li>
+        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊、小狗、星星品種狗（柴犬、哈士奇、大麥町、柯基、貴賓狗、吉娃娃、雪納瑞）、星星品種貓（三花貓、虎斑貓、暹羅貓、折耳貓、波斯貓），品種狗和品種貓要先拿到 20～60 顆星星才能買、小豬、小老鼠、小青蛙、小老虎、貓熊、小恐龍，還有要 100 顆星星才能買的獨角獸）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>眼睛</b>（基礎色咖啡、藍、綠、灰各 4 金幣）、<b>裙子・褲子</b>、<b>寵物</b>（會跟在波波旁邊跳跳跳）、<b>顏色</b>。</li>
         <li>腮紅基礎色一個只要 4 金幣，愛心、星星、彩虹等特別款比較貴。</li>
         <li><b>花掉金幣不會讓老師少加點！</b>老師看的是你「累積賺到」的金幣總數，不是剩下的。</li>
-        <li><b>⭐ 星星特別款</b>：星星髮箍、星星手套、星星魔杖、星空斗篷、星夜藍、星星眼（30 顆）、獨角獸，還有所有品種狗和品種貓（柴犬、哈士奇、吉娃娃、虎斑貓 20 顆；大麥町、柯基、貴賓狗、雪納瑞、三花貓、暹羅貓、折耳貓 40 顆；波斯貓 60 顆），要先累積足夠的星星才能用金幣買。星星不會被花掉喔！</li>
+        <li><b>⭐ 星星特別款</b>：星星髮箍、星星手套、星星魔杖、星空斗篷、星夜藍、星星眼（30 顆）、彩虹裙（40 顆）、小飛龍（80 顆）、星星精靈（150 顆）、獨角獸，還有所有品種狗和品種貓（柴犬、哈士奇、吉娃娃、虎斑貓 20 顆；大麥町、柯基、貴賓狗、雪納瑞、三花貓、暹羅貓、折耳貓 40 顆；波斯貓 60 顆），要先累積足夠的星星才能用金幣買。星星不會被花掉喔！</li>
       </ul>
 
       <h3>🧭 船長的小祕訣</h3>
@@ -550,6 +553,7 @@ const HATS = {
   hat_chef:'<path d="M42 44 L42 30 Q34 28 36 20 Q38 10 48 14 Q52 4 60 6 Q68 4 72 14 Q82 10 84 20 Q86 28 78 30 L78 44 Z" fill="#fff" stroke="#d9d9e3" stroke-width="2" stroke-linejoin="round"/><path d="M42 38 L78 38" stroke="#e6e6ee" stroke-width="2"/>',
   hat_fedora:'<g transform="rotate(-8 60 40)"><ellipse cx="60" cy="47" rx="38" ry="7.5" fill="#fff" stroke="#d9d9e3" stroke-width="2"/><path d="M38 47 Q35 24 48 17 Q60 24 72 17 Q85 24 82 47 Q60 52 38 47 Z" fill="#fff" stroke="#d9d9e3" stroke-width="2" stroke-linejoin="round"/><path d="M60 23 Q58 30 60 37" stroke="#d9d9e3" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M37.5 39 Q60 44 82.5 39 L82.5 46 Q60 51 37.5 46 Z" fill="#2e2a40"/></g>',
   hat_fedora_black:'<g transform="rotate(-8 60 40)"><ellipse cx="60" cy="47" rx="38" ry="7.5" fill="#3b3752" stroke="#24213a" stroke-width="2"/><path d="M38 47 Q35 24 48 17 Q60 24 72 17 Q85 24 82 47 Q60 52 38 47 Z" fill="#3b3752" stroke="#24213a" stroke-width="2" stroke-linejoin="round"/><path d="M60 23 Q58 30 60 37" stroke="#24213a" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M37.5 39 Q60 44 82.5 39 L82.5 46 Q60 51 37.5 46 Z" fill="#e9e6f2"/></g>',
+  hat_tophat:'<rect x="40" y="6" width="40" height="36" rx="3" fill="#2e2a40"/><rect x="40" y="31" width="40" height="7" fill="#e84a5f"/><ellipse cx="60" cy="44" rx="32" ry="6" fill="#2e2a40"/><path d="M46 10 L46 28" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".25"/>',
   hat_grad:'<path d="M60 14 L96 26 L60 38 L24 26 Z" fill="#4a4566" stroke="#37334f" stroke-width="2" stroke-linejoin="round"/><path d="M42 32 L42 44 Q60 50 78 44 L78 32" fill="#4a4566"/><path d="M60 26 L88 30 L90 46" stroke="#ffd66b" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="90" cy="48" r="3.5" fill="#ffd66b"/>',
   hat_wizard:'<ellipse cx="60" cy="44" rx="34" ry="7" fill="#8e72e0"/><path d="M40 44 Q50 20 70 0 Q72 26 80 44 Z" fill="#a98bf0"/><path d="M58 22 l2.5 5 5.5 .8 -4 3.9 1 5.4 -5 -2.6 -5 2.6 1 -5.4 -4 -3.9 5.5 -.8 Z" fill="#ffd66b"/>'
 };
@@ -647,6 +651,34 @@ const EYES = {
   eye_sparkle: () => [45, 75].map(x => `<ellipse cx="${x}" cy="62" rx="5.5" ry="6.5" fill="#4a4566"/><circle cx="${x + 2}" cy="59" r="2.4" fill="#fff"/><circle cx="${x - 2}" cy="65" r="1.2" fill="#fff"/><circle cx="${x + 2.5}" cy="64.5" r=".8" fill="#fff"/>`).join(''),
   eye_star: () => [45, 75].map(x => `<path transform="translate(${x} 62) scale(1.15)" d="M0 -6 l1.8 3.6 4 .6 -2.9 2.8 .7 4 -3.6 -1.9 -3.6 1.9 .7 -4 -2.9 -2.8 4 -.6 Z" fill="#ffc83d" stroke="#d99a1c" stroke-width="1" stroke-linejoin="round"/>`).join('')
 };
+/* 裙子・褲子：畫在身體最下面（y 100～118） */
+const SKIRT = 'M19 96 Q60 106 101 96 L107 117 Q60 127 13 117 Z', SHORTS = 'M18 96 Q60 106 102 96 L102 112 Q96 119 60 119 Q24 119 18 112 Z';
+const BOTTOMS = {
+  bottom_none: () => '',
+  bottom_jeans: () => `<path d="${SHORTS}" fill="#6f9fd8" stroke="#4f7fb8" stroke-width="2" stroke-linejoin="round"/><path d="M60 108 L60 119" stroke="#4f7fb8" stroke-width="2"/><path d="M24 114 Q40 117 52 117 M68 117 Q80 117 96 114" stroke="#ffd66b" stroke-width="1.5" stroke-dasharray="2 2" fill="none"/>`,
+  bottom_sport: () => `<path d="${SHORTS}" fill="#3b3752" stroke="#24213a" stroke-width="2" stroke-linejoin="round"/><path d="M60 108 L60 119" stroke="#24213a" stroke-width="2"/><path d="M22 103 L22 114 M98 103 L98 114" stroke="#fff" stroke-width="3" stroke-linecap="round"/>`,
+  bottom_pleat: () => `<path d="${SKIRT}" fill="#4a5f9e" stroke="#36487a" stroke-width="2" stroke-linejoin="round"/><path d="M34 104 L30 120 M47 106 L45 122 M60 107 L60 122 M73 106 L75 122 M86 104 L90 120" stroke="#36487a" stroke-width="1.5"/>`,
+  bottom_flower: () => `<path d="${SKIRT}" fill="#fff4c8" stroke="#e6c86a" stroke-width="2" stroke-linejoin="round"/>` + [[30,110,'#ff8fa3'],[46,114,'#7fc6ff'],[60,111,'#ff8fa3'],[74,115,'#9be0b8'],[90,110,'#7fc6ff'],[38,118,'#9be0b8'],[82,119,'#ff8fa3']].map(([x, y, c]) => `<circle cx="${x}" cy="${y}" r="2.6" fill="${c}"/><circle cx="${x}" cy="${y}" r="1" fill="#fff"/>`).join(''),
+  bottom_tutu: () => '<g fill="#ffc2d4" stroke="#f59ab6" stroke-width="1.5">' + [16,28,40,52,64,76,88,100].map((x, i) => `<circle cx="${x + 2}" cy="${112 + (i % 2) * 3}" r="8"/>`).join('') + '</g><path d="M20 100 Q60 110 100 100 L100 106 Q60 116 20 106 Z" fill="#ff8fb0"/>',
+  bottom_plaid: () => `<path d="${SKIRT}" fill="#e05a6a" stroke="#b83e4e" stroke-width="2" stroke-linejoin="round"/><g stroke="#2e2a40" stroke-width="1.5" opacity=".45"><path d="M18 108 Q60 117 102 108 M15 114 Q60 124 105 114"/><path d="M36 104 L33 121 M52 107 L51 123 M68 107 L69 123 M84 104 L87 121"/></g>`,
+  bottom_suspender: () => `<path d="${SHORTS}" fill="#7a5c50" stroke="#5a4038" stroke-width="2" stroke-linejoin="round"/><path d="M60 108 L60 119" stroke="#5a4038" stroke-width="2"/><path d="M40 104 L44 80 M80 104 L76 80" stroke="#e84a5f" stroke-width="4" stroke-linecap="round"/><circle cx="44" cy="81" r="2" fill="#ffd66b"/><circle cx="76" cy="81" r="2" fill="#ffd66b"/>`,
+  bottom_grass: () => '<g stroke="#5aa85f" stroke-width="3.5" stroke-linecap="round">' + Array.from({ length: 15 }, (_, i) => { const x = 20 + i * 5.7; return `<path d="M${x} ${101 + Math.abs(7 - i) * -0.3 + 4} L${x + (i - 7) * 0.5} 121"/>`; }).join('') + '</g><path d="M20 100 Q60 110 100 100 L100 105 Q60 115 20 105 Z" fill="#c98a4b"/><circle cx="40" cy="105" r="3" fill="#ff8fa3"/><circle cx="80" cy="105" r="3" fill="#ffd66b"/>',
+  bottom_rainbow: () => `<path d="${SKIRT}" fill="#ff8fa3"/>` + ['#ffb37a', '#ffd66b', '#9be0b8', '#7fc6ff', '#b79cf0'].map((c, i) => `<path d="M${20 - i * 1.4} ${103 + i * 3} Q60 ${113 + i * 3} ${100 + i * 1.4} ${103 + i * 3} L${101 + i * 1.4} ${106 + i * 3} Q60 ${116 + i * 3} ${19 - i * 1.4} ${106 + i * 3} Z" fill="${c}"/>`).join('')
+};
+/* 寵物：站在波波右邊（x 112～152），有寵物時畫面會變寬 */
+const PETS = {
+  pet_none: null,
+  pet_chick: '<path d="M127 116 L125 119 M137 116 L139 119" stroke="#f2a25c" stroke-width="2" stroke-linecap="round"/><circle cx="132" cy="106" r="11" fill="#ffd66b"/><path d="M130 95 Q132 90 134 95" stroke="#ffd66b" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="128" cy="104" r="1.6" fill="#4a4566"/><circle cx="136" cy="104" r="1.6" fill="#4a4566"/><path d="M130 107 L134 107 L132 110 Z" fill="#f2a25c"/><ellipse cx="141" cy="108" rx="3" ry="5" fill="#f5c64f"/>',
+  pet_hamster: '<circle cx="123" cy="99" r="4.5" fill="#e8a86a"/><circle cx="141" cy="99" r="4.5" fill="#e8a86a"/><circle cx="123" cy="99" r="2.2" fill="#ffc7d2"/><circle cx="141" cy="99" r="2.2" fill="#ffc7d2"/><ellipse cx="132" cy="109" rx="15" ry="11" fill="#f2c08a"/><ellipse cx="132" cy="112" rx="9" ry="7" fill="#fff4e4"/><circle cx="127" cy="106" r="1.6" fill="#4a4566"/><circle cx="137" cy="106" r="1.6" fill="#4a4566"/><ellipse cx="132" cy="109" rx="1.8" ry="1.3" fill="#e5788e"/>',
+  pet_turtle: '<circle cx="148" cy="108" r="5.5" fill="#9bd38a"/><circle cx="150" cy="106.5" r="1.3" fill="#4a4566"/><ellipse cx="123" cy="117" rx="3.5" ry="2.5" fill="#9bd38a"/><ellipse cx="140" cy="117" rx="3.5" ry="2.5" fill="#9bd38a"/><path d="M116 116 Q116 96 132 96 Q146 96 146 116 Z" fill="#5aa85f" stroke="#3f8445" stroke-width="2"/><path d="M126 102 L132 99 L138 102 L138 109 L132 112 L126 109 Z" fill="#7cc46e"/>',
+  pet_fish: '<ellipse cx="132" cy="117" rx="11" ry="3" fill="#c9b8e8"/><circle cx="132" cy="103" r="15" fill="#cfeaff" stroke="#9ccfff" stroke-width="2" opacity=".95"/><path d="M118 100 Q132 96 146 100" stroke="#9ccfff" stroke-width="1.5" fill="none"/><ellipse cx="130" cy="106" rx="6" ry="4" fill="#ff9a4a"/><path d="M136 106 L141 102 L141 110 Z" fill="#ff9a4a"/><circle cx="127.5" cy="105" r="1" fill="#4a4566"/><circle cx="125" cy="97" r="1.5" fill="#fff"/><circle cx="122" cy="93" r="1" fill="#fff"/>',
+  pet_bunny: '<ellipse cx="127" cy="90" rx="3.5" ry="10" fill="#fff" stroke="#e3dfee" stroke-width="1.5"/><ellipse cx="137" cy="90" rx="3.5" ry="10" fill="#fff" stroke="#e3dfee" stroke-width="1.5"/><ellipse cx="132" cy="108" rx="13" ry="11" fill="#fff" stroke="#e3dfee" stroke-width="1.5"/><circle cx="127" cy="105" r="1.6" fill="#4a4566"/><circle cx="137" cy="105" r="1.6" fill="#4a4566"/><ellipse cx="132" cy="108" rx="1.8" ry="1.3" fill="#ff8fa3"/><circle cx="145" cy="112" r="3" fill="#fff" stroke="#e3dfee" stroke-width="1.5"/>',
+  pet_kitten: '<path d="M144 112 Q154 108 150 96" stroke="#b6b2c8" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M121 102 L123 90 L130 97 Z M143 102 L141 90 L134 97 Z" fill="#b6b2c8"/><ellipse cx="132" cy="108" rx="13" ry="11" fill="#b6b2c8"/><circle cx="127" cy="106" r="1.7" fill="#4a4566"/><circle cx="137" cy="106" r="1.7" fill="#4a4566"/><path d="M130.5 109 L133.5 109 L132 111 Z" fill="#ff8fa3"/><path d="M122 109 L116 108 M142 109 L148 108" stroke="#4a4566" stroke-width="1" opacity=".6"/>',
+  pet_puppy: '<path d="M144 106 Q152 98 148 94" stroke="#c9915e" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="132" cy="108" rx="13" ry="11" fill="#e3b583"/><ellipse cx="121" cy="104" rx="4" ry="8" transform="rotate(15 121 104)" fill="#a8703f"/><ellipse cx="143" cy="104" rx="4" ry="8" transform="rotate(-15 143 104)" fill="#a8703f"/><ellipse cx="132" cy="111" rx="6" ry="4.5" fill="#fff4e4"/><circle cx="127" cy="105" r="1.7" fill="#4a4566"/><circle cx="137" cy="105" r="1.7" fill="#4a4566"/><ellipse cx="132" cy="109" rx="2" ry="1.4" fill="#4a4566"/>',
+  pet_owl: '<path d="M122 96 L124 88 L129 94 Z M142 96 L140 88 L135 94 Z" fill="#8a6a50"/><ellipse cx="132" cy="106" rx="13" ry="14" fill="#a8835f"/><ellipse cx="132" cy="110" rx="8" ry="8" fill="#e8d3b4"/><circle cx="127" cy="100" r="5" fill="#fff"/><circle cx="137" cy="100" r="5" fill="#fff"/><circle cx="127" cy="100" r="2.4" fill="#4a4566"/><circle cx="137" cy="100" r="2.4" fill="#4a4566"/><path d="M130.5 104 L133.5 104 L132 107 Z" fill="#f2a25c"/><path d="M128 120 L128 116 M136 120 L136 116" stroke="#f2a25c" stroke-width="2" stroke-linecap="round"/>',
+  pet_dragon: '<path d="M124 96 Q112 84 116 100 Q120 98 124 102 Z M140 96 Q152 84 148 100 Q144 98 140 102 Z" fill="#b79cf0" stroke="#9070d6" stroke-width="1.5"/><path d="M142 108 Q154 112 152 102" stroke="#9be0b8" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="132" cy="102" rx="11" ry="10" fill="#9be0b8"/><path d="M127 93 L126 88 L130 92 Z M137 93 L138 88 L134 92 Z" fill="#ffd66b"/><ellipse cx="132" cy="106" rx="6" ry="4" fill="#d8f5e4"/><circle cx="128" cy="100" r="1.7" fill="#4a4566"/><circle cx="136" cy="100" r="1.7" fill="#4a4566"/>',
+  pet_sprite: '<path transform="translate(132 101) scale(2.1)" d="M0 -6 l1.8 3.6 4 .6 -2.9 2.8 .7 4 -3.6 -1.9 -3.6 1.9 .7 -4 -2.9 -2.8 4 -.6 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width=".6" stroke-linejoin="round"/><circle cx="128.5" cy="101" r="1.4" fill="#4a4566"/><circle cx="135.5" cy="101" r="1.4" fill="#4a4566"/><path d="M130 104 Q132 106 134 104" stroke="#4a4566" stroke-width="1.2" fill="none" stroke-linecap="round"/><circle cx="117" cy="92" r="1.5" fill="#ffd66b"/><circle cx="148" cy="88" r="1.2" fill="#ffd66b"/><circle cx="146" cy="112" r="1.4" fill="#ffd66b"/>'
+};
 /* 腮紅：兩頰 (36,74) 與 (84,74) */
 const cheekDot = fill => [36, 84].map(x => `<ellipse cx="${x}" cy="74" rx="7" ry="4.5" fill="${fill}" opacity=".9"/>`).join('');
 const CHEEKS = {
@@ -663,7 +695,7 @@ function mascot(mood, outfit){
   const hat = HATS[o.hat] != null ? HATS[o.hat] : HATS.hat_sailor;
   const acc = ACCS[o.acc] || '';
   const front = o.acc === 'acc_glasses' ? acc : '', neck = o.acc === 'acc_glasses' ? '' : acc;
-  const coat = (COATS[o.coat] || COATS.coat_none)(), sp = SPECIES[o.species] || SPECIES.sp_seal, glove = GLOVES[o.glove] || GLOVES.glove_none, cheek = (CHEEKS[o.cheek] || CHEEKS.cheek_pink)();
+  const coat = (COATS[o.coat] || COATS.coat_none)(), sp = SPECIES[o.species] || SPECIES.sp_seal, bottom = (BOTTOMS[o.bottom] || BOTTOMS.bottom_none)(), pet = PETS[o.pet] || '', glove = GLOVES[o.glove] || GLOVES.glove_none, cheek = (CHEEKS[o.cheek] || CHEEKS.cheek_pink)();
   const hands = mood === 'cheer' ? [[14, 56], [106, 56]] : [[15, 108], [105, 108]];
   const mouth = {
     happy:'<path d="M54 74 Q60 80 66 74" stroke="#4a4566" stroke-width="3" fill="none" stroke-linecap="round"/>',
@@ -679,18 +711,20 @@ function mascot(mood, outfit){
   const arms = mood === 'cheer'
     ? `<path d="M22 84 Q8 66 14 56" stroke="${arm}" stroke-width="10" fill="none" stroke-linecap="round"/><path d="M98 84 Q112 66 106 56" stroke="${arm}" stroke-width="10" fill="none" stroke-linecap="round"/>`
     : `<ellipse cx="22" cy="96" rx="9" ry="14" transform="rotate(30 22 96)" fill="${arm}"/><ellipse cx="98" cy="96" rx="9" ry="14" transform="rotate(-30 98 96)" fill="${arm}"/>`;
-  return `<svg class="mascot" viewBox="0 -4 120 128" aria-hidden="true">
+  return `<svg class="mascot${pet ? ' withpet' : ''}" viewBox="0 -4 ${pet ? 160 : 120} 128" aria-hidden="true">
     <ellipse cx="60" cy="118" rx="38" ry="5" fill="rgba(74,69,102,.12)"/>
     ${sp.back(body, arm)}${arms}
     <path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 C102 112 84 118 60 118 C36 118 18 112 18 92 Z" fill="${body}"/>
     <ellipse cx="60" cy="98" rx="26" ry="18" fill="${belly}"/>
     ${sp.skin ? sp.skin(body, arm) : ''}
+    ${bottom}
     ${coat}
     ${hands.map(([x, y]) => glove(x, y)).join('')}
     ${cheek}
     ${sp.face ? sp.face(body, arm) : ''}${eyes}
     <ellipse cx="60" cy="69" rx="5" ry="3.5" fill="#4a4566"/>${mouth}
     ${sp.front(body, arm)}${neck}${front}${hat}
+    ${pet ? `<ellipse cx="134" cy="118.5" rx="17" ry="3.5" fill="rgba(74,69,102,.12)"/><g class="pet"><g transform="translate(134 118) scale(1.2) translate(-132 -118)">${pet}</g></g>` : ''}
     ${mood === 'sleep' ? '<text x="92" y="30" font-size="16" font-weight="800" fill="#8a85a3">z</text><text x="102" y="18" font-size="12" font-weight="800" fill="#8a85a3">z</text>' : ''}
   </svg>`;
 }
@@ -986,7 +1020,7 @@ function renderResult(r){
 $('bQuit').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 波波的衣櫃 ---------- */
-const SLOTS = [['species','角色'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['eye','眼睛'],['color','顏色']];
+const SLOTS = [['species','角色'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['eye','眼睛'],['bottom','裙子・褲子'],['pet','寵物'],['color','顏色']];
 let trying = null, selId = null;
 function openShop(){ trying = Object.assign({}, state.outfit); selId = null; renderShop(); show('vShop'); }
 function renderShop(){
@@ -1011,7 +1045,7 @@ function renderShop(){
   else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = '「' + it.name + '」很適合波波喔！'; }
   else { b.disabled = true; b.textContent = '還差 ' + (it.price - state.coins) + ' 金幣'; $('shopMsg').textContent = '再去島上答對幾題，就能買「' + it.name + '」了。'; }
 }
-const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', color:'color_blue'};
+const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue'};
 $('shopList').addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
   selId = b.dataset.id; trying = Object.assign({}, state.outfit, {[state.shop[selId].slot]: selId}); renderShop();

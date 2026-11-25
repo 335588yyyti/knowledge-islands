@@ -43,6 +43,7 @@ const SHOP = {
   hat_grad: { slot: 'hat', name: '學士帽', price: 90 },
   hat_fedora: { slot: 'hat', name: '白色紳士帽', price: 70 },
   hat_fedora_black: { slot: 'hat', name: '黑色紳士帽', price: 70 },
+  hat_tophat: { slot: 'hat', name: '高禮帽', price: 90 },
   acc_lei: { slot: 'acc', name: '花圈', price: 45 },
   acc_headphones: { slot: 'acc', name: '耳機', price: 60 },
   color_coral: { slot: 'color', name: '珊瑚橘', price: 50 },
@@ -74,6 +75,27 @@ const SHOP = {
   sp_siamese: { slot: 'species', name: '暹羅貓', price: 80, stars: 40 },
   sp_scottish: { slot: 'species', name: '折耳貓', price: 80, stars: 40 },
   sp_persian: { slot: 'species', name: '波斯貓', price: 90, stars: 60 },
+  bottom_none: { slot: 'bottom', name: '不穿', price: 0 },
+  bottom_jeans: { slot: 'bottom', name: '牛仔短褲', price: 40 },
+  bottom_sport: { slot: 'bottom', name: '運動短褲', price: 40 },
+  bottom_pleat: { slot: 'bottom', name: '百褶裙', price: 40 },
+  bottom_flower: { slot: 'bottom', name: '碎花裙', price: 50 },
+  bottom_tutu: { slot: 'bottom', name: '蓬蓬裙', price: 50 },
+  bottom_plaid: { slot: 'bottom', name: '格子裙', price: 60 },
+  bottom_suspender: { slot: 'bottom', name: '吊帶褲', price: 60 },
+  bottom_grass: { slot: 'bottom', name: '草裙', price: 60 },
+  bottom_rainbow: { slot: 'bottom', name: '彩虹裙', price: 80, stars: 40 },
+  pet_none: { slot: 'pet', name: '不帶寵物', price: 0 },
+  pet_chick: { slot: 'pet', name: '小雞', price: 40 },
+  pet_hamster: { slot: 'pet', name: '倉鼠', price: 60 },
+  pet_turtle: { slot: 'pet', name: '小烏龜', price: 60 },
+  pet_fish: { slot: 'pet', name: '金魚缸', price: 60 },
+  pet_bunny: { slot: 'pet', name: '小白兔', price: 80 },
+  pet_kitten: { slot: 'pet', name: '小貓咪', price: 80 },
+  pet_puppy: { slot: 'pet', name: '小狗狗', price: 80 },
+  pet_owl: { slot: 'pet', name: '貓頭鷹', price: 100 },
+  pet_dragon: { slot: 'pet', name: '小飛龍', price: 150, stars: 80 },
+  pet_sprite: { slot: 'pet', name: '星星精靈', price: 150, stars: 150 },
   eye_dark: { slot: 'eye', name: '深紫黑', price: 0 },
   eye_brown: { slot: 'eye', name: '咖啡色', price: 4 },
   eye_blue: { slot: 'eye', name: '藍色', price: 4 },
@@ -109,7 +131,7 @@ const SHOP = {
   cheek_star: { slot: 'cheek', name: '星星腮紅', price: 40 },
   cheek_rainbow: { slot: 'cheek', name: '彩虹腮紅', price: 60 }
 };
-const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', color: 'color_blue' };
+const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue' };
 
 /**
  * 徽章：每一個都要做到一件有意義的事，而且只拿一次。
