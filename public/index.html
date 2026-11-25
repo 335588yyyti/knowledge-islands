@@ -428,7 +428,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 
       <h3>👕 第 7 站：波波的衣櫃</h3>
       <ul>
-        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>顏色</b>。</li>
+        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊、小狗、小豬、小老鼠、小青蛙、小老虎、貓熊、小恐龍，還有要 100 顆星星才能買的獨角獸）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>顏色</b>。</li>
         <li>腮紅基礎色一個只要 4 金幣，愛心、星星、彩虹等特別款比較貴。</li>
         <li><b>花掉金幣不會讓老師少加點！</b>老師看的是你「累積賺到」的金幣總數，不是剩下的。</li>
         <li><b>⭐ 星星特別款</b>：星星髮箍、星星魔杖、星夜藍，要先累積足夠的星星（20、60、120 顆）才能用金幣買。星星不會被花掉喔！</li>
@@ -572,6 +572,20 @@ const SPECIES = {
     front: () => '' },
   sp_fox: { back: c => `<path d="M98 104 Q122 92 114 66 Q104 84 92 92 Z" fill="${c}"/><path d="M114 66 Q118 76 112 82 Q108 74 114 66 Z" fill="#fff"/><path d="M22 58 L26 14 L54 38 Z" fill="${c}"/><path d="M26 22 L28 14 L34 20 Z" fill="#4a4566"/><path d="M98 58 L94 14 L66 38 Z" fill="${c}"/><path d="M94 22 L92 14 L86 20 Z" fill="#4a4566"/>`,
     front: () => '' },
+  sp_dog: { back: () => '', front: (c, a) => `<ellipse cx="24" cy="58" rx="9" ry="19" transform="rotate(18 24 58)" fill="${a}"/><ellipse cx="96" cy="58" rx="9" ry="19" transform="rotate(-18 96 58)" fill="${a}"/>` },
+  sp_pig: { back: c => `<path d="M30 46 L34 26 L50 38 Z" fill="${c}"/><path d="M34 40 L36 31 L44 38 Z" fill="#ffc7d2"/><path d="M90 46 L86 26 L70 38 Z" fill="${c}"/><path d="M86 40 L84 31 L76 38 Z" fill="#ffc7d2"/>`,
+    front: () => '<ellipse cx="60" cy="69" rx="9" ry="6.5" fill="#ffc7d2" stroke="#f2a7b7" stroke-width="2"/><ellipse cx="57" cy="69" rx="1.8" ry="2.4" fill="#c97b8b"/><ellipse cx="63" cy="69" rx="1.8" ry="2.4" fill="#c97b8b"/>' },
+  sp_mouse: { back: c => `<circle cx="28" cy="38" r="17" fill="${c}"/><circle cx="28" cy="38" r="10" fill="#ffc7d2"/><circle cx="92" cy="38" r="17" fill="${c}"/><circle cx="92" cy="38" r="10" fill="#ffc7d2"/>`,
+    front: () => '<path d="M30 71 L18 69 M30 75 L18 77 M90 71 L102 69 M90 75 L102 77" stroke="#4a4566" stroke-width="1.8" stroke-linecap="round" opacity=".6"/>' },
+  sp_frog: { back: c => `<circle cx="40" cy="38" r="13" fill="${c}"/><circle cx="80" cy="38" r="13" fill="${c}"/>`,
+    front: () => '<circle cx="40" cy="36" r="5" fill="#fff"/><circle cx="40" cy="36" r="2.5" fill="#4a4566"/><circle cx="80" cy="36" r="5" fill="#fff"/><circle cx="80" cy="36" r="2.5" fill="#4a4566"/>' },
+  sp_tiger: { back: c => `<circle cx="32" cy="42" r="11" fill="${c}"/><circle cx="32" cy="42" r="5" fill="#4a4566" opacity=".5"/><circle cx="88" cy="42" r="11" fill="${c}"/><circle cx="88" cy="42" r="5" fill="#4a4566" opacity=".5"/>`,
+    front: () => '<g stroke="#4a4566" stroke-width="3" stroke-linecap="round" opacity=".45" fill="none"><path d="M54 40 L56 48 M60 38 L60 47 M66 40 L64 48"/><path d="M20 80 L30 82 M20 90 L30 90 M100 80 L90 82 M100 90 L90 90"/></g>' },
+  sp_panda: { back: () => '<circle cx="32" cy="40" r="12" fill="#4a4566"/><circle cx="88" cy="40" r="12" fill="#4a4566"/>',
+    face: () => '<ellipse cx="45" cy="63" rx="9" ry="10" transform="rotate(-20 45 63)" fill="#6b6585"/><ellipse cx="75" cy="63" rx="9" ry="10" transform="rotate(20 75 63)" fill="#6b6585"/>', front: () => '' },
+  sp_dino: { back: (c, a) => '<g fill="' + a + '">' + [[30,52],[38,40],[48,32],[60,29],[72,32],[82,40],[90,52]].map(([x, y]) => `<path d="M${x - 6} ${y + 6} L${x} ${y - 8} L${x + 6} ${y + 6} Z"/>`).join('') + `</g><path d="M96 104 Q118 104 116 88 Q108 98 94 96 Z" fill="${c}"/>`, front: () => '' },
+  sp_unicorn: { back: () => '<g fill="none" stroke-width="5" stroke-linecap="round"><path d="M88 40 Q102 52 96 72" stroke="#ff8fa3"/><path d="M94 44 Q106 58 100 76" stroke="#ffd66b"/><path d="M84 38 Q96 48 92 66" stroke="#9ccfff"/></g>',
+    front: () => '<path d="M54 38 L60 8 L66 38 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width="2" stroke-linejoin="round"/><path d="M56 30 L64 27 M57 22 L63 19" stroke="#e6a92a" stroke-width="1.5"/>' },
   sp_sheep: { back: c => `<ellipse cx="18" cy="60" rx="11" ry="6" transform="rotate(20 18 60)" fill="${c}"/><ellipse cx="102" cy="60" rx="11" ry="6" transform="rotate(-20 102 60)" fill="${c}"/>`,
     front: () => '<g fill="#fff" stroke="#e3dfee" stroke-width="2">' + [[40,42,10],[50,34,11],[60,31,11],[70,34,11],[80,42,10]].map(([x,y,r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + '</g>' }
 };
@@ -627,15 +641,15 @@ function mascot(mood, outfit){
     : `<ellipse cx="22" cy="96" rx="9" ry="14" transform="rotate(30 22 96)" fill="${arm}"/><ellipse cx="98" cy="96" rx="9" ry="14" transform="rotate(-30 98 96)" fill="${arm}"/>`;
   return `<svg class="mascot" viewBox="0 -4 120 128" aria-hidden="true">
     <ellipse cx="60" cy="118" rx="38" ry="5" fill="rgba(74,69,102,.12)"/>
-    ${sp.back(body)}${arms}
+    ${sp.back(body, arm)}${arms}
     <path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 C102 112 84 118 60 118 C36 118 18 112 18 92 Z" fill="${body}"/>
     <ellipse cx="60" cy="98" rx="26" ry="18" fill="${belly}"/>
     ${coat}
     ${hands.map(([x, y]) => glove(x, y)).join('')}
     ${cheek}
-    ${eyes}
+    ${sp.face ? sp.face(body, arm) : ''}${eyes}
     <ellipse cx="60" cy="69" rx="5" ry="3.5" fill="#4a4566"/>${mouth}
-    ${sp.front(body)}${neck}${front}${hat}
+    ${sp.front(body, arm)}${neck}${front}${hat}
     ${mood === 'sleep' ? '<text x="92" y="30" font-size="16" font-weight="800" fill="#8a85a3">z</text><text x="102" y="18" font-size="12" font-weight="800" fill="#8a85a3">z</text>' : ''}
   </svg>`;
 }
