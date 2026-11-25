@@ -453,7 +453,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li><b>⭐ 星星特別款</b>：星星髮箍、星星手套、星星魔杖、星空斗篷、星夜藍、星星眼（30 顆）、彩虹裙（40 顆）、所有寵物（小雞 10 顆～星星精靈 150 顆；新寵物：小海鷗、寄居蟹 20 顆，小章魚 40 顆，小燈籠魚 60 顆）、獨角獸，還有所有品種狗和品種貓（柴犬、哈士奇、吉娃娃、虎斑貓 20 顆；大麥町、柯基、貴賓狗、雪納瑞、三花貓、暹羅貓、折耳貓 40 顆；波斯貓 60 顆），要先累積足夠的星星才能用金幣買。星星不會被花掉喔！</li>
         <li><b>👑 高級款</b>：要<b>星星和徽章數量都夠，還要拿到指定的徽章</b>才能買，星星和徽章都不會被花掉：銀河眼（⭐100＋🏅10＋閱讀偵探）、黃金手套（⭐100＋🏅10＋救援隊長）、國王披風（⭐120＋🏅12＋森林守護者）、公主禮服裙（⭐120＋🏅12＋全勤一週）、寶石皇冠（⭐150＋🏅15＋知識森林）、雲朵小鯨魚（⭐200＋🏅15＋穩定航行）、小龍（⭐250＋🏅18＋航海王）、小鳳凰（⭐300＋🏅20＋越挫越勇）。老師頒發的徽章也算在裡面！</li>
         <li><b>🎽 套裝</b>：運動明星（⭐50＋🏅5＋百發百中）、海上船長（⭐60＋🏅6＋一週不間斷）、太空人（⭐80＋🏅8＋五島通航）、魔法學院（⭐100＋🏅10＋觀念突破）。星星和徽章夠了就能<b>整套買，還沒有的單品打 8 折</b>。也可以先一件一件<b>單買</b>，不用徽章；只有每套的<b>關鍵物品 🔑</b>（冠軍獎盃、船長帽、太空頭盔、星空魔法袍）要星星＋徽章＋指定徽章才能買。</li>
-        <li><b>🔥 限定特價與每週新品</b>：11/26～11/28 衣櫃全部特價！之後恢復原價，新品改成<b>每週一上架</b>，上架後特價 3 天。衣櫃裡標 🔜 的是下週新品，可以先試穿。買到的東西永遠是你的。</li>
+        <li><b>🔥 限定特價與每週新品</b>：11/26（四）早上 8 點～11/29（日）早上 8 點衣櫃全部特價！之後恢復原價，新品改成<b>每週一早上 8 點上架</b>，上架後特價 3 天。衣櫃裡標 🔜 的是下週新品，可以先試穿。買到的東西永遠是你的。</li>
         <li><b>🐰 耳朵顏色</b>：小兔、小狗、大麥町、吉娃娃、柯基、小狐狸可以換耳朵顏色。<b>🍿 娃娃裝</b>：穿上會蓋住外套和裙子・褲子。</li>
         <li><b>🎖️ 徽章限定款</b>：拿到指定的徽章就能用金幣買——偵探帽（題目偵探，80 金幣）、救生圈（救援英雄，100 金幣）、金色船舵（航海王，120 金幣）、五島旗（五島通航，120 金幣）。另有星星皇冠（⭐60，100 金幣）、恐龍帽（70 金幣）。</li>
       </ul>
@@ -888,9 +888,9 @@ function sparkle(el){
 const NEWS = {
   ver: 'launch-2026-11-26',
   // 每一段：標題、項目（圖示、標題、說明）；brief 的段落每項只顯示一行
-  sections: [{ title: '🔥 限定特價 3 天：11/26～11/28', items: [
+  sections: [{ title: '🔥 限定特價 3 天：11/26（四）早上 8 點～11/29（日）早上 8 點', items: [
     ['🛍️', '衣櫃全部開放', '角色、帽子、配件、外套、手套、腮紅、眼睛、裙子・褲子、寵物、背景、耳朵顏色、娃娃裝……這 3 天全部用特價買得到！'],
-    ['📈', '11/29 起恢復原價', '大部分是現在的 2 倍，最貴的是 1.5 倍。買到的東西永遠是你的。'],
+    ['📈', '11/29 早上 8 點起恢復原價', '大部分是現在的 2 倍，最貴的是 1.5 倍。買到的東西永遠是你的。'],
     ['🗓️', '之後每週一上架新品', '特價結束後，衣櫃先收起來一部分，每週一上架一批，新品也特價 3 天。衣櫃裡會預告下週的新品，可以先試穿；之後每週上什麼，衣櫃最上面的「📅 上架行事曆」寫給你看。']
   ] }, { title: '✨ 衣櫃新東西', brief: true, items: [
     ['🐰', '耳朵換色', '小兔、小狗、大麥町、吉娃娃、柯基、小狐狸可以換耳朵顏色，還有彩虹耳朵。'],
@@ -910,13 +910,14 @@ const NEWS = {
 function dropNews(){
   const f = state && state.shopInfo, d = f && f.lastDrop;
   if (!d) return null;
-  const secs = [{ title: '🆕 本週新品：' + d.name, items: [['🛍️', md(d.day) + '上架', d.items.join('、') + '。上架後特價 3 天，到 ' + md(f.drop ? f.drop.last : d.day) + '！']] }];
+  const secs = [{ title: '🆕 本週新品：' + d.name, items: [['🛍️', md(d.day) + '上架', d.items.join('、') + '。上架後特價 3 天，到 ' + md(f.drop ? f.drop.end : d.day) + '早上 8 點！']] }];
   if (f.next) secs.push({ title: '🔜 下週預告', brief: true, items: [['🗓️', md(f.next.day) + '「' + f.next.name + '」', '衣櫃裡標 🔜 的可以先試穿。']] });
   return { ver: 'drop:' + d.day, sections: secs };
 }
 /** 還沒看過的公告：先看特價公告，再看本週新品 */
 function pendingNews(){
   const seen = (state && state.newsSeen) || '';
+  if (state && state.shopInfo && state.shopInfo.beforeLaunch) return null;  // 特價開始（早上 8 點）前先不跳公告
   if (seen !== NEWS.ver && !seen.startsWith('drop:')) return NEWS;
   const dn = dropNews();
   return dn && seen !== dn.ver ? dn : null;
@@ -1196,9 +1197,9 @@ function shopBoard(){
   const f = state.shopInfo; if (!f) return '';
   const rows = [];
   if (state.isTest) rows.push('🧪 <b>測試帳號</b>：金幣、星星、徽章都不限，還沒上架的新品也能先拿來穿。');
-  if (f.beforeLaunch) rows.push(`🔥 <b>${md(f.launch)}起限定特價 3 天！</b>衣櫃全部開放。`);
-  if (f.inLaunch) rows.push(`🔥 <b>限定特價中，還剩 ${daysLeft(f.saleLast)} 天！</b>衣櫃全部開放，到 ${md(f.saleLast)}為止。之後恢復原價，新品改成每週一上架（買到的永遠是你的）。`);
-  if (f.drop) rows.push(`🆕 <b>本週新品「${esc(f.drop.name)}」</b>特價到 ${md(f.drop.last)}。`);
+  if (f.beforeLaunch) rows.push(`🔥 <b>${md(f.launch)}早上 8 點起限定特價 3 天！</b>`);
+  if (f.inLaunch) rows.push(`🔥 <b>限定特價中，還剩 ${daysLeft(f.saleEnd) - 1} 天！</b>衣櫃全部開放，到 ${md(f.saleEnd)}早上 8 點為止。之後恢復原價，新品改成每週一上架（買到的永遠是你的）。`);
+  if (f.drop) rows.push(`🆕 <b>本週新品「${esc(f.drop.name)}」</b>特價到 ${md(f.drop.end)}早上 8 點。`);
   if (f.next && !f.inLaunch && !f.beforeLaunch) rows.push(`🔜 <b>${md(f.next.day)}上架「${esc(f.next.name)}」</b>：下面標 🔜 的可以先試穿，還不能買。`);
   // 上架行事曆：只用文字列出之後每週的新品，圖片和試穿只開放下一週
   if ((f.schedule || []).length) rows.push(`<details class="sched"><summary>📅 <b>上架行事曆</b>：接下來每週一上架什麼（點開看）</summary><ul>` + f.schedule.map((w, i) => `<li><b>${md(w.day)}「${esc(w.name)}」</b>${i === 0 && !f.inLaunch && !f.beforeLaunch ? '（下面標 🔜 的可以先試穿）' : ''}：${w.items.map(esc).join('、')}</li>`).join('') + '</ul></details>');
@@ -1253,7 +1254,7 @@ function renderShop(){
       : it.need && !it.stars
       ? '「' + it.name + '」是徽章限定款：' + reqText(it) + '就能用金幣買。'
       : '「' + it.name + '」是星星特別款：' + reqText(it) + '就能買（星星不會被花掉）。每次過關得 1 顆星星，一天最多 ' + (state.starMax || 5) + ' 顆喔！'; }
-  else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = it.was ? '「' + it.name + '」限定特價 ' + it.price + ' 金幣（原價 ' + it.was + '），特價到 ' + md(it.saleEnd) + '！' : '「' + it.name + '」很適合波波喔！'; }
+  else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = it.was ? '「' + it.name + '」限定特價 ' + it.price + ' 金幣（原價 ' + it.was + '），特價到 ' + md(it.saleEnd) + '早上 8 點！' : '「' + it.name + '」很適合波波喔！'; }
   else { b.disabled = true; b.textContent = '還差 ' + (it.price - state.coins) + ' 金幣'; $('shopMsg').textContent = '再去島上答對幾題，就能買「' + it.name + '」了。'; }
 }
 const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue', bg:'bg_none', ear:'ear_same', doll:'doll_none'};

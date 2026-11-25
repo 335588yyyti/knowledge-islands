@@ -231,8 +231,9 @@ function regularPrice(id) {
   if (p === 4) return KEEP4.has(id) ? 4 : 10;
   return p <= 150 ? p * 2 : Math.round(p * 1.5 / 5) * 5;
 }
-/** 衣櫃用的日期（測試可以用 SHOP_DAY 固定）；特價開始日可以用 SALE_LAUNCH 改 */
-const shopDay = ctx => (ctx.env && ctx.env.SHOP_DAY) || today();
+/** 衣櫃的「一天」從臺灣時間早上 8 點開始（特價、上架都在早上 8 點切換），也就是 UTC 的日期。
+ * 測試可以用 SHOP_DAY 固定；特價開始日可以用 SALE_LAUNCH 改 */
+const shopDay = ctx => (ctx.env && ctx.env.SHOP_DAY) || new Date().toISOString().slice(0, 10);
 const launchDay = ctx => (ctx.env && ctx.env.SALE_LAUNCH) || LAUNCH_DAY;
 /** 特價結束後的第一天 */
 const saleOver = ctx => addDays(launchDay(ctx), SALE_DAYS);
@@ -248,12 +249,14 @@ function lastDrop(ctx, day) {
   const d = Object.keys(DROPS).sort().filter(x => x <= day && x >= saleOver(ctx)).pop();
   return d ? { day: d, name: DROPS[d].name, items: DROPS[d].items } : null;
 }
-/** 這一天的價格：price 現在的價格、was 原價（特價中才有）、saleEnd 特價最後一天、soon 預告的上架日 */
+/** 這一天的價格：price 現在的價格、was 原價（特價中才有）、saleEnd 特價結束那天（早上 8 點結束）、soon 預告的上架日
+ * 特價開始前維持原本的價格，不先漲價 */
 function priceInfo(ctx, id, day) {
   const reg = regularPrice(id), L = launchDay(ctx), D = DROP_OF[id];
   const inLaunch = day >= L && day < saleOver(ctx), inDrop = !!D && day >= D && day < addDays(D, SALE_DAYS);
   const sale = (inLaunch || inDrop) && SHOP[id].price < reg;
-  const end = inDrop ? addDays(D, SALE_DAYS - 1) : addDays(saleOver(ctx), -1);
+  const end = inDrop ? addDays(D, SALE_DAYS) : saleOver(ctx);
+  if (day < L) return { price: SHOP[id].price, was: 0, saleEnd: '', soon: '' };
   return { price: sale ? SHOP[id].price : reg, was: sale ? reg : 0, saleEnd: sale ? end : '', soon: onShelf(ctx, id, day) ? '' : D };
 }
 /** 給學生看的衣櫃：買得到的、自己已經有的、下一週的預告 */
@@ -272,8 +275,8 @@ const setsView = (ctx, isTest) => Object.fromEntries(Object.entries(SETS).filter
 function shopInfo(ctx) {
   const day = shopDay(ctx), L = launchDay(ctx), over = saleOver(ctx);
   const ld = lastDrop(ctx, day), nx = nextDrop(ctx, day);
-  return { day, launch: L, saleLast: addDays(over, -1), inLaunch: day >= L && day < over, beforeLaunch: day < L,
-    drop: ld && day < addDays(ld.day, SALE_DAYS) ? { day: ld.day, name: ld.name, last: addDays(ld.day, SALE_DAYS - 1), items: ld.items.map(x => SHOP[x].name) } : null,
+  return { day, launch: L, saleEnd: over, inLaunch: day >= L && day < over, beforeLaunch: day < L,
+    drop: ld && day < addDays(ld.day, SALE_DAYS) ? { day: ld.day, name: ld.name, end: addDays(ld.day, SALE_DAYS), items: ld.items.map(x => SHOP[x].name) } : null,
     lastDrop: ld ? { day: ld.day, name: ld.name, items: ld.items.map(x => SHOP[x].name) } : null,
     next: nx ? { day: nx.day, name: nx.name, items: nx.items.map(x => SHOP[x].name) } : null,
     // 上架行事曆：之後每一週上什麼（只給文字，不給圖）
