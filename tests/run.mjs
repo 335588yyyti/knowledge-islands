@@ -139,6 +139,9 @@ try {
     assert.equal(Number(await s.textContent('#shopCoins')), coins - 20);
     await s.click('.item[data-id="hat_sailor"]'); await s.click('#bShopAct');
     await s.waitForFunction(() => document.querySelector('#shopMsg').textContent.includes('換好了'));
+    // 背景：新的欄位，試穿時舞台上看得到；還沒買的不能穿
+    await s.click('.item[data-id="bg_beach"]'); assert.ok(await s.locator('#shopStage clipPath').count() >= 1, '試穿背景沒有畫出來');
+    assert.equal((await call('setOutfit', { code: 'DEMO', seat: 1, pin: '1234' }, { bg: 'bg_beach' })).ok.outfit.bg, 'bg_none');
     await s.click('#bShopBack');
   });
 
@@ -369,7 +372,7 @@ try {
     assert.ok(r.badges.some(b => b.id === 'exam'));
     const st = (await call('studentLogin', c4)).ok;
     assert.ok(st.badges.includes('comeback') && st.badges.includes('exam'));
-    assert.equal(st.badgeList.length, 46);
+    assert.equal(st.badgeList.length, 55);
     const d = (await call('tDashboard', PW, 'DEMO')).ok.students.find(x => x.seat === 3);
     assert.ok(d.badges.length >= 2);
   });
@@ -381,7 +384,7 @@ try {
     await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
     assert.ok(await p.locator('.bcard.got').count() >= 2);
-    assert.equal(await p.locator('.bcard').count(), 26);  // 46 個徽章，系列合成一張卡片後是 26 張
+    assert.equal(await p.locator('.bcard').count(), 29);  // 55 個徽章，系列合成一張卡片後是 29 張
     assert.ok(await p.locator('.bcard.series .pips i.on').count() >= 1);
     // 點徽章跳出說明，系列徽章列出每一階
     await p.click('.bcard.series.got'); await p.waitForSelector('.bpop');
@@ -433,7 +436,7 @@ try {
   });
   await step('徽章排行榜：只比徽章數，老師可以關掉', async () => {
     const r = (await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
-    assert.equal(r.total, 46);
+    assert.equal(r.total, 55);
     assert.ok(r.rows.some(x => x.me));
     assert.ok(r.rows.every((x, i) => i === 0 || r.rows[i - 1].n >= x.n));
     const p = await page('/?c=DEMO');
@@ -462,7 +465,7 @@ try {
     const st = (await call('studentLogin', { code: 'DEMO', seat: 3, pin: '3333' })).ok;
     const cid = st.badges.find(x => x.startsWith('c:'));
     assert.ok(cid); assert.equal(st.badgeNotes[cid], '幫忙整理圖書角');
-    assert.equal(st.badgeList.length, 47);
+    assert.equal(st.badgeList.length, 56);
     const p = await page('/?c=DEMO');
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');

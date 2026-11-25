@@ -46,6 +46,8 @@ const SHOP = {
   hat_tophat: { slot: 'hat', name: '高禮帽', price: 90 },
   acc_lei: { slot: 'acc', name: '花圈', price: 45 },
   acc_headphones: { slot: 'acc', name: '耳機', price: 60 },
+  acc_scope: { slot: 'acc', name: '望遠鏡', price: 50 },
+  acc_backpack: { slot: 'acc', name: '探險背包', price: 60 },
   color_coral: { slot: 'color', name: '珊瑚橘', price: 50 },
   color_cloud: { slot: 'color', name: '雲朵灰', price: 50 },
   // 角色：換成其他動物（顏色跟著「顏色」走）
@@ -96,6 +98,10 @@ const SHOP = {
   pet_owl: { slot: 'pet', name: '貓頭鷹', price: 100, stars: 60 },
   pet_dragon: { slot: 'pet', name: '小飛龍', price: 150, stars: 80 },
   pet_sprite: { slot: 'pet', name: '星星精靈', price: 150, stars: 150 },
+  pet_gull: { slot: 'pet', name: '小海鷗', price: 60, stars: 20 },
+  pet_crab: { slot: 'pet', name: '寄居蟹', price: 60, stars: 20 },
+  pet_octo: { slot: 'pet', name: '小章魚', price: 80, stars: 40 },
+  pet_lantern: { slot: 'pet', name: '小燈籠魚', price: 100, stars: 60 },
   /* 高級款：要星星＋徽章（徽章數，老師頒發的也算）才能買 */
   hat_royal: { slot: 'hat', name: '寶石皇冠', price: 300, stars: 150, badges: 15 },
   coat_royal: { slot: 'coat', name: '國王披風', price: 300, stars: 120, badges: 12 },
@@ -139,6 +145,7 @@ const SHOP = {
   coat_down: { slot: 'coat', name: '羽絨外套', price: 60 },
   coat_team: { slot: 'coat', name: '校隊外套', price: 70 },
   coat_cape: { slot: 'coat', name: '星空斗篷', price: 90, stars: 80 },
+  coat_rainbow: { slot: 'coat', name: '彩虹披風', price: 250 },  // 高價長期目標：只要金幣
   // 手套
   glove_none: { slot: 'glove', name: '不戴手套', price: 0 },
   glove_white: { slot: 'glove', name: '白手套', price: 20 },
@@ -154,7 +161,13 @@ const SHOP = {
   cheek_shy: { slot: 'cheek', name: '害羞大腮紅', price: 20 },
   cheek_heart: { slot: 'cheek', name: '愛心腮紅', price: 30 },
   cheek_star: { slot: 'cheek', name: '星星腮紅', price: 40 },
-  cheek_rainbow: { slot: 'cheek', name: '彩虹腮紅', price: 60 }
+  cheek_rainbow: { slot: 'cheek', name: '彩虹腮紅', price: 60 },
+  // 背景：畫在波波後面
+  bg_none: { slot: 'bg', name: '不用背景', price: 0 },
+  bg_beach: { slot: 'bg', name: '晴天海灘', price: 40 },
+  bg_reef: { slot: 'bg', name: '珊瑚礁', price: 60 },
+  bg_stars: { slot: 'bg', name: '星空', price: 60 },
+  bg_lighthouse: { slot: 'bg', name: '燈塔夜景', price: 80 }
 };
 /* 套裝：要先達到關鍵物品的星星＋徽章才能整套買；整套買時，還沒有的單品打 8 折 */
 const SETS = {
@@ -165,7 +178,7 @@ const SETS = {
 };
 const setPrice = (set, have) => Math.round(set.items.filter(x => !have.includes(x)).reduce((a, x) => a + SHOP[x].price, 0) * 0.8);
 const badgeCount = async (ctx, cls, s) => (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
-const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue' };
+const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue', bg: 'bg_none' };
 
 /**
  * 徽章：每一個都要做到一件有意義的事，而且只拿一次。
@@ -178,9 +191,11 @@ const BADGES = [
   { id: 'streak7', series: 'streak', tier: 2, group: '好習慣', icon: '🔥', name: '一週不間斷', desc: '連續 7 天拿到今日印章' },
   { id: 'streak14', series: 'streak', tier: 3, group: '好習慣', icon: '⛵', name: '穩定航行', desc: '連續 14 天拿到今日印章' },
   { id: 'streak30', series: 'streak', tier: 4, group: '好習慣', icon: '👑', name: '航海王', desc: '連續 30 天拿到今日印章' },
+  { id: 'streak60', series: 'streak', tier: 5, group: '好習慣', icon: '🌊', name: '乘風破浪', desc: '連續 60 天拿到今日印章' },
   { id: 'days10', series: 'days', tier: 1, group: '好習慣', icon: '📅', name: '十日水手', desc: '累積 10 天拿到今日印章' },
   { id: 'days30', series: 'days', tier: 2, group: '好習慣', icon: '📅', name: '三十日水手', desc: '累積 30 天拿到今日印章' },
   { id: 'days60', series: 'days', tier: 3, group: '好習慣', icon: '🧭', name: '老練水手', desc: '累積 60 天拿到今日印章' },
+  { id: 'days100', series: 'days', tier: 4, group: '好習慣', icon: '🏝️', name: '百日水手', desc: '累積 100 天拿到今日印章' },
   { id: 'week5', group: '好習慣', icon: '🗓️', name: '全勤一週', desc: '同一週的週一到週五都拿到今日印章' },
   { id: 'month15', group: '好習慣', icon: '🌙', name: '月月有你', desc: '同一個月有 15 天拿到今日印章' },
   // 精熟
@@ -197,7 +212,9 @@ const BADGES = [
   { id: 'master50', series: 'master', tier: 6, group: '精熟', icon: '🌍', name: '知識大陸', desc: '精熟 50 個單元' },
   { id: 'climb', group: '精熟', icon: '👣', name: '一步一腳印', desc: '一個曾經答錯過的單元，一路練到精熟' },
   { id: 'longmem1', series: 'longmem', tier: 1, group: '精熟', icon: '🧠', name: '長期記憶', desc: '一題隔了 21 天以上再答，還是答對' },
-  { id: 'longmem30', series: 'longmem', tier: 2, group: '精熟', icon: '🧠', name: '記憶大師', desc: '隔了 21 天以上再答還答對的題目，累積 30 題' },
+  { id: 'longmem10', series: 'longmem', tier: 2, group: '精熟', icon: '🧠', name: '記憶小達人', desc: '隔了 21 天以上再答還答對的題目，累積 10 題' },
+  { id: 'longmem30', series: 'longmem', tier: 3, group: '精熟', icon: '🧠', name: '記憶大師', desc: '隔了 21 天以上再答還答對的題目，累積 30 題' },
+  { id: 'unitperfect', group: '精熟', icon: '💯', name: '完美單元', desc: '一個單元的每一題都記住了（那個單元要有 5 題以上，素養題組不算）' },
   { id: 'isle_國語', group: '精熟', icon: '📜', name: '國語島主', desc: '國語島開放的單元全部精熟（至少 2 個單元）' },
   { id: 'isle_數學', group: '精熟', icon: '📐', name: '數學島主', desc: '數學島開放的單元全部精熟（至少 2 個單元）' },
   { id: 'isle_自然', group: '精熟', icon: '🔬', name: '自然島主', desc: '自然島開放的單元全部精熟（至少 2 個單元）' },
@@ -208,6 +225,7 @@ const BADGES = [
   { id: 'rescue10', series: 'rescue', tier: 1, group: '成長', icon: '🛟', name: '救援小隊', desc: '把 10 題答錯過的題目重新答對' },
   { id: 'rescue50', series: 'rescue', tier: 2, group: '成長', icon: '🚁', name: '救援隊長', desc: '把 50 題答錯過的題目重新答對' },
   { id: 'rescue100', series: 'rescue', tier: 3, group: '成長', icon: '🦸', name: '救援英雄', desc: '把 100 題答錯過的題目重新答對' },
+  { id: 'rescue200', series: 'rescue', tier: 4, group: '成長', icon: '🏅', name: '救援傳奇', desc: '把 200 題答錯過的題目重新答對' },
   { id: 'clearwrong', group: '成長', icon: '🧹', name: '錯題清零', desc: '錯題礁有 5 題以上時，全部救回來變成 0 題' },
   { id: 'concept', group: '成長', icon: '💡', name: '觀念突破', desc: '一個答錯過 3 次以上的觀念，後來連續答對 5 題' },
   { id: 'comeback', group: '成長', icon: '💪', name: '越挫越勇', desc: '同一天沒過關之後，再挑戰並過關' },
@@ -217,10 +235,14 @@ const BADGES = [
   { id: 'reader30', series: 'reader', tier: 2, group: '挑戰', icon: '🔎', name: '情境高手', desc: '答對 30 題素養題' },
   { id: 'reader60', series: 'reader', tier: 3, group: '挑戰', icon: '📚', name: '素養達人', desc: '答對 60 題素養題' },
   { id: 'groupall', group: '挑戰', icon: '🧩', name: '題組全對', desc: '一組素養題組（3 題以上）每一題都答對' },
+  { id: 'litfive', group: '挑戰', icon: '🌺', name: '素養五島', desc: '五科的素養島，都至少有一組題組每一題最近一次都答對' },
+  { id: 'explorer5', series: 'explorer', tier: 1, group: '挑戰', icon: '🔭', name: '小小探險家', desc: '完成 5 個延伸冒險' },
+  { id: 'explorer15', series: 'explorer', tier: 2, group: '挑戰', icon: '🏕️', name: '探險隊長', desc: '完成 15 個延伸冒險' },
   { id: 'perfect', group: '挑戰', icon: '🎯', name: '百發百中', desc: '一整回合每一題都答對（那一回合要有 8 題以上）' },
   { id: 'lighthouse', group: '挑戰', icon: '🗼', name: '燈塔全對', desc: '燈塔挑戰一整回合每一題都答對，一題都沒錯（那一回合要有 5 題以上）' },
   { id: 'exam', group: '挑戰', icon: '🚩', name: '備戰完成', desc: '在段考衝刺島過關' },
-  { id: 'prepared', group: '挑戰', icon: '🎒', name: '有備而來', desc: '段考前，考試範圍有 7 成題目最近一次答對' },
+  { id: 'prepared', series: 'prepared', tier: 1, group: '挑戰', icon: '🎒', name: '有備而來', desc: '段考前，考試範圍有 7 成題目最近一次答對' },
+  { id: 'prepared90', series: 'prepared', tier: 2, group: '挑戰', icon: '🎓', name: '滿分準備', desc: '段考前，考試範圍有 9 成題目最近一次答對' },
   // AI 素養
   { id: 'detective1', series: 'detective', tier: 1, group: 'AI 素養', icon: '🕵️', name: '題目偵探', desc: '回報的題目被老師確認真的有問題（老師修改或停用了那題）' },
   { id: 'detective3', series: 'detective', tier: 2, group: 'AI 素養', icon: '🔍', name: '細心查證員', desc: '被老師確認的回報累積 3 次' }
@@ -486,7 +508,7 @@ async function state(ctx, cls, s) {
   SUBJECTS.forEach(sj => islands[sj] = { total: 0, mastered: 0, practice: 0, lit: 0 });
   // 素養島：有閱讀情境的題組集中在這裡，依科目分開
   const literacy = {}, litSets = {};
-  SUBJECTS.forEach(sj => { literacy[sj] = { groups: 0, total: 0, mastered: 0 }; litSets[sj] = new Set(); });
+  SUBJECTS.forEach(sj => { literacy[sj] = { groups: 0, total: 0, mastered: 0, allRight: 0 }; litSets[sj] = new Set(); });
   let wrong = 0;
   pool.forEach(q => {
     const h = hist[q.id];
@@ -497,6 +519,10 @@ async function state(ctx, cls, s) {
     if (h && !h.last) wrong++;
   });
   SUBJECTS.forEach(sj => literacy[sj].groups = litSets[sj].size);
+  // 每一組題組：每一題最近一次都答對（素養五島徽章用）
+  const grpOk = {};
+  pool.forEach(q => { if (!q.passage || !literacy[q.subject]) return; const k = q.subject + '\u0001' + q.passage, h = hist[q.id]; grpOk[k] = (grpOk[k] ?? true) && !!h && h.last; });
+  Object.keys(grpOk).forEach(k => { if (grpOk[k]) literacy[k.split('\u0001')[0]].allRight++; });
   let ex = exam(cls);
   if (ex) {
     const ep = await poolFor(ctx, ex.units);
@@ -590,11 +616,12 @@ async function customBadges(ctx) {
 /** 檢查並頒發徽章，回傳這次新拿到的 */
 async function awardBadges(ctx, cls, s, st, ev) {
   const have = new Set(st.badges || []);
-  const [m, det] = await Promise.all([
+  const [m, det, lk] = await Promise.all([
     ctx.first('SELECT COUNT(*) AS n FROM mastery WHERE class_code = ? AND seat = ?', cls.code, s.seat),
-    ctx.first("SELECT COUNT(DISTINCT qid) AS n FROM reports WHERE class_code = ? AND seat = ? AND status = 'confirmed'", cls.code, s.seat)
+    ctx.first("SELECT COUNT(DISTINCT qid) AS n FROM reports WHERE class_code = ? AND seat = ? AND status = 'confirmed'", cls.code, s.seat),
+    ctx.first('SELECT COUNT(*) AS n FROM link_done WHERE class_code = ? AND seat = ?', cls.code, s.seat)
   ]);
-  const mastered = m.n, detective = det.n;
+  const mastered = m.n, detective = det.n, explored = lk.n;
   const subj = sj => st.units.filter(u => u.subject === sj);
   // 拿到今日印章的日期：同一週週一到週五、同一個月 15 天
   const days = new Set(jsonp(s.stamp_days, []));
@@ -605,14 +632,17 @@ async function awardBadges(ctx, cls, s, st, ev) {
   const ex = st.exam;
   const cond = {
     star10: s.stars >= 10, star50: s.stars >= 50, star100: s.stars >= 100, star300: s.stars >= 300, star500: s.stars >= 500,
-    streak3: s.streak >= 3, streak7: s.streak >= 7, streak14: s.streak >= 14, streak30: s.streak >= 30,
-    days10: s.stamps >= 10, days30: s.stamps >= 30, days60: s.stamps >= 60, week5, month15,
+    streak3: s.streak >= 3, streak7: s.streak >= 7, streak14: s.streak >= 14, streak30: s.streak >= 30, streak60: s.streak >= 60,
+    days10: s.stamps >= 10, days30: s.stamps >= 30, days60: s.stamps >= 60, days100: s.stamps >= 100, week5, month15,
     master1: mastered >= 1, master5: mastered >= 5, master10: mastered >= 10, master20: mastered >= 20, master30: mastered >= 30, master50: mastered >= 50,
-    longmem1: s.longmem >= 1, longmem30: s.longmem >= 30,
+    longmem1: s.longmem >= 1, longmem10: s.longmem >= 10, longmem30: s.longmem >= 30,
+    unitperfect: st.units.some(u => u.total >= 5 && u.remembered === u.total),
     allfive: SUBJECTS.every(sj => subj(sj).some(u => u.level === MASTER)),
-    rescue10: s.rescued >= 10, rescue50: s.rescued >= 50, rescue100: s.rescued >= 100,
+    rescue10: s.rescued >= 10, rescue50: s.rescued >= 50, rescue100: s.rescued >= 100, rescue200: s.rescued >= 200,
     reader10: s.passage_right >= 10, reader30: s.passage_right >= 30, reader60: s.passage_right >= 60,
-    prepared: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.7,
+    prepared: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.7, prepared90: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.9,
+    litfive: SUBJECTS.every(sj => st.literacy && st.literacy[sj] && st.literacy[sj].allRight >= 1),
+    explorer5: explored >= 5, explorer15: explored >= 15,
     detective1: detective >= 1, detective3: detective >= 3,
     comeback: !!ev.comeback, review: !!ev.review, perfect: !!ev.perfect, exam: !!ev.exam,
     climb: !!ev.climb, clearwrong: !!ev.clearwrong, concept: !!ev.concept, groupall: !!ev.groupall, lighthouse: !!ev.lighthouse
@@ -736,6 +766,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
       ON CONFLICT(class_code, qid) DO UPDATE SET right = right + excluded.right, total = total + 1`, cls.code, q.id, ok ? 1 : 0));
   });
   const total = seen.size;
+  if (total) stmts.push(ctx.stmt('INSERT OR IGNORE INTO play_days (class_code, seat, day) VALUES (?,?,?)', cls.code, s.seat, day));
   if (!total) fail('沒有收到作答。');
   const passed = correct / total >= (num(set.pass_ratio) || 0.7);
   let gotStamp = false;
@@ -913,7 +944,7 @@ API.tDashboard = async (ctx, pw, code) => {
   const week = new Date(Date.now() + 8 * 3600e3 - 6 * 864e5).toISOString().slice(0, 10);
   const [students, days, stats, wrongRows, mPend, b] = await Promise.all([
     ctx.all('SELECT * FROM students WHERE class_code = ? ORDER BY seat', cls.code),
-    ctx.all('SELECT seat, COUNT(DISTINCT day) AS n FROM logs WHERE class_code = ? AND day >= ? GROUP BY seat', cls.code, week),
+    ctx.all('SELECT seat, COUNT(*) AS n FROM play_days WHERE class_code = ? AND day >= ? GROUP BY seat', cls.code, week),
     ctx.all('SELECT qid, right, total FROM qstats WHERE class_code = ?', cls.code),
     ctx.all('SELECT seat, qid FROM progress WHERE class_code = ? AND last_ok = 0', cls.code),
     ctx.all('SELECT seat, COUNT(*) AS n FROM mastery WHERE class_code = ? AND redeemed = 0 GROUP BY seat', cls.code),
