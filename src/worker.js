@@ -334,11 +334,15 @@ async function checkNeed(ctx, cls, s, item, label) {
  *   每日任務：每個主力科目各過關 1 回合，額外得 FOCUS_BONUS 金幣，累積天數算「國數雙修」徽章；
  *   focus_stamp 開著時，今日印章只在主力島過關才拿得到。
  * 算「在主力島過關」的島：主力科目的科目島、該科的單課練習、該科的素養島（素養:國語 這種）。 */
-const FOCUS_RATE = 1.5, FOCUS_LIT_RATE = 2, FOCUS_BONUS = 5;  // 主力科目的素養題（有情境的題組）2 倍
+const FOCUS_RATE = 1.5, FOCUS_LIT_RATE = 2, FOCUS_BONUS = 5;
+/* 考試範圍為主：老師設定考試（名稱、日期、範圍）時，範圍外的題目金幣乘上 outside_rate（預設 0.5，老師可以改）；
+ * 印章、每日任務、精熟照算。段考衝刺島在考前 EXAM_BOOST_DAYS 天內，題目至少有主力島的金幣加成。 */
+const OUTSIDE_RATE = 0.5, EXAM_BOOST_DAYS = 14;  // 主力科目的素養題（有情境的題組）2 倍
 async function focusConf(ctx) {
   const set = await ctx.settings();
   const subj = jsonp(set.focus_subjects, null);
-  return { subjects: Array.isArray(subj) ? subj.filter(x => SUBJECTS.includes(x)) : ['國語', '數學'], stamp: set.focus_stamp !== '0' };
+  const out = set.outside_rate === undefined || set.outside_rate === '' ? OUTSIDE_RATE : Math.min(1, Math.max(0, num(set.outside_rate)));
+  return { subjects: Array.isArray(subj) ? subj.filter(x => SUBJECTS.includes(x)) : ['國語', '數學'], stamp: set.focus_stamp !== '0', outside: out };
 }
 /** 這座島是哪一科的主力島（不是就回傳空字串） */
 function focusOf(island, subjects) {
@@ -716,7 +720,7 @@ async function state(ctx, cls, s) {
   let ex = exam(cls);
   if (ex) {
     const ep = await poolFor(ctx, ex.units);
-    ex = { name: ex.name, date: ex.date, days: ex.days, total: ep.length, mastered: ep.filter(q => hist[q.id] && hist[q.id].last).length };
+    ex = { name: ex.name, date: ex.date, days: ex.days, units: ex.units, boost: ex.days <= EXAM_BOOST_DAYS, total: ep.length, mastered: ep.filter(q => hist[q.id] && hist[q.id].last).length };
   }
   const set = await ctx.settings();
   const sortOf = {}; (await unitCatalog(ctx)).forEach(u => sortOf[u.key] = u.sort);
@@ -932,7 +936,9 @@ API.submitRound = async (ctx, cred, island, responses) => {
   const longAgo = new Date(Date.now() + 8 * 3600e3 - 21 * 864e5).toISOString().slice(0, 10);
   const gotOk = {};
   const passageOk = {};   // 每一段情境：答了幾題、對了幾題（題組全對用）
-  const fc = await focusConf(ctx);
+  const fc = await focusConf(ctx), exNow = exam(cls), exUnits = new Set(exNow ? exNow.units : []);
+  const boost = island === '段考' && exNow && exNow.days <= EXAM_BOOST_DAYS;
+  let outside = 0;
   let correct = 0, coinW = 0, rescued = 0, passageRight = 0, reviewDone = false, longmem = 0;
   list.forEach(r => {
     const q = qmap[str(r && r.id, 40)];
@@ -941,7 +947,11 @@ API.submitRound = async (ctx, cred, island, responses) => {
     const ok = grade(q, r.answer);
     gotOk[q.id] = ok;
     if (ok) {
-      correct++; coinW += fc.subjects.includes(q.subject) ? (q.passage ? FOCUS_LIT_RATE : FOCUS_RATE) : 1;
+      correct++;
+      let w = fc.subjects.includes(q.subject) ? (q.passage ? FOCUS_LIT_RATE : FOCUS_RATE) : 1;
+      if (boost) w = Math.max(w, FOCUS_RATE);
+      if (exNow && !exUnits.has(q.unit_key)) { w *= fc.outside; outside++; }  // 考試範圍外：金幣打折
+      coinW += w;
       if (before[q.id] && !before[q.id].last) rescued++;   // 之前答錯，這次答對
       if (q.passage) passageRight++;
       if (reviewUnits.has(q.unit_key)) reviewDone = true;
@@ -1031,7 +1041,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     lighthouse: island === '綜合' && total >= 5 && correct === total
   });
   st.badges = st.badges.concat(nb.map(b => b.id));
-  return { correct, total, passed, coins, focusBonus, focusCoins: Math.round(coinW) - correct, stampNeedFocus, focusSubjects: fc.subjects, star: gotStar, starFull: passed && !gotStar, starMax: STAR_DAILY_MAX, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
+  return { correct, total, passed, coins, focusBonus, focusCoins: Math.round(coinW) - correct, outside, outsideRate: fc.outside, examBoost: !!boost, stampNeedFocus, focusSubjects: fc.subjects, star: gotStar, starFull: passed && !gotStar, starMax: STAR_DAILY_MAX, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
     badges: nb.map(b => ({ id: b.id, icon: b.icon, name: b.name, desc: b.desc })), state: st };
 };
 
@@ -2104,7 +2114,7 @@ API.leaderboard = async (ctx, cred) => {
 API.tGetSettings = async (ctx, pw) => {
   await checkPw(ctx, pw);
   const s = await ctx.settings();
-  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), perMastery: num(s.per_mastery), showLeaderboard: s.show_leaderboard !== '0', credit: s.credit || '', customPw: !!s.teacher_pw_hash, focusSubjects: (await focusConf(ctx)).subjects, focusStamp: s.focus_stamp !== '0', subjects: SUBJECTS };
+  return { perRound: num(s.per_round) || 10, passRatio: num(s.pass_ratio) || 0.7, perStamp: num(s.per_stamp), coinsPerPoint: num(s.coins_per_point), perMastery: num(s.per_mastery), showLeaderboard: s.show_leaderboard !== '0', credit: s.credit || '', customPw: !!s.teacher_pw_hash, focusSubjects: (await focusConf(ctx)).subjects, focusStamp: s.focus_stamp !== '0', outsideRate: (await focusConf(ctx)).outside, subjects: SUBJECTS };
 };
 
 API.tSaveSettings = async (ctx, pw, data) => {
@@ -2119,6 +2129,7 @@ API.tSaveSettings = async (ctx, pw, data) => {
   if (data.credit !== undefined) stmts.push(put('credit', str(data.credit, 80)));
   if (data.showLeaderboard !== undefined) stmts.push(put('show_leaderboard', data.showLeaderboard ? '1' : '0'));
   if (Array.isArray(data.focusSubjects)) stmts.push(put('focus_subjects', JSON.stringify(data.focusSubjects.filter(x => SUBJECTS.includes(x)))));
+  if (data.outsideRate !== undefined) stmts.push(put('outside_rate', Math.min(1, Math.max(0, Math.round(num(data.outsideRate) * 10) / 10))));
   if (data.focusStamp !== undefined) stmts.push(put('focus_stamp', data.focusStamp ? '1' : '0'));
   if (data.perMastery !== undefined) stmts.push(put('per_mastery', Math.min(100, Math.max(0, Math.floor(num(data.perMastery))))));
   if (data.newPw !== undefined) {

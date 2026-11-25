@@ -756,6 +756,7 @@ try {
     assert.ok(!st0.some(x => x.seat === seat));
     const c = { code: 'DEMO', seat, pin: '7777' };
     await call('studentLogin', c);
+    await call('tSaveSettings', PW, { outsideRate: 1 });  // 先不打折，單純看主力島加成
     const right = q => q.type === '選擇' ? q.options['ABCD'.indexOf(q.answer)] : String(q.answer).split('|')[0];
     const play1 = async isl => { const qs = (await call('getRound', c, isl)).ok; return (await call('submitRound', c, isl, qs.map(q => ({ id: q.id, answer: right(q) })))).ok; };
     const e = await play1('英文');
@@ -770,6 +771,12 @@ try {
     assert.deepEqual(m.state.focus.done.sort(), ['★', '國語', '數學'].sort());
     const lit = await play1('素養:數學');
     assert.equal(lit.coins, Math.round(lit.correct * 2), '數學素養島金幣 2 倍');
+    // 考試範圍為主：範圍外（這裡是通用版的英文）金幣打 5 折
+    await call('tSaveSettings', PW, { outsideRate: 0.5 });
+    assert.equal((await call('tGetSettings', PW)).ok.outsideRate, 0.5);
+    const e2 = await play1('英文');
+    assert.ok(e2.outside > 0, '英文不在考試範圍');
+    assert.equal(e2.coins, Math.round(e2.correct * 0.5));
     // 老師可以關掉「印章只算主力島」、換主力科目
     await call('tSaveSettings', PW, { focusSubjects: ['自然'], focusStamp: false });
     const g = (await call('tGetSettings', PW)).ok;

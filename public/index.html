@@ -988,6 +988,7 @@ const FAQ = [
   ['🛍️ 衣櫃', '黑影的「？？？神秘角色」是什麼？', '那是隱藏新品，上架那天早上 8 點才會揭曉長什麼樣子。它們很貴、條件也很嚴格，要努力存喔！', '神秘 黑影 陰影 隱藏 ？？？'],
   ['⭐ 星星金幣', '為什麼過關了卻沒加星星？', '星星一天最多 5 顆。同一天過關超過 5 回合，照樣過關、照樣拿金幣，只是不再加星星。每天練一點最好！', '星星 沒加星 沒有星 過關'],
   ['⭐ 星星金幣', '金幣怎麼來？「金幣」和「累積金幣」差在哪？', '每答對 1 題得 1 枚金幣。金幣餘額可以在衣櫃花掉；累積金幣只會增加、不會變少，老師換加點看的是累積金幣，所以買東西不會讓你少加點。', '金幣 錢 累積 餘額 加點 怎麼賺'],
+  ['⭐ 星星金幣', '為什麼這回合的金幣比較少？', '老師設定考試範圍以後，不在考試範圍裡的題目（例如上次考過的單元）金幣會打折。選單元時有寫「考試範圍外」的就是。多練考試範圍的單元，金幣比較多；段考衝刺島在考前兩週還有加成！', '金幣 比較少 打折 考試範圍 期中 期末 範圍外'],
   ['⭐ 星星金幣', '為什麼金幣變少了？', '在衣櫃買東西會花金幣。另外，亂提問的話，老師可能會扣金幣。', '變少 扣 少了 不見了'],
   ['⭐ 星星金幣', '印章怎麼拿？為什麼今天沒有印章？', '每天第一次在主力島（國語、數學，含這兩科的素養島和單課練習）過關，會蓋 1 個印章，同一天只有 1 個。在其他島過關照樣有金幣和星星，但不會蓋章。連續每天都有印章，連續天數就會增加。', '印章 蓋章 連續 天數 沒有印章'],
   ['⭐ 星星金幣', '什麼是主力島？每日任務是什麼？', '國語島和數學島是主力島：答對 1 題得 1.5 枚金幣，國語、數學的素養島答對 1 題得 2 枚！今日印章也只在主力島拿得到。每日任務是國語、數學各過關 1 回合，完成多拿 5 枚金幣，累積天數有「國數雙修」徽章。', '主力島 主力 每日任務 任務 國數 1.5 加成 雙修'],
@@ -1062,6 +1063,7 @@ const NEWS = {
   sections: [{ title: '⭐ 最重要：{F}是主力島', items: [
     ['📌', '今日印章只在主力島拿得到！', '從現在起，每天的印章要在{F}島過關才拿得到（{F}的素養島和單課練習也算）。在其他島過關，照樣有金幣和星星，但不會蓋印章，連續天數也不會增加喔！', 'stamp'],
     ['🪙', '主力島金幣加成', '{F}的題目答對 1 題得 1.5 枚金幣；{F}的素養島題目更多，答對 1 題得 2 枚！（一回合加起來四捨五入，在燈塔挑戰、錯題礁答對也算）'],
+    ['📚', '考試範圍為主', '老師設定考試範圍以後，範圍裡的題目照常拿金幣，範圍外（例如上次考過的單元）金幣打折，印章和每日任務照算。段考衝刺島在考前兩週金幣×1.5！'],
     ['🎯', '每日任務：雙修', '每天{F}各過關 1 回合，額外多拿 5 枚金幣；累積 3、10、30 天還有「國數雙修」系列徽章。地圖上方會顯示今天的進度。']
   ] }, { title: '🔥 限定特價 3 天：11/26（四）早上 8 點～11/29（日）早上 8 點', items: [
     ['🛍️', '衣櫃全部開放', '角色、帽子、配件、外套、手套、腮紅、眼睛、裙子・褲子、寵物、背景、耳朵顏色、娃娃裝……這 3 天全部用特價買得到！'],
@@ -1165,7 +1167,7 @@ function renderMap(){
     : fo.stamp && fs ? '今天要在<b>主力島（' + esc(fs) + '）</b>過關才能蓋印章！答對 ' + Math.ceil(s.perRound * 0.7) + ' 題以上就過關。'
     : '選一座島出發吧！答對 ' + Math.ceil(s.perRound * 0.7) + ' 題以上，就能蓋今天的印章。') + task;
   const cards = [];
-  if (ex) cards.push(`<button class="island" data-island="段考">${islandSvg({c:'#ff8fa3', d:'#e66d84', ch:'考'}, 2, false)}<div class="name">段考衝刺島</div><div class="meta">只出考試範圍</div><div class="bar"><i style="width:${ex.total ? Math.round(ex.mastered / ex.total * 100) : 0}%;background:#ff8fa3"></i></div></button>`);
+  if (ex) cards.push(`<button class="island" data-island="段考">${islandSvg({c:'#ff8fa3', d:'#e66d84', ch:'考'}, 2, false)}<div class="name">段考衝刺島</div><div class="meta">只出考試範圍${ex.boost ? '・🔥 考前衝刺金幣×1.5' : ''}</div><div class="bar"><i style="width:${ex.total ? Math.round(ex.mastered / ex.total * 100) : 0}%;background:#ff8fa3"></i></div></button>`);
   const focusCards = [], otherCards = [];
   SUBJ.forEach((sj, i) => {
     const cards = fo.subjects.includes(sj.k) ? focusCards : otherCards, isF = cards === focusCards;
@@ -1227,7 +1229,7 @@ function pickUnit(sj){
   const LV = ['', '🌱 發芽', '🌿 長葉', '🪴 茁壯', '🌳 精熟'];
   const us = (state.units || []).filter(u => u.subject === sj && u.practice);
   openPick(sj + '島：想練哪裡？', [{ v: sj, label: '全部單元混合', small: '推薦：混著練，記得最久', main: true }]
-    .concat(us.map(u => ({ v: '單元:' + u.key, label: u.unit, small: (u.review ? '⏰ 該複習・' : '') + (LV[u.level] || '還沒練') + '・記住 ' + u.remembered + ' / ' + u.total })))
+    .concat(us.map(u => ({ v: '單元:' + u.key, label: u.unit, small: (state.exam && state.exam.units && !state.exam.units.includes(u.key) ? '考試範圍外・金幣×' + ((state.focus || {}).outside ?? 0.5) + '・' : state.exam ? '📚 考試範圍・' : '') + (u.review ? '⏰ 該複習・' : '') + (LV[u.level] || '還沒練') + '・記住 ' + u.remembered + ' / ' + u.total })))
     , '素養題組不在這裡，請到素養島練。');
 }
 // 素養島：先選科目（或全部混合）
@@ -1365,6 +1367,7 @@ function renderResult(r){
     </div>
     ${r.stamp ? '<p>連續完成 <b>' + r.state.streak + '</b> 天！印章可以跟老師換加點喔。</p>' : ''}
     ${r.focusCoins > 0 ? '<p>⭐ 主力島加成：多拿 <b>' + r.focusCoins + '</b> 枚金幣（已算在上面）</p>' : ''}
+    ${r.outside > 0 ? '<p>📚 這回合有 <b>' + r.outside + '</b> 題不在考試範圍，金幣×' + r.outsideRate + '。多練考試範圍的單元，金幣比較多喔！</p>' : ''}
     ${r.focusBonus ? '<div class="badge newb"><span>🎯</span><div><b>今日任務完成！</b><br>' + esc((r.focusSubjects || []).join('、')) + '都過關，多拿 ' + r.focusBonus + ' 枚金幣（已算在上面）</div></div>' : ''}
     ${r.stampNeedFocus ? '<p>📌 今天的印章要在<b>主力島（' + esc((r.focusSubjects || []).join('、')) + '）</b>過關才拿得到喔！去主力島挑戰吧！</p>' : ''}
     ${(r.badges || []).map(b => `<div class="badge newb"><span>${b.icon}</span><div><b>新徽章：${esc(b.name)}</b><br>${esc(b.desc)}</div></div>`).join('')}
