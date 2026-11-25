@@ -428,7 +428,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 
       <h3>👕 第 7 站：波波的衣櫃</h3>
       <ul>
-        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊、小狗、小豬、小老鼠、小青蛙、小老虎、貓熊、小恐龍，還有要 100 顆星星才能買的獨角獸）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>顏色</b>。</li>
+        <li>用金幣幫波波換裝，可以先試穿再決定。衣櫃有：<b>角色</b>（小貓、小兔、小熊、小狐狸、小綿羊、小狗、狗狗品種（柴犬、哈士奇、大麥町、柯基、貴賓狗、吉娃娃、雪納瑞）、貓咪品種（三花貓、虎斑貓、暹羅貓、折耳貓、波斯貓）、小豬、小老鼠、小青蛙、小老虎、貓熊、小恐龍，還有要 100 顆星星才能買的獨角獸）、<b>帽子</b>、<b>配件</b>、<b>外套</b>、<b>手套</b>、<b>腮紅</b>、<b>顏色</b>。</li>
         <li>腮紅基礎色一個只要 4 金幣，愛心、星星、彩虹等特別款比較貴。</li>
         <li><b>花掉金幣不會讓老師少加點！</b>老師看的是你「累積賺到」的金幣總數，不是剩下的。</li>
         <li><b>⭐ 星星特別款</b>：星星髮箍、星星魔杖、星夜藍，要先累積足夠的星星（20、60、120 顆）才能用金幣買。星星不會被花掉喔！</li>
@@ -562,6 +562,11 @@ const ACCS = {
   acc_medal:'<path d="M50 82 L56 100 L64 100 L70 82" fill="#7cc2ff" stroke="#549fe0" stroke-width="2" stroke-linejoin="round"/><circle cx="60" cy="104" r="10" fill="#ffd66b" stroke="#e6a92a" stroke-width="2.5"/><path d="M60 98 l2 4 4.4 .6 -3.2 3.1 .8 4.3 -4 -2.1 -4 2.1 .8 -4.3 -3.2 -3.1 4.4 -.6 Z" fill="#fff"/>'
 };
 /* 角色：耳朵、尾巴等畫在身體後面（back），鬍鬚等畫在臉上（front）；c = 身體顏色 */
+const WHISKERS = '<path d="M28 70 L12 66 M28 75 L12 77 M92 70 L108 66 M92 75 L108 77" stroke="#4a4566" stroke-width="2" stroke-linecap="round" opacity=".7"/>';
+/* 尖耳朵（貓、柴犬、哈士奇）：左右可以不同顏色 */
+/* 頭頂一圈固定毛色（哈士奇、雪納瑞） */
+const hood = fill => `<path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 Q96 80 82 82 Q60 64 38 82 Q24 80 18 92 Z" fill="${fill}"/>`;
+const catEars = (c, inner, c2) => `<path d="M24 56 L30 20 L52 38 Z" fill="${c}"/><path d="M30 46 L33 28 L45 38 Z" fill="${inner}"/><path d="M96 56 L90 20 L68 38 Z" fill="${c2 || c}"/><path d="M90 46 L87 28 L75 38 Z" fill="${inner}"/>`;
 const SPECIES = {
   sp_seal: { back: () => '', front: () => '' },
   sp_cat: { back: c => `<path d="M24 56 L30 20 L52 38 Z" fill="${c}"/><path d="M30 46 L33 28 L45 38 Z" fill="#ffc7d2"/><path d="M96 56 L90 20 L68 38 Z" fill="${c}"/><path d="M90 46 L87 28 L75 38 Z" fill="#ffc7d2"/>`,
@@ -586,6 +591,28 @@ const SPECIES = {
   sp_dino: { back: (c, a) => '<g fill="' + a + '">' + [[30,52],[38,40],[48,32],[60,29],[72,32],[82,40],[90,52]].map(([x, y]) => `<path d="M${x - 6} ${y + 6} L${x} ${y - 8} L${x + 6} ${y + 6} Z"/>`).join('') + `</g><path d="M96 104 Q118 104 116 88 Q108 98 94 96 Z" fill="${c}"/>`, front: () => '' },
   sp_unicorn: { back: () => '<g fill="none" stroke-width="5" stroke-linecap="round"><path d="M88 40 Q102 52 96 72" stroke="#ff8fa3"/><path d="M94 44 Q106 58 100 76" stroke="#ffd66b"/><path d="M84 38 Q96 48 92 66" stroke="#9ccfff"/></g>',
     front: () => '<path d="M54 38 L60 8 L66 38 Z" fill="#ffd66b" stroke="#e6a92a" stroke-width="2" stroke-linejoin="round"/><path d="M56 30 L64 27 M57 22 L63 19" stroke="#e6a92a" stroke-width="1.5"/>' },
+  /* 狗狗品種 */
+  sp_shiba: { back: c => `<path d="M98 96 Q118 92 114 76 Q106 70 102 80 Q108 82 104 88 Z" fill="${c}"/>` + catEars(c, '#fff'),
+    face: () => '<ellipse cx="60" cy="74" rx="16" ry="10" fill="#fff"/><ellipse cx="45" cy="51" rx="3.5" ry="2.5" fill="#fff"/><ellipse cx="75" cy="51" rx="3.5" ry="2.5" fill="#fff"/>', front: () => '' },
+  sp_husky: { back: () => catEars('#7d7896', '#fff'), skin: () => hood('#7d7896'),
+    face: () => '<ellipse cx="60" cy="74" rx="19" ry="11" fill="#fff"/><ellipse cx="45" cy="61" rx="9.5" ry="8.5" fill="#fff"/><ellipse cx="75" cy="61" rx="9.5" ry="8.5" fill="#fff"/>', front: () => '' },
+  sp_dalmatian: { back: () => '', skin: () => '<g fill="#4a4566">' + [[26,82,4.5],[32,104,3.5],[94,86,5],[88,106,3.5],[50,110,3],[73,100,4],[33,55,3],[88,58,3.5],[23,95,2.5],[60,90,2.5],[98,98,2.5]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + '</g>',
+    front: () => '<ellipse cx="24" cy="58" rx="9" ry="19" transform="rotate(18 24 58)" fill="#4a4566"/><ellipse cx="96" cy="58" rx="9" ry="19" transform="rotate(-18 96 58)" fill="#4a4566"/>' },
+  sp_corgi: { back: c => `<path d="M20 60 L22 10 L54 38 Z" fill="${c}"/><path d="M27 48 L28 22 L46 38 Z" fill="#ffc7d2"/><path d="M100 60 L98 10 L66 38 Z" fill="${c}"/><path d="M93 48 L92 22 L74 38 Z" fill="#ffc7d2"/>`,
+    face: () => '<ellipse cx="60" cy="75" rx="15" ry="9" fill="#fff"/><path d="M57 50 Q60 46 63 50 L64 68 L56 68 Z" fill="#fff"/>', front: () => '' },
+  sp_poodle: { back: () => '', front: (c, a) => '<g fill="' + c + '" stroke="' + a + '" stroke-width="2">' + [[22,58,8],[20,70,8],[24,81,7],[98,58,8],[100,70,8],[96,81,7],[42,38,10],[52,31,11],[60,28,11],[68,31,11],[78,38,10]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + '</g>' },
+  sp_chihuahua: { back: c => `<path d="M34 50 L0 12 L54 34 Z" fill="${c}"/><path d="M34 44 L12 20 L46 36 Z" fill="#ffc7d2"/><path d="M86 50 L120 12 L66 34 Z" fill="${c}"/><path d="M86 44 L108 20 L74 36 Z" fill="#ffc7d2"/>`, front: () => '' },
+  sp_schnauzer: { back: () => '', skin: () => hood('#8f8aa6'), face: () => '<ellipse cx="51" cy="79" rx="11" ry="8" fill="#eceaf2"/><ellipse cx="69" cy="79" rx="11" ry="8" fill="#eceaf2"/><ellipse cx="60" cy="84" rx="9" ry="7" fill="#eceaf2"/>',
+    front: () => `<path d="M16 50 L36 40 L28 62 Z" fill="#6b6585"/><path d="M104 50 L84 40 L92 62 Z" fill="#6b6585"/><path d="M38 53 L52 51 M68 51 L82 53" stroke="#eceaf2" stroke-width="4.5" stroke-linecap="round"/>` },
+  /* 貓咪品種 */
+  sp_calico: { back: () => catEars('#f2a25c', '#ffc7d2', '#4a4566'), skin: () => '<path d="M24 66 Q32 56 42 62 Q44 76 34 82 Q22 84 20 76 Z" fill="#f2a25c"/><path d="M80 98 Q92 90 100 96 Q100 110 88 112 Q78 108 80 98 Z" fill="#4a4566" opacity=".85"/><path d="M84 52 Q94 50 98 60 Q92 64 86 60 Z" fill="#4a4566" opacity=".85"/><path d="M30 104 Q38 100 42 108 Q36 114 30 110 Z" fill="#f2a25c"/>', front: () => WHISKERS },
+  sp_tabby: { back: (c, a) => catEars(c, '#ffc7d2'), skin: (c, a) => `<g stroke="${a}" stroke-width="4" stroke-linecap="round" fill="none"><path d="M19 84 Q26 86 30 82 M19 96 Q27 98 31 94 M23 108 Q30 108 33 104 M101 84 Q94 86 90 82 M101 96 Q93 98 89 94 M97 108 Q90 108 87 104"/></g>`,
+    front: (c, a) => `<path d="M52 44 L55 50 L60 45 L65 50 L68 44" stroke="${a}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` + WHISKERS },
+  sp_siamese: { back: () => catEars('#7a5c50', '#c99a8a') + '<path d="M98 104 Q122 104 116 82" stroke="#7a5c50" stroke-width="7" fill="none" stroke-linecap="round"/>',
+    face: () => '<ellipse cx="60" cy="70" rx="18" ry="13" fill="#9b7a6c" opacity=".55"/>', front: () => WHISKERS },
+  sp_scottish: { back: () => '', front: (c, a) => `<path d="M18 52 Q18 36 34 38 Q34 50 24 56 Z" fill="${c}" stroke="${a}" stroke-width="2" stroke-linejoin="round"/><path d="M102 52 Q102 36 86 38 Q86 50 96 56 Z" fill="${c}" stroke="${a}" stroke-width="2" stroke-linejoin="round"/>` + WHISKERS },
+  sp_persian: { back: (c, a) => '<g fill="' + c + '" stroke="' + a + '" stroke-width="1.5">' + [[20,64],[15,78],[14,92],[18,106],[100,64],[105,78],[106,92],[102,106],[28,52],[92,52]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="9"/>`).join('') + '</g>' + catEars(c, '#ffc7d2'),
+    front: () => WHISKERS },
   sp_sheep: { back: c => `<ellipse cx="18" cy="60" rx="11" ry="6" transform="rotate(20 18 60)" fill="${c}"/><ellipse cx="102" cy="60" rx="11" ry="6" transform="rotate(-20 102 60)" fill="${c}"/>`,
     front: () => '<g fill="#fff" stroke="#e3dfee" stroke-width="2">' + [[40,42,10],[50,34,11],[60,31,11],[70,34,11],[80,42,10]].map(([x,y,r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('') + '</g>' }
 };
@@ -644,6 +671,7 @@ function mascot(mood, outfit){
     ${sp.back(body, arm)}${arms}
     <path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 C102 112 84 118 60 118 C36 118 18 112 18 92 Z" fill="${body}"/>
     <ellipse cx="60" cy="98" rx="26" ry="18" fill="${belly}"/>
+    ${sp.skin ? sp.skin(body, arm) : ''}
     ${coat}
     ${hands.map(([x, y]) => glove(x, y)).join('')}
     ${cheek}
