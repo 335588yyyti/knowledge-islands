@@ -77,7 +77,7 @@ const SHOP = {
   sp_persian: { slot: 'species', name: '波斯貓', price: 90, stars: 60 },
   bottom_none: { slot: 'bottom', name: '不穿', price: 0 },
   bottom_jeans: { slot: 'bottom', name: '牛仔短褲', price: 40 },
-  bottom_sport: { slot: 'bottom', name: '運動短褲', price: 40 },
+  bottom_sport: { slot: 'bottom', name: '運動短褲', price: 40, set: 'set_sport' },
   bottom_pleat: { slot: 'bottom', name: '百褶裙', price: 40 },
   bottom_flower: { slot: 'bottom', name: '碎花裙', price: 50 },
   bottom_tutu: { slot: 'bottom', name: '蓬蓬裙', price: 50 },
@@ -105,6 +105,22 @@ const SHOP = {
   sp_dragon: { slot: 'species', name: '小龍', price: 400, stars: 250, badges: 18 },
   pet_whale: { slot: 'pet', name: '雲朵小鯨魚', price: 300, stars: 200, badges: 15 },
   pet_phoenix: { slot: 'pet', name: '小鳳凰', price: 400, stars: 300, badges: 20 },
+  /* 套裝的單品：可以單買（不用徽章）；key 是套裝的關鍵物品，要星星＋徽章 */
+  hat_astro: { slot: 'hat', name: '太空頭盔', price: 150, stars: 80, badges: 8, set: 'set_space', key: true },
+  coat_space: { slot: 'coat', name: '太空衣', price: 60, set: 'set_space' },
+  glove_space: { slot: 'glove', name: '太空手套', price: 40, set: 'set_space' },
+  pet_robot: { slot: 'pet', name: '小機器人', price: 80, stars: 20, set: 'set_space' },
+  hat_captain: { slot: 'hat', name: '船長帽', price: 120, stars: 60, badges: 6, set: 'set_pirate', key: true },
+  coat_pirate: { slot: 'coat', name: '船長外套', price: 60, set: 'set_pirate' },
+  bottom_pirate: { slot: 'bottom', name: '條紋水手褲', price: 40, set: 'set_pirate' },
+  pet_parrot: { slot: 'pet', name: '鸚鵡', price: 80, stars: 20, set: 'set_pirate' },
+  coat_robe: { slot: 'coat', name: '星空魔法袍', price: 150, stars: 100, badges: 10, set: 'set_magic', key: true },
+  hat_witch: { slot: 'hat', name: '魔法學院尖帽', price: 60, set: 'set_magic' },
+  glove_magic: { slot: 'glove', name: '魔法手套', price: 40, set: 'set_magic' },
+  pet_blackcat: { slot: 'pet', name: '黑貓使魔', price: 80, stars: 20, set: 'set_magic' },
+  acc_trophy: { slot: 'acc', name: '冠軍獎盃', price: 120, stars: 50, badges: 5, set: 'set_sport', key: true },
+  hat_cap: { slot: 'hat', name: '棒球帽', price: 40, set: 'set_sport' },
+  coat_jersey: { slot: 'coat', name: '球衣', price: 50, set: 'set_sport' },
   eye_dark: { slot: 'eye', name: '深紫黑', price: 0 },
   eye_brown: { slot: 'eye', name: '咖啡色', price: 4 },
   eye_blue: { slot: 'eye', name: '藍色', price: 4 },
@@ -140,6 +156,15 @@ const SHOP = {
   cheek_star: { slot: 'cheek', name: '星星腮紅', price: 40 },
   cheek_rainbow: { slot: 'cheek', name: '彩虹腮紅', price: 60 }
 };
+/* 套裝：要先達到關鍵物品的星星＋徽章才能整套買；整套買時，還沒有的單品打 8 折 */
+const SETS = {
+  set_sport: { name: '運動明星套裝', key: 'acc_trophy', items: ['hat_cap', 'coat_jersey', 'bottom_sport', 'acc_trophy'] },
+  set_pirate: { name: '海上船長套裝', key: 'hat_captain', items: ['hat_captain', 'coat_pirate', 'bottom_pirate', 'pet_parrot'] },
+  set_space: { name: '太空人套裝', key: 'hat_astro', items: ['hat_astro', 'coat_space', 'glove_space', 'pet_robot'] },
+  set_magic: { name: '魔法學院套裝', key: 'coat_robe', items: ['hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat'] }
+};
+const setPrice = (set, have) => Math.round(set.items.filter(x => !have.includes(x)).reduce((a, x) => a + SHOP[x].price, 0) * 0.8);
+const badgeCount = async (ctx, cls, s) => (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
 const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue' };
 
 /**
@@ -494,15 +519,16 @@ async function state(ctx, cls, s) {
   const badges = brows.map(r => r.badge);
   const custom = await customBadges(ctx);
   const badgeNotes = {};
-  brows.forEach(r => { if (r.note) badgeNotes[r.badge] = r.note; });
+  const badgeDays = {};
+  brows.forEach(r => { if (r.note) badgeNotes[r.badge] = r.note; badgeDays[r.badge] = r.day; });
   return {
-    units, badges, badgeNotes, badgeList: BADGES.concat(custom), credit: set.credit || '',
+    units, badges, badgeNotes, badgeDays, badgeList: BADGES.concat(custom), credit: set.credit || '',
     notice: cls.notice || '', mission: cls.mission || '', showLeaderboard: set.show_leaderboard !== '0',
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
     streak: liveStreak(s), todayDone: s.last_day === today(),
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
-    owned: owned(s), outfit: outfit(s), shop: SHOP
+    owned: owned(s), outfit: outfit(s), shop: SHOP, sets: SETS
   };
 }
 
@@ -780,7 +806,7 @@ API.buyItem = async (ctx, cred, id) => {
   if (have.includes(id)) fail('你已經有這個了。');
   if (item.stars && s.stars < item.stars) fail('還要再拿 ' + (item.stars - s.stars) + ' 顆星星，才能買「' + item.name + '」。');
   if (item.badges) {
-    const n = (await ctx.first('SELECT COUNT(*) AS n FROM badges WHERE class_code = ? AND seat = ?', cls.code, s.seat)).n;
+    const n = await badgeCount(ctx, cls, s);
     if (n < item.badges) fail('還要再拿 ' + (item.badges - n) + ' 個徽章，才能買「' + item.name + '」。');
   }
   if (s.coins < item.price) fail('金幣還不夠，再去島上挑戰吧！');
@@ -790,6 +816,27 @@ API.buyItem = async (ctx, cred, id) => {
     item.price, JSON.stringify(have), JSON.stringify(o), cls.code, s.seat, item.price);
   if (!r.meta.changes) fail('金幣還不夠，再去島上挑戰吧！');
   s.coins -= item.price; s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
+  return state(ctx, cls, s);
+};
+
+API.buySet = async (ctx, cred, id) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const set = SETS[id];
+  if (!set) fail('商店沒有這個套裝。');
+  const key = SHOP[set.key], have = owned(s);
+  const missing = set.items.filter(x => !have.includes(x) && SHOP[x].price > 0);
+  if (!missing.length) fail('這個套裝你已經全部都有了。');
+  if (s.stars < key.stars) fail('還要再拿 ' + (key.stars - s.stars) + ' 顆星星，才能買「' + set.name + '」。');
+  const n = await badgeCount(ctx, cls, s);
+  if (n < key.badges) fail('還要再拿 ' + (key.badges - n) + ' 個徽章，才能買「' + set.name + '」。');
+  const price = setPrice(set, have);
+  if (s.coins < price) fail('金幣還不夠，再去島上挑戰吧！');
+  have.push(...missing);
+  const o = outfit(s); set.items.forEach(x => { o[SHOP[x].slot] = x; });
+  const r = await ctx.run('UPDATE students SET coins = coins - ?, owned = ?, outfit = ? WHERE class_code = ? AND seat = ? AND coins >= ?',
+    price, JSON.stringify(have), JSON.stringify(o), cls.code, s.seat, price);
+  if (!r.meta.changes) fail('金幣還不夠，再去島上挑戰吧！');
+  s.coins -= price; s.owned = JSON.stringify(have); s.outfit = JSON.stringify(o);
   return state(ctx, cls, s);
 };
 

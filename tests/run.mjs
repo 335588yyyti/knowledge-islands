@@ -128,6 +128,12 @@ try {
     await s.click('.item[data-id="hat_stars"]'); assert.match(await s.textContent('#bShopAct'), /顆星星/);
     assert.match(await s.textContent('.item[data-id="hat_stars"]'), /解鎖/);
     assert.match((await call('buyItem', { code: 'DEMO', seat: 1, pin: '1234' }, 'hat_stars')).err, /星星/);
+    // 套裝：關鍵物品的星星＋徽章不夠，整套買不了；單品可以單買
+    await s.click('.item[data-set="set_space"]'); assert.match(await s.textContent('#bShopAct'), /顆星星/);
+    assert.match(await s.textContent('#shopMsg'), /單買/);
+    assert.match((await call('buySet', { code: 'DEMO', seat: 1, pin: '1234' }, 'set_space')).err, /星星/);
+    assert.match((await call('buyItem', { code: 'DEMO', seat: 1, pin: '1234' }, 'hat_astro')).err, /星星/);
+    assert.match(await s.textContent('.item[data-id="glove_space"]'), /太空人/);
     await s.click('.item[data-id="hat_flower"]'); await s.click('#bShopAct');
     await s.waitForFunction(() => document.querySelector('#shopMsg').textContent.includes('買到了'));
     assert.equal(Number(await s.textContent('#shopCoins')), coins - 20);
@@ -377,6 +383,10 @@ try {
     assert.ok(await p.locator('.bcard.got').count() >= 2);
     assert.equal(await p.locator('.bcard').count(), 26);  // 46 個徽章，系列合成一張卡片後是 26 張
     assert.ok(await p.locator('.bcard.series .pips i.on').count() >= 1);
+    // 點徽章跳出說明，系列徽章列出每一階
+    await p.click('.bcard.series.got'); await p.waitForSelector('.bpop');
+    assert.ok(await p.locator('.bpop .bp').count() >= 2); assert.match(await p.textContent('.bpop'), /已經拿到/);
+    await p.click('.bpop [data-close]'); assert.equal(await p.locator('.bpop').count(), 0);
   });
   await step('老師公告與指定任務：學生地圖最上方出現公告，任務島排第一', async () => {
     await t.click('[data-tab="tUnits"]');
