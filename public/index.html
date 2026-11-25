@@ -1197,7 +1197,7 @@ function shopBoard(){
   const f = state.shopInfo; if (!f) return '';
   const rows = [];
   if (state.isTest) rows.push('🧪 <b>測試帳號</b>：金幣、星星、徽章都不限，還沒上架的新品也能先拿來穿。');
-  if (f.beforeLaunch) rows.push(`🔥 <b>${md(f.launch)}早上 8 點起限定特價 3 天！</b>`);
+  if (f.beforeLaunch) rows.push(`🔥 <b>${md(f.launch)}早上 8 點起限定特價 3 天！</b>標 🔜 的新東西現在可以先試穿，8 點開賣。`);
   if (f.inLaunch) rows.push(`🔥 <b>限定特價中，還剩 ${daysLeft(f.saleEnd) - 1} 天！</b>衣櫃全部開放，到 ${md(f.saleEnd)}早上 8 點為止。之後恢復原價，新品改成每週一上架（買到的永遠是你的）。`);
   if (f.drop) rows.push(`🆕 <b>本週新品「${esc(f.drop.name)}」</b>特價到 ${md(f.drop.end)}早上 8 點。`);
   if (f.next && !f.inLaunch && !f.beforeLaunch) rows.push(`🔜 <b>${md(f.next.day)}上架「${esc(f.next.name)}」</b>：下面標 🔜 的可以先試穿，還不能買。`);
@@ -1224,7 +1224,7 @@ function renderShop(){
       const it = shop[id], wear = state.outfit[slot] === id;
       const pv = Object.assign({}, DEFAULT_LOOK, {[slot]: id}, slot === 'ear' ? {species: LONG_EARS.includes(state.outfit.species) ? state.outfit.species : 'sp_bunny'} : {});
       return `<button class="item${wear ? ' on wear' : ''}${selId === id ? ' sel' : ''}" data-id="${id}">${mascot('happy', pv)}${it.key ? '🔑 ' : ''}${esc(it.name)}${it.set && sets[it.set] ? `<span class="settag">${esc(sets[it.set].name.replace('套裝', ''))}</span>` : ''}
-        <small>${wear ? '穿著中' : has(id) ? '已擁有' : it.soon && !state.isTest ? '🔜 ' + md(it.soon) + '上架' : state.isTest ? '🧪 直接拿來穿' : (locked(it) ? '🔒 ' + req(it) + ' 解鎖' : (it.stars || it.badges || it.need ? req(it) + '・' : '') + priceTag(it))}</small></button>`;
+        <small>${wear ? '穿著中' : has(id) ? '已擁有' : it.soon && !state.isTest ? '🔜 ' + md(it.soon) + '8 點上架' : state.isTest ? '🧪 直接拿來穿' : (locked(it) ? '🔒 ' + req(it) + ' 解鎖' : (it.stars || it.badges || it.need ? req(it) + '・' : '') + priceTag(it))}</small></button>`;
     }).join('') + '</div>').join('');
   const b = $('bShopAct');
   if (!selId){ b.disabled = true; b.textContent = '選一樣東西'; return; }
@@ -1245,7 +1245,7 @@ function renderShop(){
   const it = shop[selId];
   if (state.outfit[it.slot] === selId){ b.disabled = true; b.textContent = '穿著中'; $('shopMsg').textContent = '波波已經穿著「' + it.name + '」了。'; }
   else if (has(selId)){ b.disabled = false; b.textContent = '穿上'; $('shopMsg').textContent = '這是你的「' + it.name + '」，要幫波波穿上嗎？'; }
-  else if (it.soon && !state.isTest){ b.disabled = true; b.textContent = md(it.soon) + '上架'; $('shopMsg').textContent = '預告：「' + it.name + '」' + md(it.soon) + '上架，先試穿看看吧！'; }
+  else if (it.soon && !state.isTest){ b.disabled = true; b.textContent = md(it.soon) + '早上 8 點上架'; $('shopMsg').textContent = '預告：「' + it.name + '」' + md(it.soon) + '早上 8 點上架，先試穿看看吧！'; }
   else if (state.isTest){ b.disabled = false; b.textContent = '測試帳號：直接拿來穿'; $('shopMsg').textContent = '測試帳號不用金幣、星星和徽章。'; }
   else if (locked(it)){
     b.disabled = true; b.textContent = lack(it);

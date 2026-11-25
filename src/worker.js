@@ -237,8 +237,8 @@ const shopDay = ctx => (ctx.env && ctx.env.SHOP_DAY) || new Date().toISOString()
 const launchDay = ctx => (ctx.env && ctx.env.SALE_LAUNCH) || LAUNCH_DAY;
 /** 特價結束後的第一天 */
 const saleOver = ctx => addDays(launchDay(ctx), SALE_DAYS);
-/** 這一天買得到嗎：特價前（還沒開放給學生）和特價期間全部都在；之後要等上架日 */
-const onShelf = (ctx, id, day) => !DROP_OF[id] || day < saleOver(ctx) || day >= DROP_OF[id];
+/** 這一天買得到嗎：原本的東西一直都在；新東西特價開始前只能試穿，特價期間全部開放，之後要等上架日 */
+const onShelf = (ctx, id, day) => !DROP_OF[id] || (day >= launchDay(ctx) && day < saleOver(ctx)) || day >= DROP_OF[id];
 /** 下一批（特價結束後才有） */
 function nextDrop(ctx, day) {
   const d = Object.keys(DROPS).sort().find(x => x > day && x >= saleOver(ctx));
@@ -256,14 +256,14 @@ function priceInfo(ctx, id, day) {
   const inLaunch = day >= L && day < saleOver(ctx), inDrop = !!D && day >= D && day < addDays(D, SALE_DAYS);
   const sale = (inLaunch || inDrop) && SHOP[id].price < reg;
   const end = inDrop ? addDays(D, SALE_DAYS) : saleOver(ctx);
-  if (day < L) return { price: SHOP[id].price, was: 0, saleEnd: '', soon: '' };
+  if (day < L) return { price: SHOP[id].price, was: 0, saleEnd: '', soon: DROP_OF[id] ? L : '' };
   return { price: sale ? SHOP[id].price : reg, was: sale ? reg : 0, saleEnd: sale ? end : '', soon: onShelf(ctx, id, day) ? '' : D };
 }
 /** 給學生看的衣櫃：買得到的、自己已經有的、下一週的預告 */
 function shopView(ctx, have, isTest) {
   const day = shopDay(ctx), nx = nextDrop(ctx, day), mine = new Set(have || []), out = {};
   Object.keys(SHOP).forEach(id => {
-    if (!isTest && !onShelf(ctx, id, day) && !mine.has(id) && !(nx && DROP_OF[id] === nx.day)) return;
+    if (!isTest && !onShelf(ctx, id, day) && !mine.has(id) && !(nx && DROP_OF[id] === nx.day) && !(day < launchDay(ctx))) return;
     out[id] = Object.assign({}, SHOP[id], priceInfo(ctx, id, day));
     if (mine.has(id) || isTest) out[id].soon = '';
   });
@@ -960,7 +960,7 @@ API.buyItem = async (ctx, cred, id) => {
   }
   await checkNeed(ctx, cls, s, item, item.name);
   const info = priceInfo(ctx, id, shopDay(ctx)), price = info.price;
-  if (info.soon) fail('「' + item.name + '」' + Number(info.soon.slice(5, 7)) + '/' + Number(info.soon.slice(8)) + ' 才上架喔！');
+  if (info.soon) fail('「' + item.name + '」' + Number(info.soon.slice(5, 7)) + '/' + Number(info.soon.slice(8)) + ' 早上 8 點才上架喔！');
   if (!onShelf(ctx, id, shopDay(ctx))) fail('「' + item.name + '」現在沒有上架。');
   if (s.coins < price) fail('金幣還不夠，再去島上挑戰吧！');
   have.push(id);
