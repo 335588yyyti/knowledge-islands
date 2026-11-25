@@ -28,6 +28,13 @@ async function waitUp() {
 }
 const call = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', body: JSON.stringify({ args }), signal: AbortSignal.timeout(15000) })).json());
 
+// 學生第一次登入會跳出更新公告：捲到最下面再關掉
+async function closeNews(p) {
+  if (!(await p.$('#news'))) return;
+  await p.$eval('#news .box', b => { b.scrollTop = b.scrollHeight; });
+  await p.waitForFunction(() => !document.querySelector('#bNewsOk').disabled);
+  await p.click('#bNewsOk');
+}
 let passed = 0;
 // 等畫面出現某段提示文字（取代固定等待時間，網路慢也不會誤判）
 const toastHas = (p, text) => p.waitForFunction(t => document.querySelector('#toast').textContent.includes(t), text);
@@ -82,6 +89,22 @@ try {
     await s.fill('#iSeat', '1'); await s.fill('#iPin', '1234'); await s.fill('#iNick', '小海');
     await s.click('#bLogin'); await s.waitForSelector('#vMap:not(.hidden)');
     assert.match(await s.textContent('#whoName'), /小海/);
+  });
+  await step('更新公告：登入跳出，看完才能關，之後不再跳出（換裝置也一樣）', async () => {
+    await s.waitForSelector('#news');
+    assert.match(await s.textContent('#news'), /這次更新了什麼/);
+    await s.setViewportSize({ width: 360, height: 500 });  // 小螢幕：要往下捲才看得完
+    await s.waitForFunction(() => document.querySelector('#bNewsOk').disabled);
+    await s.$eval('#news .box', b => { b.scrollTop = b.scrollHeight; });
+    await s.waitForFunction(() => !document.querySelector('#bNewsOk').disabled);
+    await s.click('#bNewsOk'); assert.equal(await s.locator('#news').count(), 0);
+    await s.setViewportSize({ width: 900, height: 1000 });
+    const st = await (async () => { for (let i = 0; i < 20; i++) { const x = (await call('studentLogin', { code: 'DEMO', seat: 1, pin: '1234' })).ok; if (x && x.newsSeen) return x; await new Promise(r => setTimeout(r, 200)); } })();
+    assert.ok(st && st.newsSeen, '看完的版本沒有記下來');
+    // 航海手冊最下面可以再打開來看
+    await s.click('#bGuide2'); await s.click('#bNewsAgain'); await s.waitForSelector('#news');
+    assert.equal(await s.locator('#bNewsOk').isDisabled(), false);
+    await s.click('#bNewsOk'); await s.click('#bGuideBack');
   });
   await step('密碼錯誤會被擋下，錯 5 次會鎖住', async () => {
     for (let i = 0; i < 4; i++) assert.match((await call('studentLogin', { code: 'DEMO', seat: 1, pin: '0000' })).err, /密碼不對/);
@@ -206,7 +229,7 @@ try {
     const d = new Date(Date.now() + 8 * 3600e3 + 8 * 864e5).toISOString().slice(0, 10);
     await t.fill('#exName', '第一次段考'); await t.fill('#exDate', d);
     await t.click('#examBox [data-all="南一版・6年級上學期"]'); await t.click('#bSaveExam'); await toastHas(t, '考試設定已儲存');
-    await s.reload(); await s.fill('#iSeat', '1'); await s.fill('#iPin', '1234'); await s.click('#bLogin'); await s.waitForSelector('#vMap:not(.hidden)');
+    await s.reload(); await s.fill('#iSeat', '1'); await s.fill('#iPin', '1234'); await s.click('#bLogin'); await s.waitForSelector('#vMap:not(.hidden)'); await closeNews(s);
     assert.match(await s.textContent('#exam'), /倒數8天/);
     const r = await play(s, '段考', [0, 1]);
     assert.match(r, /波波建議多練習：通分/);
@@ -252,7 +275,7 @@ try {
   });
   await step('學生的精熟圖鑑', async () => {
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     assert.match(await p.textContent('[data-island="英文"]'), /精熟 2 \/ 2 單元/);
     await p.click('#bMastery'); await p.waitForSelector('#vMastery:not(.hidden)');
     assert.equal(await p.locator('.mrow.lv4').count(), 2);
@@ -283,7 +306,7 @@ try {
     assert.ok(idx.length >= 2, '應該有素養題');
     assert.equal(idx[idx.length - 1] - idx[0], idx.length - 1, '同一段情境要連在一起');
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('[data-island="素養"]'); await p.click('#pick [data-go="素養:數學"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
     let seen = false;
     for (let i = 0; i < 10 && !seen; i++) {
@@ -321,7 +344,7 @@ try {
     assert.ok(st.literacy['數學'].total > 0, '素養題組在素養島另外計算');
     assert.equal(st.units.filter(x => x.subject === '數學').reduce((a, x) => a + x.total, 0), st.islands['數學'].total, '單元精熟也不含素養題組');
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('[data-island="數學"]'); await p.waitForSelector('#pick');
     assert.match(await p.textContent('#pick'), /全部單元混合/);
     await p.click(`#pick [data-go="單元:${u.key}"]`); await p.waitForSelector('#vQuiz:not(.hidden)');
@@ -381,7 +404,7 @@ try {
     assert.ok(st.badges.includes('master1'), '第一棵樹');
     assert.ok(st.badges.includes('isle_英文'), '英文島主');
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '2'); await p.fill('#iPin', '2222'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
     assert.ok(await p.locator('.bcard.got').count() >= 2);
     assert.equal(await p.locator('.bcard').count(), 29);  // 55 個徽章，系列合成一張卡片後是 29 張
@@ -396,14 +419,14 @@ try {
     await t.fill('#nText', '本週先練數學，記得去錯題礁！'); await t.selectOption('#nMission', '數學');
     await t.click('#bSaveNotice'); await toastHas(t, '公告與任務已儲存');
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     assert.match(await p.textContent('#notice'), /本週先練數學/);
     assert.equal(await p.getAttribute('#map .island:first-child', 'data-island'), '數學');
     assert.match(await p.textContent('#map .island:first-child'), /老師的任務/);
   });
   await step('學生回報題目，老師在待檢查題目處理', async () => {
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('[data-island="社會"]'); await p.click('#pick [data-go="社會"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
     const q = await p.evaluate(() => round.qs[round.i]);
     if (q.type === '填空') { await p.fill('#iFill', 'x'); await p.click('#fFill button'); } else await p.click('#qBody .opt >> nth=0');
@@ -440,7 +463,7 @@ try {
     assert.ok(r.rows.some(x => x.me));
     assert.ok(r.rows.every((x, i) => i === 0 || r.rows[i - 1].n >= x.n));
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('#bBadges'); await p.click('[data-bt="rank"]'); await p.waitForSelector('.rank li.me');
     await call('tSaveSettings', PW, { showLeaderboard: false });
     assert.match((await call('leaderboard', { code: 'DEMO', seat: 3, pin: '3333' })).err, /沒有開放/);
@@ -467,7 +490,7 @@ try {
     assert.ok(cid); assert.equal(st.badgeNotes[cid], '幫忙整理圖書角');
     assert.equal(st.badgeList.length, 56);
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
     assert.match(await p.textContent('#badgeWall'), /老師說：幫忙整理圖書角/);
     await t.click('[data-cb-revoke="3"]'); await toastHas(t, '已收回');
@@ -493,7 +516,7 @@ try {
     await t.click('#bLkSave'); await toastHas(t, '已新增延伸冒險');
     const c = { code: 'DEMO', seat: 3, pin: '3333' };
     const p = await page('/?c=DEMO');
-    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     assert.match(await p.textContent('[data-island="數學"]'), /1 個延伸冒險/);
     await p.click('#bLinks'); await p.waitForSelector('.lcard');
     assert.equal(await p.getAttribute('.lcard a', 'href'), 'https://example.org/fraction');
@@ -724,7 +747,7 @@ try {
   });
   await step('手機寬度不會左右捲動（學生端與後台每個分頁）', async () => {
     const m = await page('/?c=DEMO', 390);
-    await m.fill('#iSeat', '1'); await m.fill('#iPin', '1234'); await m.click('#bLogin'); await m.waitForSelector('#vMap:not(.hidden)');
+    await m.fill('#iSeat', '1'); await m.fill('#iPin', '1234'); await m.click('#bLogin'); await m.waitForSelector('#vMap:not(.hidden)'); await closeNews(m);
     assert.equal(await m.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     const mt = await page('/teacher', 390);
     await mt.fill('#iPw', 'new-pass-1'); await mt.click('#fLogin button'); await mt.waitForSelector('#vApp:not(.hidden)');

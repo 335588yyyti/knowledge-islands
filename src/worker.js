@@ -567,7 +567,7 @@ async function state(ctx, cls, s) {
     notice: cls.notice || '', mission: cls.mission || '', showLeaderboard: set.show_leaderboard !== '0',
     className: cls.name, seat: s.seat, nick: s.nick,
     coins: s.coins, earned: s.earned, stars: s.stars, stamps: s.stamps,
-    streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX,
+    streak: liveStreak(s), todayDone: s.last_day === today(), starToday: s.star_day === today() ? s.star_today : 0, starMax: STAR_DAILY_MAX, newsSeen: s.news_seen || '',
     islands, literacy, wrong, exam: ex, perRound: num(set.per_round) || 10, passRatio: num(set.pass_ratio) || 0.7,
     owned: owned(s), outfit: outfit(s), shop: SHOP, sets: SETS
   };
@@ -1439,6 +1439,13 @@ API.tUploadImage = async (ctx, pw, dataUrl) => {
 };
 
 /** 「關於與版權」用的署名（不用登入） */
+/** 學生看完「這次更新了什麼」：記下版本，下次登入就不會再跳出 */
+API.seenNews = async (ctx, cred, ver) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  await ctx.run('UPDATE students SET news_seen = ? WHERE class_code = ? AND seat = ?', str(ver, 20), cls.code, s.seat);
+  return true;
+};
+
 API.about = async ctx => ({ credit: (await ctx.settings()).credit || '' });
 
 /* ---------- 學生回報題目 ---------- */

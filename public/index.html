@@ -92,9 +92,9 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .map{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 14px}
 .island{background:rgba(255,255,255,.35);padding:10px 6px 14px;text-align:center;border-radius:28px;transition:transform .2s,background .2s}
 .island svg{width:100%;max-width:150px;height:auto;display:block;margin:0 auto}
-#pick{position:fixed;inset:0;z-index:40;background:rgba(74,69,102,.35);display:flex;align-items:center;justify-content:center;padding:16px}
-#pick .box{background:#fff;border-radius:28px;padding:20px;width:min(420px,100%);display:grid;gap:10px;box-shadow:0 10px 30px rgba(74,69,102,.25)}
-#pick h3{margin:0;text-align:center}
+#pick,#news{position:fixed;inset:0;z-index:40;background:rgba(74,69,102,.35);display:flex;align-items:center;justify-content:center;padding:16px}
+#pick .box,#news .box{background:#fff;border-radius:28px;padding:20px;width:min(420px,100%);display:grid;gap:10px;box-shadow:0 10px 30px rgba(74,69,102,.25)}
+#pick h3,#news h3{margin:0;text-align:center}
 #pick .lp{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:12px 16px;border-radius:18px;border:3px solid #f1e3c8;background:#fffaf0;font:inherit;font-weight:700;color:var(--ink);cursor:pointer}
 #pick .lp small{font-weight:600;opacity:.75;text-align:right}
 #pick .lp.main{background:#e8f7ff;border-color:#bfe6f5}
@@ -220,6 +220,10 @@ label{display:block;font-weight:800;margin-bottom:6px}
 .bcard.got .bi{filter:none;opacity:1}
 .bcard{cursor:pointer}
 #pick .bpop{max-height:86vh;overflow:auto}
+#news .box{max-height:86vh;overflow:auto;width:min(480px,100%)}
+#news .nw{display:grid;grid-template-columns:34px 1fr;gap:4px 10px;align-items:start;border:3px solid #f1e3c8;background:#fffaf0;border-radius:16px;padding:8px 12px}
+#news .nw>span{font-size:26px;line-height:1.2}#news .nw b{display:block}#news .nw p{margin:2px 0 0;line-height:1.55;font-weight:600}
+#news .nhint{text-align:center;color:var(--muted);font-weight:700;margin:0}
 .bpop .bbig{font-size:64px;text-align:center;line-height:1.1}.bpop .bbig.off{filter:grayscale(1);opacity:.4}
 .bpop .bp{border:3px dashed #ddd6e8;background:#f4f2f6;border-radius:16px;padding:8px 12px;display:grid;gap:2px}
 .bpop .bp.got{border:3px solid var(--butter);background:#fff8e6}
@@ -433,6 +437,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>按地圖上的「<b>徽章牆</b>」看全部徽章。灰色的還沒拿到，卡片上寫著要怎麼達成。</li>
         <li>每個徽章只拿一次，拿到後會一直留著。同一系列的徽章（例如連續 3、7、14、30 天）會放在同一張卡片上，一階一階往上升。</li>
         <li>發現 AI 出的題目有錯，按「這題怪怪的？」回報；老師確認真的有錯，你會拿到「題目偵探」徽章。</li>
+        <li>新徽章：<b>完美單元</b>（一個單元每一題都記住）、<b>素養五島</b>（五科素養島都有一組題組全對）、<b>小小探險家・探險隊長</b>（完成 5、15 個延伸冒險）、<b>滿分準備</b>（段考範圍 9 成答對），還有連續 60 天、累積 100 天、長期記憶 10 題、救回 200 題這些更高階的系列徽章。</li>
+        <li>有些衣服要拿到<b>指定的徽章</b>才能買（例如偵探帽要「題目偵探」），在衣櫃點一下就會寫出需要哪一個。</li>
         <li>老師也會頒發特別的徽章給表現好的同學喔！</li>
         <li>徽章牆裡有「全班徽章排行榜」，比的是誰收集的徽章多。</li>
       </ul>
@@ -455,7 +461,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>不會的題目，看完解析再想一次，下次就會了。</li>
         <li>自己的密碼不要告訴別人，也不要用別人的座號登入。</li>
       </ul>
-      <div class="actions" style="justify-content:center"><button class="btn" id="bGuideDone">我看完了，出航！</button></div>
+      <div class="actions" style="justify-content:center"><button class="btn soft" id="bNewsAgain" type="button">📢 看最近更新了什麼</button><button class="btn" id="bGuideDone">我看完了，出航！</button></div>
     </div>
   </section>
 
@@ -851,6 +857,36 @@ function sparkle(el){
 }
 
 /* ---------- 地圖 ---------- */
+/* ---------- 這次更新了什麼（每個學生看完一次就不再跳出） ---------- */
+const NEWS = {
+  ver: '2026-11-26',
+  items: [
+    ['🏞️', '衣櫃新增「背景」', '晴天海灘、珊瑚礁、星空、燈塔夜景，幫波波換一個風景！'],
+    ['🐙', '四隻新寵物', '小海鷗、寄居蟹（⭐20）、小章魚（⭐40）、小燈籠魚（⭐60），星星夠了就能用金幣買。'],
+    ['🎒', '新的帽子和配件', '望遠鏡、探險背包、星星皇冠、恐龍帽，還有要存 250 金幣的彩虹披風。'],
+    ['🎖️', '徽章限定款', '偵探帽、救生圈、金色船舵、五島旗：拿到指定的徽章，就能用金幣買。'],
+    ['🏅', '9 個新徽章', '完美單元、素養五島、小小探險家、探險隊長、滿分準備、乘風破浪、百日水手、記憶小達人、救援傳奇。到徽章牆點一下就能看怎麼拿。'],
+    ['⭐', '星星一天最多 5 顆', '同一天過關超過 5 回合，照樣過關、照樣拿金幣，只是不再加星星。每天認真練，比一次刷很多回合更好！'],
+    ['👑', '高級款要「指定徽章」', '高級款和套裝的關鍵物品 🔑，除了星星和徽章數量，還要拿到一個指定的徽章（商店會寫是哪一個）。已經買到的不會被收回。']
+  ]
+};
+function showNews(force){
+  if ($('news') || (!force && (!state || state.newsSeen === NEWS.ver))) return;
+  const d = document.createElement('div'); d.id = 'news';
+  d.innerHTML = `<div class="box" role="dialog" aria-label="這次更新了什麼"><h3>📢 這次更新了什麼</h3>`
+    + NEWS.items.map(([ic, t, p]) => `<div class="nw"><span aria-hidden="true">${ic}</span><div><b>${esc(t)}</b><p>${esc(p)}</p></div></div>`).join('')
+    + `<p class="nhint" id="newsHint">往下看完，就可以關掉喔</p><button class="btn" id="bNewsOk">我看完了</button></div>`;
+  document.body.appendChild(d);
+  const box = d.querySelector('.box'), ok = d.querySelector('#bNewsOk'), hint = d.querySelector('.nhint');
+  // 要捲到最下面（看完）才能關；內容不用捲就看得完時，直接可以關
+  const check = () => { const done = force || box.scrollTop + box.clientHeight >= box.scrollHeight - 8; ok.disabled = !done; hint.classList.toggle('hidden', done); };
+  box.addEventListener('scroll', check); check();
+  ok.addEventListener('click', () => {
+    d.remove();
+    if (state && cred && state.newsSeen !== NEWS.ver){ state.newsSeen = NEWS.ver; api('seenNews', cred, NEWS.ver).catch(() => {}); }
+  });
+}
+
 function renderMap(){
   const s = state;
   $('whoName').textContent = (s.nick || (s.seat + ' 號')) + ' 的冒險日誌';
@@ -1300,6 +1336,7 @@ $('bGuide1').addEventListener('click', openGuide);
 $('bGuide2').addEventListener('click', openGuide);
 $('bGuideBack').addEventListener('click', closeGuide);
 $('bGuideDone').addEventListener('click', closeGuide);
+$('bNewsAgain').addEventListener('click', () => showNews(true));
 
 $('bMastery').addEventListener('click', () => { renderMastery(); show('vMastery'); });
 $('bMasteryBack').addEventListener('click', () => { renderMap(); show('vMap'); });
@@ -1314,7 +1351,7 @@ $('fLogin').addEventListener('submit', async ev => {
     cred = {code:c.code, seat:c.seat, pin:c.pin};
     store('kq_code', c.code);
     if ($('iRemember').checked) store('kq_cred', cred); else store('kq_cred');
-    renderMap(); show('vMap');
+    renderMap(); show('vMap'); showNews();
   }catch(e){ $('loginErr').textContent = e.message; }
   $('bLogin').disabled = false;
 });
@@ -1327,7 +1364,7 @@ $('bLogout').addEventListener('click', () => { store('kq_cred'); cred = null; st
   const qc = new URLSearchParams(location.search).get('c'); if (qc) $('iCode').value = qc.toUpperCase();
   if (saved){
     show('vLoading');
-    try{ state = await api('studentLogin', saved); cred = saved; renderMap(); show('vMap'); return; }
+    try{ state = await api('studentLogin', saved); cred = saved; renderMap(); show('vMap'); showNews(); return; }
     catch(e){ store('kq_cred'); }
   }
   show('vLogin');
