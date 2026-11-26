@@ -615,7 +615,7 @@ async function bumpBank(ctx) {
   await ctx.run("INSERT INTO settings (key, value) VALUES ('qver', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value", v);
   QCACHE = null; ctx._bank = null; if (ctx._set) ctx._set.qver = v;
 }
-const BANK_WRITERS = new Set(['tImport', 'xImportQuestions', 'tSaveQuestion', 'tSetEnabled', 'tDeleteQuestions', 'tRenameUnit']);
+const BANK_WRITERS = new Set(['tImport', 'xImportQuestions', 'xEditQuestion', 'tSaveQuestion', 'tSetEnabled', 'tDeleteQuestions', 'tRenameUnit']);
 
 async function poolFor(ctx, units) {
   if (!units || !units.length) return [];
@@ -2032,10 +2032,10 @@ API.tResolveReports = async (ctx, pw, qid, result, reply, junk, coins) => {
   });
   if (confirmed && rows.length) {
     const q = await ctx.first('SELECT * FROM questions WHERE id = ?', str(qid, 40));
-    if (q) {
+    if (q && q.enabled) {  // 只公告「修改」好的題目；停用的不公告
       const tomorrow = addDays(shopDay(ctx), 1);  // 隔天早上 8 點起公告（跟衣櫃一樣，一天從早上 8 點開始）
       stmts.push(ctx.stmt('INSERT INTO corrections (ts, day, qid, kind, subject, unit, text, answer, explain) VALUES (?,?,?,?,?,?,?,?,?)',
-        stampNow(), tomorrow, q.id, q.enabled ? 'edit' : 'off', q.subject, q.unit, q.text, q.enabled ? answerText(q) : '', q.enabled ? q.explain : ''));
+        stampNow(), tomorrow, q.id, 'edit', q.subject, q.unit, q.text, answerText(q), q.explain));
     }
   }
   if (stmts.length) await ctx.db.batch(stmts);
@@ -2050,6 +2050,16 @@ function answerText(q) {
 /** 已經公告的題目更正（隔天早上 8 點起；衣櫃的一天也是早上 8 點開始） */
 const corrOut = c => ({ id: c.id, qid: c.qid, day: c.day, kind: c.kind, subject: c.subject, unit: c.unit, text: c.text, answer: c.answer, explain: c.explain });
 /** Claude 用：待檢查的題目（含題目全文、答案、解析、學生選了什麼） */
+/** Claude 用：修改題目文字（只能改題目、選項、解析、提示、情境；答案和題型要老師在後台改） */
+const X_EDIT = { text: 300, a: 200, b: 200, c: 200, d: 200, explain: 300, hint: 120, passage: 1000 };
+API.xEditQuestion = async (ctx, id, fields) => {
+  checkImport(ctx);
+  const keys = Object.keys(fields || {}).filter(k => X_EDIT[k]);
+  if (!keys.length) fail('沒有可以改的欄位。');
+  const r = await ctx.run(`UPDATE questions SET ${keys.map(k => k + ' = ?').join(', ')} WHERE id = ?`, ...keys.map(k => str(fields[k], X_EDIT[k])), str(id, 40));
+  if (!r.meta.changes) fail('找不到這一題。');
+  return ctx.first('SELECT * FROM questions WHERE id = ?', str(id, 40));
+};
 API.xReports = async ctx => {
   checkImport(ctx);
   const rows = await ctx.all(`SELECT r.id AS rid, r.qid, r.reason, r.note, r.answer AS ranswer, r.class_code, r.seat, r.draft AS rdraft, q.* FROM reports r JOIN questions q ON q.id = r.qid

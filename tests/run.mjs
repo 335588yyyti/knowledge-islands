@@ -547,19 +547,30 @@ try {
     await t.click(`[data-rep-off="${q.id}"]`); await toastHas(t, '題目偵探');
     const st = (await call('studentLogin', c3)).ok;
     assert.ok(st.badges.includes('detective1'));
-    // 確認有錯的題目：隔天早上 8 點起公告給全班（同一天的合成一則）
-    assert.ok(!(st.askNews.corr || []).some(c => c.qid === q.id), '當天還不公告');
+    // 停用的題目不公告
+    assert.ok(!(st.askNews.corr || []).length, '停用的不公告');
+    // 修改好的題目：隔天早上 8 點起公告給全班（同一天的合成一則）
+    await call('tSetEnabled', PW, [q.id], true);
+    assert.ok((await call('reportQuestion', c3, q.id, '答案好像錯了', '')).ok.ok);
+    await call('tResolveReports', PW, q.id, 'confirmed', '', [], 30);
+    assert.ok(!(await call('studentLogin', c3)).ok.askNews.corr.some(c => c.qid === q.id), '當天還不公告');
     execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE corrections SET day = '2026-11-27'"`, { stdio: 'ignore' });
     const c5 = { code: 'DEMO', seat: 2, pin: '2222' };
     const n5 = (await call('studentLogin', c5)).ok;
     const cr = n5.askNews.corr.find(c => c.qid === q.id);
-    assert.ok(cr && cr.kind === 'off' && cr.text === q.text, '別的同學也看得到更正');
+    assert.ok(cr && cr.kind === 'edit' && cr.text === q.text && cr.answer, '別的同學也看得到更正和正確答案');
     const p5 = await page('/?c=DEMO');
     await p5.fill('#iSeat', '2'); await p5.fill('#iPin', '2222'); await p5.click('#bLogin'); await p5.waitForSelector('#vMap:not(.hidden)'); await closeNews(p5);
     await p5.waitForFunction(() => document.body.textContent.includes('題目更正'));
     assert.ok((await call('myAsks', c5)).ok.corr.some(c => c.qid === q.id), '常見問答頁有更正紀錄');
     await call('seenAsks', c5, 0, cr.id);
     assert.ok(!(await call('studentLogin', c5)).ok.askNews.corr.some(c => c.qid === q.id), '看過就不再跳出');
+    // Claude 用匯入鑰匙改題目文字（答案不能改）
+    const xe = async (...args) => (await (await fetch(BASE + '/api/xEditQuestion', { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
+    const ed = (await xe(q.id, { explain: '新的解析', answer: 'Z' })).ok;
+    assert.equal(ed.explain, '新的解析'); assert.notEqual(ed.answer, 'Z', '答案不會被改');
+    assert.match((await xe(q.id, { answer: 'Z' })).err, /沒有可以改/);
+    assert.match((await (await fetch(BASE + '/api/xEditQuestion', { method: 'POST', body: JSON.stringify({ args: [q.id, { explain: 'x' }] }) })).json()).err, /鑰匙/);
     await call('tSetEnabled', PW, [q.id], true);
   });
   await step('老師頒發的徽章：建立、頒發、學生看到原因、收回', async () => {
