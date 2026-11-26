@@ -729,7 +729,7 @@ async function state(ctx, cls, s) {
   const units = finishLevels(unitLevels(pool, hist), had).map(u => ({ key: u.key, subject: u.subject, unit: u.unit, level: u.level, rawLevel: u.rawLevel, review: u.review, total: u.total, remembered: u.remembered, right: u.right, once: u.once, wrong: u.tried - u.right, practice: practice[u.key] || 0,
     needMaster: u.needMaster, needNext: u.needNext, again: u.again }))
     .sort((a, b) => SUBJECTS.indexOf(a.subject) - SUBJECTS.indexOf(b.subject) || (sortOf[a.key] ?? 1e6) - (sortOf[b.key] ?? 1e6) || a.unit.localeCompare(b.unit, 'zh-Hant'));
-  const linkRows = await ctx.all('SELECT unit_key FROM links WHERE unit_key IN (SELECT value FROM json_each(?))', cls.units || '[]');
+  const linkRows = await ctx.all('SELECT unit_key FROM links WHERE unit_key IN (SELECT value FROM json_each(?))', linkKeys(cls));
   SUBJECTS.forEach(sj => {
     islands[sj].links = linkRows.filter(r => r.unit_key.split('｜')[2] === sj).length;
     const us = units.filter(u => u.subject === sj);
@@ -1760,6 +1760,20 @@ API.xClasses = async ctx => {
 };
 API.xUnits = async ctx => { checkImport(ctx); return unitCatalog(ctx); };
 API.xImportUnits = async (ctx, text, versions) => { checkImport(ctx); return importUnits(ctx, text, versions); };
+API.xAddLinks = async (ctx, list) => {
+  checkImport(ctx);
+  const out = [];
+  for (const d of (Array.isArray(list) ? list : []).slice(0, 50)) {
+    const unitKey = str(d.unitKey, 200), title = str(d.title, 40), note = str(d.note, 80);
+    if (!unitKey || !(await linkUnitOk(ctx, unitKey))) { out.push({ title, err: '找不到單元' }); continue; }
+    if (!title) { out.push({ err: '沒有名稱' }); continue; }
+    const url = cleanUrl(d.url);
+    if (await ctx.first('SELECT id FROM links WHERE unit_key = ? AND url = ?', unitKey, url)) { out.push({ title, skip: '已經有了' }); continue; }
+    await ctx.run('INSERT INTO links (id, unit_key, title, url, note, star, created) VALUES (?,?,?,?,?,?,?)', 'L' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(), unitKey, title, url, note, d.star ? 1 : 0, stampNow());
+    out.push({ title, ok: true });
+  }
+  return out;
+};
 API.xImportQuestions = async (ctx, text, versions) => { checkImport(ctx); return importQuestions(ctx, text, 'AI', versions); };
 
 API.tQuestions = async (ctx, pw, filter) => {
@@ -2104,20 +2118,24 @@ function cleanUrl(u) {
   return x.toString();
 }
 
+/* 延伸冒險可以掛在整個科目（版本｜學期｜科目｜＊全部單元）：那一科有任何一課勾了已教過，就看得到 */
+const ALL_UNITS = '＊全部單元';
+const linkKeys = cls => { const u = JSON.parse(cls.units || '[]'); return JSON.stringify([...new Set(u.concat(u.map(k => k.split('｜').slice(0, 3).join('｜') + '｜' + ALL_UNITS)))]); };
+
 API.getLinks = async (ctx, cred) => {
   const { cls, s } = await auth(ctx, cred, false);
   const rows = await ctx.all(`SELECT l.*, (SELECT 1 FROM link_done d WHERE d.class_code = ? AND d.seat = ? AND d.link_id = l.id) AS done
-    FROM links l WHERE l.unit_key IN (SELECT value FROM json_each(?)) ORDER BY l.created`, cls.code, s.seat, cls.units || '[]');
+    FROM links l WHERE l.unit_key IN (SELECT value FROM json_each(?)) ORDER BY l.created`, cls.code, s.seat, linkKeys(cls));
   return rows.map(r => {
     const [, , subject, unit] = r.unit_key.split('｜');
     let host = ''; try { host = new URL(r.url).hostname.replace(/^www\./, ''); } catch (e) {}
-    return { id: r.id, subject, unit, title: r.title, url: r.url, host, note: r.note, star: !!r.star, done: !!r.done };
+    return { id: r.id, subject, unit: unit === ALL_UNITS ? '全部單元' : unit, title: r.title, url: r.url, host, note: r.note, star: !!r.star, done: !!r.done };
   });
 };
 
 API.completeLink = async (ctx, cred, id) => {
   const { cls, s } = await auth(ctx, cred, false);
-  const l = await ctx.first('SELECT * FROM links WHERE id = ? AND unit_key IN (SELECT value FROM json_each(?))', str(id, 40), cls.units || '[]');
+  const l = await ctx.first('SELECT * FROM links WHERE id = ? AND unit_key IN (SELECT value FROM json_each(?))', str(id, 40), linkKeys(cls));
   if (!l) fail('找不到這個延伸冒險。');
   const r = await ctx.run('INSERT OR IGNORE INTO link_done (class_code, seat, link_id, day) VALUES (?,?,?,?)', cls.code, s.seat, l.id, today());
   const first = r.meta.changes > 0;
@@ -2133,11 +2151,15 @@ API.tLinks = async (ctx, pw, code) => {
   return rows.map(r => ({ id: r.id, unitKey: r.unit_key, title: r.title, url: r.url, note: r.note, star: !!r.star, doneN: r.doneN }));
 };
 
+const linkUnitOk = (ctx, k) => k.endsWith('｜' + ALL_UNITS)
+  ? ctx.first("SELECT unit_key FROM questions WHERE unit_key LIKE ? UNION SELECT unit_key FROM units WHERE unit_key LIKE ? LIMIT 1", k.slice(0, -ALL_UNITS.length) + '%', k.slice(0, -ALL_UNITS.length) + '%')
+  : ctx.first('SELECT unit_key FROM questions WHERE unit_key = ? UNION SELECT unit_key FROM units WHERE unit_key = ? LIMIT 1', k, k);
+
 API.tSaveLink = async (ctx, pw, data) => {
   await checkPw(ctx, pw);
   data = data || {};
   const unitKey = str(data.unitKey, 200), title = str(data.title, 40), note = str(data.note, 80);
-  if (!unitKey || !(await ctx.first('SELECT unit_key FROM questions WHERE unit_key = ? UNION SELECT unit_key FROM units WHERE unit_key = ? LIMIT 1', unitKey, unitKey))) fail('請選一個單元。');
+  if (!unitKey || !(await linkUnitOk(ctx, unitKey))) fail('請選一個單元。');
   if (!title) fail('請幫連結取個名稱。');
   const url = cleanUrl(data.url);
   const id = str(data.id, 40);

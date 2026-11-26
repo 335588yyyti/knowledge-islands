@@ -218,7 +218,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
       </div>
       <div class="panel" id="linkPanel">
         <h2>延伸冒險連結</h2>
-        <p class="muted small">為單元加上島外面的好資源，例如教學影片、互動網站、其他老師做的教學遊戲。只會出現在已經勾選「已教過」的單元。我們只放連結，不複製別人的內容。請只放適合學生、沒有不當廣告的網站。</p>
+        <p class="muted small">為單元加上島外面的好資源，例如教學影片、互動網站、其他老師做的教學遊戲。只會出現在已經勾選「已教過」的單元；選「🌐 全部單元」的連結，那一科有任何一課教過就會出現，適合一個網站涵蓋很多課的情況。我們只放連結，不複製別人的內容。請只放適合學生、沒有不當廣告的網站。</p>
         <div class="row"><select id="lkUnit" style="flex:1 1 220px" aria-label="單元"></select><input id="lkTitle" maxlength="40" placeholder="名稱（例如：分數除法動畫）" style="flex:1 1 180px"></div>
         <div class="row" style="margin-top:8px"><input id="lkUrl" placeholder="網址（https:// 開頭）" style="flex:2 1 260px"><input id="lkNote" maxlength="80" placeholder="給學生的一句話（選填）" style="flex:2 1 220px"></div>
         <div class="row" style="margin-top:8px"><label class="small"><input type="checkbox" id="lkStar"> 學生按「我完成了」給 1 顆星星（每人每個連結一次）</label>
@@ -887,12 +887,14 @@ $('unitBox').addEventListener('click', async e => {
 function checked(box){ return [...$(box).querySelectorAll('.cU:checked')].map(c => c.value); }
 /* ---------- 延伸冒險連結 ---------- */
 let LINKS = [], lkEdit = null;
-const unitName = k => { const p = k.split('｜'); return p[2] + '・' + p[3] + '（' + p[0] + ' ' + p[1] + '）'; };
+const ALL_UNITS = '＊全部單元';
+const unitName = k => { const p = k.split('｜'); return p[2] + '・' + (p[3] === ALL_UNITS ? '🌐 全部單元（整個科目）' : p[3]) + '（' + p[0] + ' ' + p[1] + '）'; };
 async function loadLinks(){
   const taught = new Set(CUR.units);
   const opts = DASH.units.filter(u => u.version === verOf(CUR, u.subject) || u.version === '通用' || taught.has(u.key));
   const keep = $('lkUnit').value;
-  $('lkUnit').innerHTML = '<option value="">選擇單元</option>' + opts.map(u => `<option value="${esc(u.key)}">${esc(unitName(u.key))}${taught.has(u.key) ? '' : '（還沒勾選已教）'}</option>`).join('');
+  const subj = [...new Set(opts.map(u => u.key.split('｜').slice(0, 3).join('｜')))];
+  $('lkUnit').innerHTML = '<option value="">選擇單元</option>' + subj.map(k => `<option value="${esc(k + '｜' + ALL_UNITS)}">${esc(unitName(k + '｜' + ALL_UNITS))}</option>`).join('') + opts.map(u => `<option value="${esc(u.key)}">${esc(unitName(u.key))}${taught.has(u.key) ? '' : '（還沒勾選已教）'}</option>`).join('');
   if (keep) $('lkUnit').value = keep;
   try{
     LINKS = await api('tLinks', PW, CUR.code);

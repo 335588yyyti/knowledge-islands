@@ -580,6 +580,13 @@ try {
     assert.equal((await call('studentLogin', c)).ok.stars, before + 1, '星星只給一次');
     const tl = (await call('tLinks', PW, 'DEMO')).ok;
     assert.equal(tl[0].doneN, 1);
+    // 整個科目的連結：那一科有教過的課就看得到，單元顯示「全部單元」
+    await t.selectOption('#lkUnit', '通用｜6上｜數學｜＊全部單元');
+    await t.fill('#lkTitle', '數學遊戲網站'); await t.fill('#lkUrl', 'https://example.org/math-all'); await t.fill('#lkNote', ''); await t.uncheck('#lkStar');
+    await t.click('#bLkSave'); await toastHas(t, '已新增延伸冒險');
+    const all = (await call('getLinks', c)).ok.find(l => l.url === 'https://example.org/math-all');
+    assert.ok(all, '全部單元的連結看得到'); assert.equal(all.unit, '全部單元');
+    await call('tDeleteLink', PW, all.id);
   });
   await step('各科不同版本：國語南一、數學翰林，只列出對應版本的單元', async () => {
     await call('tImport', PW, '翰林\t6\t上\t數學\t翰林單元\t\t是非\t翰林題\t\t\t\t\tO\t', '老師', '通用');
