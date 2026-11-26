@@ -573,6 +573,12 @@ try {
     assert.equal(await p.getAttribute('.lcard a', 'href'), 'https://example.org/fraction');
     assert.equal(await p.getAttribute('.lcard a', 'target'), '_blank');
     const before = (await call('studentLogin', c)).ok.stars;
+    // 還沒按出發：按鈕不能按，直接呼叫也會被擋
+    assert.ok(await p.locator('[data-ldone]').isDisabled());
+    const lid = (await call('getLinks', c)).ok[0].id;
+    assert.match((await call('completeLink', c, lid)).err, /出發/);
+    const [pop] = await Promise.all([p.waitForEvent('popup'), p.click('[data-lgo]')]); await pop.close();
+    await p.waitForFunction(() => !document.querySelector('[data-ldone]').disabled);
     await p.click('[data-ldone]'); await p.waitForSelector('.ldone');
     const id = (await call('getLinks', c)).ok[0].id;
     const r2 = (await call('completeLink', c, id)).ok;

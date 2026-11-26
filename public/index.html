@@ -408,7 +408,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li><b>答錯有第二次機會</b>：第一次答錯會先給 💡 提示，再答一次；第二次答對拿一半金幣（精熟照第一次算，是非題沒有第二次）。</li>
         <li>覺得題目怪怪的？先再讀一次題目、看解析，按「🔎 查查看」確認；還是覺得怪，再按「<b>這題怪怪的？</b>」告訴老師。<b>亂回報會扣 30 金幣</b>。結果在「❓ 常見問答・提問」的「題目問題回饋」看得到。</li>
         <li>島上標著「<b>老師的任務</b>」的，是老師希望你先去的島喔！</li>
-        <li>地圖上的「<b>🧭 延伸冒險</b>」是老師推薦的影片或網站，點「出發」會開新分頁，看完回來按「我完成了」。</li>
+        <li>地圖上的「<b>🧭 延伸冒險</b>」是老師推薦的影片或網站，點「出發」會開新分頁，看完回來按「我完成了」（要先按過出發，「我完成了」才按得下去）。</li>
       </ul>
 
       <h3>🪙 第 4 站：寶物怎麼來</h3>
@@ -1743,14 +1743,22 @@ async function openLinks(){
       if (!ls.length) return '';
       return `<h3 style="color:${sj.d}">${sj.k}島</h3><div class="llist">` + ls.map(l => `<div class="lcard${l.done ? ' done' : ''}">
         <div class="lt"><b>${esc(l.title)}</b><small>${esc(l.unit)}・${esc(l.host)}</small>${l.note ? '<p>' + esc(l.note) + '</p>' : ''}</div>
-        <div class="la"><a class="btn small" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">出發 ↗</a>
-        ${l.done ? '<span class="ldone">✓ 完成了</span>' : `<button class="btn soft small" data-ldone="${esc(l.id)}">我完成了${l.star ? '（⭐+1）' : ''}</button>`}</div></div>`).join('') + '</div>';
+        <div class="la"><a class="btn small" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer" data-lgo="${esc(l.id)}">出發 ↗</a>
+        ${l.done ? '<span class="ldone">✓ 完成了</span>' : `<button class="btn soft small" data-ldone="${esc(l.id)}"${l.star ? ' data-star="1"' : ''}${l.opened ? '' : ' disabled title="先按出發去看看"'}>${l.opened ? '我完成了' + (l.star ? '（⭐+1）' : '') : '先按出發'}</button>`}</div></div>`).join('') + '</div>';
     }).join('') || '<p>目前沒有延伸冒險。</p>';
   }catch(e){ $('linkList').innerHTML = '<p>' + esc(e.message) + '</p>'; }
 }
 $('bLinks').addEventListener('click', openLinks);
 $('bLinksBack').addEventListener('click', () => { renderMap(); show('vMap'); });
 $('linkList').addEventListener('click', async e => {
+  const go = e.target.closest('[data-lgo]');
+  if (go){ // 出發：開新分頁，同時記下來，「我完成了」才會亮
+    api('openLink', cred, go.dataset.lgo).then(() => {
+      const d = go.closest('.lcard').querySelector('[data-ldone]');
+      if (d){ d.disabled = false; d.removeAttribute('title'); d.textContent = '我完成了' + (d.dataset.star ? '（⭐+1）' : ''); }
+    }).catch(() => {});
+    return;
+  }
   const b = e.target.closest('[data-ldone]'); if (!b) return;
   b.disabled = true;
   try{ const r = await api('completeLink', cred, b.dataset.ldone); state = Object.assign({}, state, r.state); if (r.star) sparkle(b); openLinks(); }

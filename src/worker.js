@@ -2124,19 +2124,30 @@ const linkKeys = cls => { const u = JSON.parse(cls.units || '[]'); return JSON.s
 
 API.getLinks = async (ctx, cred) => {
   const { cls, s } = await auth(ctx, cred, false);
-  const rows = await ctx.all(`SELECT l.*, (SELECT 1 FROM link_done d WHERE d.class_code = ? AND d.seat = ? AND d.link_id = l.id) AS done
-    FROM links l WHERE l.unit_key IN (SELECT value FROM json_each(?)) ORDER BY l.created`, cls.code, s.seat, linkKeys(cls));
+  const rows = await ctx.all(`SELECT l.*, (SELECT 1 FROM link_done d WHERE d.class_code = ? AND d.seat = ? AND d.link_id = l.id) AS done,
+    (SELECT 1 FROM link_open o WHERE o.class_code = ? AND o.seat = ? AND o.link_id = l.id) AS opened
+    FROM links l WHERE l.unit_key IN (SELECT value FROM json_each(?)) ORDER BY l.created`, cls.code, s.seat, cls.code, s.seat, linkKeys(cls));
   return rows.map(r => {
     const [, , subject, unit] = r.unit_key.split('｜');
     let host = ''; try { host = new URL(r.url).hostname.replace(/^www\./, ''); } catch (e) {}
-    return { id: r.id, subject, unit: unit === ALL_UNITS ? '全部單元' : unit, title: r.title, url: r.url, host, note: r.note, star: !!r.star, done: !!r.done };
+    return { id: r.id, subject, unit: unit === ALL_UNITS ? '全部單元' : unit, title: r.title, url: r.url, host, note: r.note, star: !!r.star, done: !!r.done, opened: !!(r.opened || r.done) };
   });
+};
+
+API.openLink = async (ctx, cred, id) => {
+  const { cls, s } = await auth(ctx, cred, false);
+  const l = await ctx.first('SELECT id FROM links WHERE id = ? AND unit_key IN (SELECT value FROM json_each(?))', str(id, 40), linkKeys(cls));
+  if (!l) fail('找不到這個延伸冒險。');
+  await ctx.run('INSERT OR IGNORE INTO link_open (class_code, seat, link_id) VALUES (?,?,?)', cls.code, s.seat, l.id);
+  return true;
 };
 
 API.completeLink = async (ctx, cred, id) => {
   const { cls, s } = await auth(ctx, cred, false);
   const l = await ctx.first('SELECT * FROM links WHERE id = ? AND unit_key IN (SELECT value FROM json_each(?))', str(id, 40), linkKeys(cls));
   if (!l) fail('找不到這個延伸冒險。');
+  if (!(await ctx.first('SELECT 1 AS x FROM link_open WHERE class_code = ? AND seat = ? AND link_id = ?', cls.code, s.seat, l.id))
+    && !(await ctx.first('SELECT 1 AS x FROM link_done WHERE class_code = ? AND seat = ? AND link_id = ?', cls.code, s.seat, l.id))) fail('先按「出發」去看看，回來才能按「我完成了」喔！');
   const r = await ctx.run('INSERT OR IGNORE INTO link_done (class_code, seat, link_id, day) VALUES (?,?,?,?)', cls.code, s.seat, l.id, today());
   const first = r.meta.changes > 0;
   if (first && l.star) { await ctx.run('UPDATE students SET stars = stars + 1 WHERE class_code = ? AND seat = ?', cls.code, s.seat); s.stars += 1; }
