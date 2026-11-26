@@ -286,7 +286,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
     <section id="tBank" class="hidden">
       <div class="panel" id="repPanel">
         <h2>待檢查題目 <span class="pill p-bad" id="repCount">0</span></h2>
-        <p class="muted small">學生答題後覺得「這題怪怪的」會回報到這裡（所有班級一起列）。「修改」或「停用」代表題目真的有問題，回報的學生會得到「題目偵探」徽章；「沒問題」只會關掉回報。</p>
+        <p class="muted small">學生答題後覺得「這題怪怪的」會回報到這裡（所有班級一起列）。每則回報都看得到學生選了什麼。「修改」或「停用」代表題目真的有問題，回報的學生會得到「題目偵探」徽章；「沒問題」會關掉回報。可以寫回覆給學生（他們在「題目問題回饋」看得到），亂回報的勾起來會扣金幣（預設 30）。標 🤖 的是 Claude 先寫好的審核建議。</p>
         <div id="repList"></div>
       </div>
       <div class="panel">
@@ -437,7 +437,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <li><b>用 AI 出一般題</b>：左邊選版本、年級、科目、單元，可以貼上課本重點，按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼回右邊，來源選「AI」。</li>
           <li><b>用 AI 出素養題</b>：在科目旁邊的選單選「素養題」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。素養題組不會出現在各科島和燈塔挑戰，而是集中在<b>素養島</b>，學生進去再選科目。</li>
           <li><b>圖片題</b>：在「題庫管理」編輯題目時按「上傳圖片」，手機拍照或截圖都可以，系統會自動縮小。圖片會顯示在題目上方。</li>
-          <li><b>學生回報</b>：學生答題後可以按「這題怪怪的？」回報。「題庫管理」上方的「待檢查題目」會列出來，分頁名稱旁的紅色數字是待檢查的題數。</li>
+          <li><b>學生回報</b>：學生答題後可以按「這題怪怪的？」回報。「題庫管理」上方的「待檢查題目」會列出來，分頁名稱旁的紅色數字是待檢查的題數。回報前學生會先被提醒看解析、查一查，亂回報扣 30 金幣。每個上課日下午 Claude 會先審核、寫建議。<b>答錯有第二次機會</b>：學生第一次答錯會看到提示（題目的「提示」欄位，沒有的話提醒注意「不是」這類字和觀念），第二次答對拿一半金幣；精熟、錯題、過關都照第一次算。答完後有「🔎 查查看」（國語查《國語辭典簡編本》，其他科 Google 安全搜尋）。</li>
           <li><b>上傳檔案</b>：「用 AI 出題」可以上傳課文、講義（Word、PDF、文字檔），內容會自動放進「課本重點」；「貼上題目匯入」和「匯入單元表」可以直接選 Excel、CSV 檔。檔案只在你的瀏覽器裡讀取，不會上傳到伺服器。照片沒辦法讀成文字，請直接附加到 AI 工具。</li>
           <li><b>AI 出的題目一定要先看過</b>，特別是答案和數字。錯的題目可以在「題庫管理」修改或停用。</li>
           <li><b>觀念</b>欄很重要：同一個觀念用一樣的寫法（例如都寫「通分」），後台才能統計出學生的弱點觀念。</li>
@@ -1207,7 +1207,7 @@ async function loadAsks(){
         ${a.draft ? `<div class="small" style="background:#f4f2fb;border-radius:10px;padding:6px 10px;margin:4px 0">🤖 Claude 建議：<b>${ASK_KIND[k] || ''}</b>${a.draftNote ? '<br>' + esc(a.draftNote) : ''}</div>` : ''}
         <div class="row" style="margin-top:6px">${Object.keys(ASK_KIND).map(x => `<label class="small"><input type="radio" name="ak${a.id}" value="${x}"${x === k ? ' checked' : ''}> ${ASK_KIND[x]}</label>`).join(' ')}</div>
         <textarea rows="2" maxlength="300" style="width:100%" placeholder="回覆給學生">${esc(a.draft || '')}</textarea>
-        <div class="row small"><label><input type="checkbox" data-pub> 公開給全班（匿名）</label>　<label>金幣 <input type="number" data-coins min="0" max="200" style="width:64px" value="${k === 'junk' ? 10 : 20}"></label>　<label>星星 <input type="number" data-stars min="0" max="10" style="width:56px" value="1"></label>
+        <div class="row small"><label><input type="checkbox" data-pub> 公開給全班（匿名）</label>　<label>金幣 <input type="number" data-coins min="0" max="200" style="width:64px" value="${k === 'junk' ? 30 : 20}"></label>　<label>星星 <input type="number" data-stars min="0" max="10" style="width:56px" value="1"></label>
           <button class="btn2 sm" data-ask-send>送出</button></div></div>`;
     }).join('') : '<p class="muted">目前沒有學生提問。</p>';
   }catch(e){ toast(e.message); }
@@ -1215,7 +1215,7 @@ async function loadAsks(){
 $('askAll').addEventListener('change', loadAsks);
 $('askList').addEventListener('change', e => {
   const r = e.target.closest('input[type=radio]'); if (!r) return;
-  const box = r.closest('[data-ask]'); box.querySelector('[data-coins]').value = r.value === 'junk' ? 10 : 20;
+  const box = r.closest('[data-ask]'); box.querySelector('[data-coins]').value = r.value === 'junk' ? 30 : 20;
 });
 $('askList').addEventListener('click', async e => {
   const b = e.target.closest('[data-ask-send]'); if (!b) return;
@@ -1240,23 +1240,30 @@ async function loadReports(){
         ${q.passage ? '<div class="small muted">情境：' + esc(q.passage).slice(0, 80) + (q.passage.length > 80 ? '…' : '') + '</div>' : ''}
         <div><b>${esc(q.text)}</b>${q.image ? ' <span class="pill p-warn">有圖</span>' : ''}</div>
         <div class="small">${q.type === '選擇' ? ['A','B','C','D'].map(k => q[k.toLowerCase()] ? k + '. ' + esc(q[k.toLowerCase()]) : '').filter(Boolean).join('　') + '<br>' : ''}答案：<b>${esc(q.answer)}</b>${q.explain ? '　解析：' + esc(q.explain) : ''}</div>
-        <div class="small" style="margin-top:4px">${Object.keys(why).map(k => `<span class="pill p-warn">${esc(k)} × ${why[k]}</span>`).join(' ')} <span class="muted">${esc(g.reports.map(r => r.who).join('、'))}</span></div>
+        <div class="small" style="margin-top:4px">${Object.keys(why).map(k => `<span class="pill p-warn">${esc(k)} × ${why[k]}</span>`).join(' ')}</div>
+        <div class="small" style="margin-top:4px">${g.reports.map(r => `<label style="display:block"><input type="checkbox" data-junk="${r.id}"> ${esc(r.who)}：${esc(r.reason)}${r.answer ? '・選了 <b>' + esc(r.answer) + '</b>' : ''}${r.note ? '・' + esc(r.note) : ''} <span class="muted">（勾＝亂回報，扣金幣）</span></label>`).join('')}</div>
+        ${g.draft ? `<div class="small" style="background:#f4f2fb;border-radius:10px;padding:6px 10px;margin:6px 0">🤖 Claude 建議：<b>${g.draftKind === 'confirmed' ? '真的有問題' : '題目沒問題'}</b>${g.draftNote ? '<br>' + esc(g.draftNote) : ''}</div>` : ''}
+        <textarea data-rep-reply rows="2" maxlength="300" style="width:100%;margin-top:6px" placeholder="給回報同學的回覆（可以不寫，會用預設的話）">${esc(g.draft || '')}</textarea>
+        <div class="row small">亂回報扣 <input type="number" data-rep-pen min="0" max="200" value="30" style="width:64px"> 金幣</div>
         <div class="row" style="margin-top:6px"><button class="btn2 sm" data-rep-edit="${esc(q.id)}">修改</button><button class="btn2 sm" data-rep-off="${esc(q.id)}">停用這題</button><button class="btn2 sm" data-rep-ok="${esc(q.id)}">沒問題</button></div></div>`;
     }).join('') : '<p class="muted">目前沒有待檢查的題目。</p>';
   }catch(e){ toast(e.message); }
 }
 $('repList').addEventListener('click', async e => {
   const ed = e.target.closest('[data-rep-edit]'), off = e.target.closest('[data-rep-off]'), ok = e.target.closest('[data-rep-ok]');
+  if (!ed && !off && !ok) return;
+  const box = e.target.closest('.rep');
+  const ctx = { reply: box.querySelector('[data-rep-reply]').value.trim(), junk: [...box.querySelectorAll('[data-junk]:checked')].map(x => Number(x.dataset.junk)), pen: Number(box.querySelector('[data-rep-pen]').value) };
   try{
-    if (ed){ fromReport = ed.dataset.repEdit; openEditor(REPORTS.find(g => g.q.id === fromReport).q); return; }
-    if (off){ await api('tSetEnabled', PW, [off.dataset.repOff], false); await api('tResolveReports', PW, off.dataset.repOff, true); toast('已停用，回報的學生會得到「題目偵探」徽章'); }
-    if (ok){ await api('tResolveReports', PW, ok.dataset.repOk, false); toast('已標記沒問題'); }
+    if (ed){ fromReport = ed.dataset.repEdit; repCtx = ctx; openEditor(REPORTS.find(g => g.q.id === fromReport).q); return; }
+    if (off){ await api('tSetEnabled', PW, [off.dataset.repOff], false); await api('tResolveReports', PW, off.dataset.repOff, 'confirmed', ctx.reply, ctx.junk, ctx.pen); toast('已停用，回報的學生會得到「題目偵探」徽章'); }
+    if (ok){ await api('tResolveReports', PW, ok.dataset.repOk, 'ok', ctx.reply, ctx.junk, ctx.pen); toast(ctx.junk.length ? '已標記沒問題，亂回報的已扣金幣' : '已標記沒問題'); }
     if (off || ok){ loadReports(); refreshUnits(); }
   }catch(err){ toast(err.message); }
 });
 
 /* ---------- 題庫管理 ---------- */
-let BANK = [], editing = null;
+let BANK = [], editing = null, repCtx = null;
 function fillBankFilters(){
   const vs = DASH.versions || [];
   const fv = $('fVer').value; $('fVer').innerHTML = '<option value="">全部版本</option>' + vs.map(v => `<option>${esc(v)}</option>`).join(''); $('fVer').value = fv;
@@ -1357,7 +1364,7 @@ $('bSaveQ').addEventListener('click', async () => {
   data.image = qImage;
   try{
     await api('tSaveQuestion', PW, data);
-    if (fromReport && fromReport === editing){ await api('tResolveReports', PW, fromReport, true); fromReport = null; loadReports(); }
+    if (fromReport && fromReport === editing){ const c = repCtx || {}; await api('tResolveReports', PW, fromReport, 'confirmed', c.reply || '', c.junk || [], c.pen); fromReport = null; repCtx = null; loadReports(); }
     toast(editing ? '題目已更新' : '已新增一題，記得到「教學進度」確認單元有勾選'); $('qEditor').classList.add('hidden'); await refreshUnits(); loadBank();
   }
   catch(e){ $('qErr').textContent = e.message; }

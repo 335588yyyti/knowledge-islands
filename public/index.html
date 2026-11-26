@@ -225,6 +225,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 #news .nw>span{font-size:26px;line-height:1.2}#news .nw b{display:block}#news .nw p{margin:2px 0 0;line-height:1.55;font-weight:600}
 #news .nsec{margin:6px 0 0;font-size:17px}#news .nw.brief{padding:6px 12px;font-weight:600;line-height:1.5}#news .nw.brief>span{font-size:20px}#news .nw.brief b{display:inline}
 #vShop .shopboard{display:grid;gap:6px;margin:4px 0 10px}#vShop .sched summary{cursor:pointer}#vShop .sched ul{margin:6px 0 0;padding-left:20px;display:grid;gap:4px;font-weight:600;line-height:1.55}#vShop s.was{opacity:.6;font-weight:600}
+.rpre,.rreason{line-height:1.7;font-weight:600}.rpre a{font-weight:800}
 .faq{display:grid;gap:8px;margin:6px 0 14px}.faq details,.faq .fa{border:3px solid #f1e3c8;background:#fffaf0;border-radius:16px;padding:8px 12px}
 .faq summary{cursor:pointer;font-weight:800}.faq details p,.faq .fa p{margin:6px 0 0;line-height:1.6;font-weight:600}.faq .fcat{font-size:13px;color:var(--muted);font-weight:800;margin:4px 0 -2px}
 .faq .fa img{max-width:100%;border-radius:10px;margin-top:6px}.faq .st{font-size:13px;font-weight:800;color:var(--muted)}
@@ -370,6 +371,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <p id="askMsg" class="small"></p>
       <h3>🗂️ 我的提問</h3>
       <div id="myAsks" class="faq"></div>
+      <h3>🚩 題目問題回饋（我回報的題目）</h3>
+      <div id="myReps" class="faq"></div>
     </div>
   </section>
 
@@ -402,7 +405,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li><b>素養題</b>會先給你一段「閱讀情境」，同一段情境會連續出好幾題。先把情境讀完，答案就藏在裡面！</li>
         <li>選擇題的選項每次順序都不一樣，所以要真的看懂，不能只背「答案是 B」喔。</li>
         <li>答錯沒關係，波波會告訴你正確答案和原因。</li>
-        <li>覺得題目怪怪的（答案好像錯了、看不懂）？答完後按「<b>這題怪怪的？</b>」告訴老師。</li>
+        <li><b>答錯有第二次機會</b>：第一次答錯會先給 💡 提示，再答一次；第二次答對拿一半金幣（精熟照第一次算，是非題沒有第二次）。</li>
+        <li>覺得題目怪怪的？先再讀一次題目、看解析，按「🔎 查查看」確認；還是覺得怪，再按「<b>這題怪怪的？</b>」告訴老師。<b>亂回報會扣 30 金幣</b>。結果在「❓ 常見問答・提問」的「題目問題回饋」看得到。</li>
         <li>島上標著「<b>老師的任務</b>」的，是老師希望你先去的島喔！</li>
         <li>地圖上的「<b>🧭 延伸冒險</b>」是老師推薦的影片或網站，點「出發」會開新分頁，看完回來按「我完成了」。</li>
       </ul>
@@ -995,7 +999,8 @@ const FAQ = [
   ['🌳 精熟', '都答對了，為什麼還是「發芽」？', '「記住」要在兩個不同的日子都答對，而且最近一次是答對。今天答對的題目，要隔天以後再答對一次才算記住。詳細請看航海手冊第 5 站。', '發芽 精熟 答對了 等級 長葉 茁壯 記住 升級'],
   ['🌳 精熟', '精熟以後答錯，會掉級嗎？', '不會！精熟過就一直是精熟，只會提醒你還有幾題要再答對。', '掉級 降級 答錯 退步'],
   ['🌳 精熟', '錯題礁的題目怎麼才會不見？', '在錯題礁或各科島把那一題重新答對，就會從錯題礁移除。', '錯題 錯題礁 移除'],
-  ['🌳 精熟', '題目的答案好像錯了怎麼辦？', '答題時按「這題怪怪的？」回報那一題。老師確認真的有錯，你會拿到「題目偵探」徽章！', '答案錯 題目錯 怪怪 看不懂 回報 錯字'],
+  ['🌳 精熟', '答錯為什麼可以再答一次？', '第一次答錯時會先給你提示，再答一次。第二次答對拿一半金幣；精熟和錯題礁照第一次的對錯算（是非題沒有第二次）。', '再答 提示 第二次 一半 重答'],
+  ['🌳 精熟', '題目的答案好像錯了怎麼辦？', '先再讀一次題目、看解析和提示，再按「查一查」確認。還是覺得怪，才按「這題怪怪的？」回報。老師確認真的有錯，你會拿到「題目偵探」徽章；亂回報會扣 30 金幣。回報結果在「常見問答・提問」的「題目問題回饋」看得到。', '答案錯 題目錯 怪怪 看不懂 回報 錯字'],
   ['🏅 徽章', '我做到了，為什麼還沒拿到徽章？', '徽章在交卷或登入時檢查，重新登入看看。也可以在徽章牆點一下那個徽章，看條件有沒有真的達到（例如要「連續」或「同一週」）。', '徽章 沒拿到 沒有徽章 條件'],
   ['🏅 徽章', '「指定徽章」是什麼？', '高級款、套裝的關鍵物品和徽章限定款，要先拿到某一個徽章才能買。點那樣東西，會寫要哪一個徽章。', '指定 限定款 高級款 指定徽章'],
   ['🔐 帳號', '忘記密碼怎麼辦？', '請老師幫你重設密碼，下次登入時再自己設定新的 4 位數字密碼。', '密碼 忘記'],
@@ -1032,6 +1037,8 @@ async function openFaq(){
     $('askDaily').textContent = r.daily;
     $('faqPub').innerHTML = r.pub.length ? r.pub.map(a => `<details><summary>有同學問：${esc(a.text)}</summary><p>👩‍🏫 ${esc(a.reply)}</p></details>`).join('') : '<p class="small">還沒有公開的回覆。</p>';
     $('myAsks').innerHTML = r.mine.length ? r.mine.map(a => `<div class="fa"><span class="st">${a.ts.slice(5, 16)}　${ASK_ST[a.status] || ''}</span><p>${esc(a.text)}</p>${a.image ? `<img src="${a.image}" alt="我的截圖" loading="lazy">` : ''}${a.reply ? `<p>👩‍🏫 ${esc(a.reply)}${a.reward ? `（${esc(a.reward)}）` : ''}</p>` : ''}</div>`).join('') : '<p class="small">你還沒有提問過。</p>';
+    const RS = { confirmed: '✅ 真的有問題，謝謝你！', ok: '👌 老師檢查過，題目沒問題', junk: '🚫 亂回報' };
+    $('myReps').innerHTML = (r.reps || []).length ? r.reps.map(x => `<div class="fa"><span class="st">${x.ts.slice(5, 16)}　${x.open ? '⏳ 老師還在檢查' : RS[x.result] || ''}</span><p>${esc(x.text)}</p><p class="small">你回報：${esc(x.reason)}${x.answer ? '・你選了：' + esc(x.answer) : ''}</p>${x.reply ? `<p>👩‍🏫 ${esc(x.reply)}${x.penalty ? '（-' + x.penalty + ' 金幣）' : ''}</p>` : ''}</div>`).join('') : '<p class="small">你還沒有回報過題目。答題時按「這題怪怪的？」就能回報。</p>';
     $('bAsk').dataset.left = r.left; askCheck();
   }catch(e){ $('askMsg').textContent = e.message; }
 }
@@ -1106,12 +1113,14 @@ function pendingNews(){
 function askPopup(){
   const an = state && state.askNews;
   const fr = state && state.flag && state.flag.result;
-  if (!an || (!an.pub.length && !an.mine.length && !fr)) return null;
+  const reps = (an && an.reps) || [];
+  if (!an || (!an.pub.length && !an.mine.length && !fr && !reps.length)) return null;
   const secs = [];
   if (fr) secs.push({ title: '🚩 旗子審核', items: [[fr.status === 'approved' ? '✅' : '❌', fr.status === 'approved' ? '你的旗子通過了！' : '你的旗子這次沒有通過', fr.status === 'approved' ? '已經扣 50 金幣，旗子插在波波旁邊了。' + (fr.note ? '老師說：' + fr.note : '') : (fr.note ? '老師說：' + fr.note + '。' : '') + '可以重畫再送審，沒通過不扣錢。']] });
   if (an.mine.length) secs.push({ title: '📮 老師回覆你的提問', items: an.mine.map(a => [a.status === 'bug' ? '🛠️' : a.status === 'junk' ? '🚫' : '💬', '你問：' + a.text, a.reply + (a.reward ? '（' + a.reward + '）' : '')]) });
+  if (reps.length) secs.push({ title: '🚩 題目問題回饋', items: reps.map(x => [x.result === 'confirmed' ? '✅' : x.result === 'junk' ? '🚫' : '👌', '你回報的題目：' + x.text.slice(0, 40), (x.reply || '') + (x.penalty ? '（-' + x.penalty + ' 金幣）' : '')]) });
   if (an.pub.length) secs.push({ title: '💬 同學問、老師答', items: an.pub.map(a => ['❓', '有同學問：' + a.text, '老師：' + a.reply]) });
-  return { ver: 'asks', sections: secs, onSeen: () => { const mx = Math.max(0, ...an.pub.map(a => a.id)); state.askNews = { pub: [], mine: [] }; if (state.flag) state.flag.result = null; api('seenAsks', cred, mx).catch(() => {}); } };
+  return { ver: 'asks', sections: secs, onSeen: () => { const mx = Math.max(0, ...an.pub.map(a => a.id)); state.askNews = { pub: [], mine: [], reps: [] }; if (state.flag) state.flag.result = null; api('seenAsks', cred, mx).catch(() => {}); } };
 }
 function showNews(force){
   if ($('news')) return;
@@ -1303,6 +1312,11 @@ function check(q, a){
   if (q.type === '是非') return tf(a) !== null && tf(a) === tf(q.answer);
   return q.answer.split('|').some(r => norm(r) && norm(r) === norm(a));
 }
+/** 查查看：國語查教育部《國語辭典簡編本》，其他科用 Google（安全搜尋） */
+function searchUrl(q){
+  const t = String(q.text || '').replace(/[（）()「」？?。，,、：:]/g, ' ').trim().slice(0, 60);
+  return 'https://www.google.com/search?safe=active&q=' + encodeURIComponent((q.subject === '國語' ? 'site:dict.concised.moe.edu.tw ' : '') + t);
+}
 function answerLabel(q){
   if (q.type === '選擇'){ const i = 'ABCD'.indexOf(q.answer.trim().toUpperCase()); return q.answer.toUpperCase() + (q.options[i] ? '　' + q.options[i] : ''); }
   if (q.type === '是非') return tf(q.answer) === 'O' ? '○（對）' : '✕（錯）';
@@ -1311,10 +1325,26 @@ function answerLabel(q){
 const YAY = ['答對了！金幣 +1', '好厲害！金幣 +1', '太棒了！金幣 +1', '完全正確！金幣 +1'];
 const OOPS = ['差一點點！', '沒關係，下次就會了！', '喔喔，再想想看～'];
 
+/** 提示：有老師或 Claude 寫的提示就用；沒有的話，提醒注意「不是」這類字和觀念（不會說出答案） */
+function hintText(q){
+  if (q.hint) return q.hint;
+  const m = String(q.text).match(/(不是|不正確|錯誤|不屬於|不會|不能|不可以|沒有|NOT|not|isn't|doesn't|don't|false)/);
+  return (m ? '注意題目問的是「' + m[1] + '」！' : '再仔細讀一次題目，') + (q.concept ? '想一想「' + q.concept + '」。' : '每個選項都看一遍再選。');
+}
 function answer(a, el){
-  const q = round.qs[round.i];
+  const q = round.qs[round.i], prev = round.res[round.i];
   const ok = check(q, a);
-  round.res[round.i] = {id:q.id, answer:a, ok};
+  // 第一次答錯（是非題除外）：先給提示，再答一次；第二次答對拿一半金幣
+  if (!ok && !prev && q.type !== '是非'){
+    round.res[round.i] = {id:q.id, first:a, answer:a, ok:false, retry:true};
+    if (el && el.classList.contains('opt')){ el.classList.add('wrong'); el.disabled = true; }
+    else if ($('iFill')){ $('iFill').value = ''; $('iFill').focus(); }
+    $('qFb').innerHTML = `<div class="fb no"><div class="talk"><span class="bob">${mascot('oops')}</span><div class="say"><h3>再想一次！</h3>
+      <p>💡 提示：${esc(hintText(q))}</p><p class="small">再答一次，答對可以拿一半金幣喔！</p></div></div></div>`;
+    renderDots();
+    return;
+  }
+  round.res[round.i] = prev && prev.retry ? {id:q.id, first:prev.first, answer:a, ok:false, second:ok} : {id:q.id, answer:a, ok};
   document.querySelectorAll('#qBody .opt, #qBody input, #qBody button').forEach(x => x.disabled = true);
   if (el && el.classList.contains('opt')) el.classList.add(ok ? 'right' : 'wrong');
   if (!ok && q.type !== '填空'){
@@ -1324,15 +1354,19 @@ function answer(a, el){
   if (ok && el) sparkle(el);
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
   $('qFb').innerHTML = `<div class="fb ${ok?'ok':'no'}"><div class="talk"><span class="bob">${mascot(ok ? 'cheer' : 'oops')}</span><div class="say">
-    <h3>${ok ? pick(YAY) : pick(OOPS)}</h3>
-    ${ok ? '' : '<p>正確答案：<b>' + esc(answerLabel(q)) + '</b></p>'}${q.explain ? '<p>' + esc(q.explain) + '</p>' : ''}</div></div></div>`;
+    <h3>${ok && prev && prev.retry ? '第二次答對了！拿一半金幣' : ok ? pick(YAY) : pick(OOPS)}</h3>
+    ${ok ? '' : '<p>正確答案：<b>' + esc(answerLabel(q)) + '</b></p>'}${q.explain ? '<p>' + esc(q.explain) + '</p>' : ''}<p class="small"><a href="${searchUrl(q)}" target="_blank" rel="noopener">${q.subject === '國語' ? '🔎 查國語辭典簡編本' : '🔎 Google 查查看'}</a></p></div></div></div>`;
+  const mine = q.type === '選擇' ? (q.options['ABCD'.indexOf(a)] || a) : a;
   $('qFb').insertAdjacentHTML('beforeend', `<div class="report"><button class="rlink" id="bReport" type="button">這題怪怪的？</button><div class="rbox hidden" id="rBox">
-    <span>哪裡怪怪的？</span>${['答案好像錯了','題目看不懂','選項有問題','圖片看不清楚','其他'].map(r => `<button type="button" class="rchip" data-r="${r}">${r}</button>`).join('')}</div></div>`);
+    <div class="rpre"><b>回報前先做這 3 件事：</b><br>① 再讀一次題目，注意「不是」「錯誤」這類字<br>② 看上面的解析${q.hint ? '和提示：' + esc(q.hint) : ''}<br>③ <a href="${searchUrl(q)}" target="_blank" rel="noopener">查一查</a>，確認答案
+      <br><b>⚠️ 其實沒錯卻回報（亂回報），會被扣 30 金幣，因為老師要花時間檢查。</b><br><button type="button" class="rchip" id="rGo">我查過了，還是覺得怪怪的</button></div>
+    <div class="rreason hidden"><span>哪裡怪怪的？</span>${['答案好像錯了','題目看不懂','選項有問題','圖片看不清楚','其他'].map(r => `<button type="button" class="rchip" data-r="${r}">${r}</button>`).join('')}</div></div></div>`);
   $('bReport').onclick = () => { $('rBox').classList.toggle('hidden'); };
+  $('rGo').onclick = e => { e.stopPropagation(); $('rBox').querySelector('.rpre').classList.add('hidden'); $('rBox').querySelector('.rreason').classList.remove('hidden'); };
   $('rBox').onclick = async e => {
-    const c = e.target.closest('.rchip'); if (!c) return;
+    const c = e.target.closest('.rchip[data-r]'); if (!c) return;
     $('rBox').innerHTML = '<span>送出中…</span>';
-    try{ const r = await api('reportQuestion', cred, q.id, c.dataset.r, ''); $('rBox').innerHTML = '<span>' + (r.already ? '你已經回報過這題了，老師會檢查。' : '謝謝你！老師會檢查這一題。') + '</span>'; }
+    try{ const r = await api('reportQuestion', cred, q.id, c.dataset.r, '', mine); $('rBox').innerHTML = '<span>' + (r.already ? '你已經回報過這題了，老師會檢查。' : '謝謝你！老師會檢查這一題。') + '</span>'; }
     catch(err){ $('rBox').innerHTML = '<span>' + esc(err.message) + '</span>'; }
     $('bReport').disabled = true;
   };
@@ -1346,7 +1380,8 @@ $('bNext').addEventListener('click', async () => {
   if (round.i < round.qs.length - 1){ round.i++; renderQ(); return; }
   show('vLoading');
   try{
-    const r = await api('submitRound', cred, round.island, round.res.map((x, i) => ({id:x.id, answer: round.qs[i].type === '選擇' ? (round.qs[i].options['ABCD'.indexOf(x.answer)] || '') : x.answer})));
+    const optText = (q, a) => q.type === '選擇' ? (q.options['ABCD'.indexOf(a)] || '') : a;
+    const r = await api('submitRound', cred, round.island, round.res.map((x, i) => Object.assign({id:x.id, answer: optText(round.qs[i], x.answer)}, x.first != null ? {first: optText(round.qs[i], x.first)} : {})));
     state = Object.assign({}, state, r.state); renderResult(r);
   }catch(e){
     show('vResult');
@@ -1366,6 +1401,7 @@ function renderResult(r){
       ${r.stamp ? `<div class="gain"><div class="seal on stampin" style="margin:0 auto 4px">已蓋章</div>今日印章</div>` : ''}
     </div>
     ${r.stamp ? '<p>連續完成 <b>' + r.state.streak + '</b> 天！印章可以跟老師換加點喔。</p>' : ''}
+    ${r.retryOk ? '<p>💡 看提示後第二次答對 <b>' + r.retryOk + '</b> 題，拿一半金幣（已算在上面）</p>' : ''}
     ${r.focusCoins > 0 ? '<p>⭐ 主力島加成：多拿 <b>' + r.focusCoins + '</b> 枚金幣（已算在上面）</p>' : ''}
     ${r.outside > 0 ? '<p>📚 這回合有 <b>' + r.outside + '</b> 題不在考試範圍，金幣×' + r.outsideRate + '。多練考試範圍的單元，金幣比較多喔！</p>' : ''}
     ${r.focusBonus ? '<div class="badge newb"><span>🎯</span><div><b>今日任務完成！</b><br>' + esc((r.focusSubjects || []).join('、')) + '都過關，多拿 ' + r.focusBonus + ' 枚金幣（已算在上面）</div></div>' : ''}

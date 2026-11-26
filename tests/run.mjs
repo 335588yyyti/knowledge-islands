@@ -62,16 +62,27 @@ try {
   };
 
   // 答題輔助：wrongAt 裡的題目故意答錯
-  async function play(p, island, wrongAt = []) {
+  // wrongAt：這幾題答錯（有第二次機會的題目，第二次也答錯）；retryAt：第一次答錯、看提示後第二次答對
+  async function play(p, island, wrongAt = [], retryAt = []) {
     await p.click(`[data-island="${island}"]`);
     if (await p.$('#pick')) await p.click('#pick [data-go]');  // 科目島先選「全部單元混合」
     await p.waitForSelector('#vQuiz:not(.hidden)');
-    for (let i = 0; ; i++) {
-      const q = await p.evaluate(() => round.qs[round.i]);
-      let a = q.answer.split('|')[0];
-      if (wrongAt.includes(i)) a = q.type === '選擇' ? (a === 'A' ? 'B' : 'A') : q.type === '是非' ? (a === 'O' ? 'X' : 'O') : 'zzz';
+    const give = async (q, a) => {
       if (q.type === '填空') { await p.fill('#iFill', a); await p.click('#fFill button'); }
       else await p.click(`#qBody .opt[data-a="${a}"]`);
+    };
+    for (let i = 0; ; i++) {
+      const q = await p.evaluate(() => round.qs[round.i]);
+      const right = q.answer.split('|')[0];
+      const wrong = (not = []) => q.type === '選擇' ? 'ABCD'.split('').find(x => x !== right && !not.includes(x) && q.options['ABCD'.indexOf(x)]) : q.type === '是非' ? (right === 'O' ? 'X' : 'O') : 'zzz' + not.length;
+      if (wrongAt.includes(i) || retryAt.includes(i)) {
+        const w1 = wrong();
+        await give(q, w1);
+        if (q.type !== '是非') {  // 第一次答錯：先出現提示，再答一次
+          await p.waitForFunction(() => document.querySelector('#qFb').textContent.includes('提示'));
+          await give(q, retryAt.includes(i) ? right : wrong([w1]));
+        }
+      } else await give(q, right);
       const last = await p.evaluate(() => round.i === round.qs.length - 1);
       await p.click('#bNext');
       if (last) break;
@@ -451,17 +462,35 @@ try {
     await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
     await p.click('[data-island="社會"]'); await p.click('#pick [data-go="社會"]'); await p.waitForSelector('#vQuiz:not(.hidden)');
     const q = await p.evaluate(() => round.qs[round.i]);
-    if (q.type === '填空') { await p.fill('#iFill', 'x'); await p.click('#fFill button'); } else await p.click('#qBody .opt >> nth=0');
-    await p.click('#bReport'); await p.click('.rchip[data-r="答案好像錯了"]');
+    const ra = q.answer.split('|')[0];
+    if (q.type === '填空') { await p.fill('#iFill', ra); await p.click('#fFill button'); } else await p.click(`#qBody .opt[data-a="${ra}"]`);
+    assert.match(await p.textContent('#qFb'), /查/);  // 公布答案後有「查查看」
+    // 回報前先提醒：看解析、查一查，亂回報扣 30 金幣
+    await p.click('#bReport');
+    assert.match(await p.textContent('#rBox'), /扣 30 金幣/);
+    await p.click('#rGo'); await p.click('.rchip[data-r="答案好像錯了"]');
     await p.waitForFunction(() => document.querySelector('#rBox').textContent.includes('謝謝'));
     const reps = (await call('tReports', PW)).ok;
     const g = reps.find(x => x.q.id === q.id);
     assert.ok(g && g.reports[0].reason === '答案好像錯了');
+    assert.ok(g.reports[0].answer, '看得到學生選了什麼');
     assert.ok((await call('tDashboard', PW, 'DEMO')).ok.openReports >= 1);
+    // Claude 先寫審核建議（匯入鑰匙）
+    const x = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
+    assert.ok((await x('xReports')).ok.some(r => r.qid === q.id && r.reports[0].answer));
+    assert.ok((await x('xDraftReport', q.id, 'ok', '老師檢查過了，答案沒有錯。', '題目和答案一致')).ok);
+    const c3r = { code: 'DEMO', seat: 3, pin: '3333' }, coins0 = (await call('studentLogin', c3r)).ok.coins;
     await t.reload(); await t.waitForSelector('#vApp:not(.hidden)');
     await t.click('[data-tab="tBank"]'); await t.waitForSelector(`[data-rep-ok="${q.id}"]`);
-    await t.click(`[data-rep-ok="${q.id}"]`); await toastHas(t, '已標記沒問題');
+    assert.match(await t.textContent('#repList'), /Claude 建議/);
+    // 勾「亂回報」→ 沒問題：扣 30 金幣，學生看得到回饋
+    await t.check(`#repList [data-junk="${g.reports[0].id}"]`);
+    await t.click(`[data-rep-ok="${q.id}"]`); await toastHas(t, '亂回報的已扣金幣');
     assert.ok(!(await call('tReports', PW)).ok.some(x => x.q.id === q.id));
+    const after = (await call('studentLogin', c3r)).ok;
+    assert.equal(after.coins, Math.max(0, coins0 - 30));
+    assert.equal(after.askNews.reps[0].result, 'junk');
+    assert.equal((await call('myAsks', c3r)).ok.reps[0].result, 'junk');
   });
   await step('圖片題：上傳、顯示在題目上方', async () => {
     // 產生一張 300x200 的 PNG 檔，從編輯器上傳
@@ -771,6 +800,14 @@ try {
     assert.deepEqual(m.state.focus.done.sort(), ['★', '國語', '數學'].sort());
     const lit = await play1('素養:數學');
     assert.equal(lit.coins, Math.round(lit.correct * 2), '數學素養島金幣 2 倍');
+    // 看提示後第二次答對：拿一半金幣，但精熟照第一次（答錯）算
+    await call('tSaveSettings', PW, { outsideRate: 1 });
+    const qs2 = (await call('getRound', c, '英文')).ok.filter(q => q.type === '選擇');
+    if (qs2.length) {
+      const q0 = qs2[0], wrongOpt = q0.options.find((o, i) => 'ABCD'[i] !== q0.answer);
+      const rr = (await call('submitRound', c, '英文', [{ id: q0.id, first: wrongOpt, answer: right(q0) }])).ok;
+      assert.equal(rr.correct, 0); assert.equal(rr.retryOk, 1); assert.equal(rr.coins, 1);  // 0.5 四捨五入
+    }
     // 考試範圍為主：範圍外（這裡是通用版的英文）金幣打 5 折
     await call('tSaveSettings', PW, { outsideRate: 0.5 });
     assert.equal((await call('tGetSettings', PW)).ok.outsideRate, 0.5);

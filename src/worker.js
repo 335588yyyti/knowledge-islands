@@ -757,7 +757,7 @@ const FIXED_ORDER = /以上|皆是|皆非|都對|都不對|都是|都不是|all 
 
 /** 給學生的題目：選擇題每次打亂選項順序，答案字母跟著換 */
 function publicQ(q) {
-  const out = { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, passage: q.passage || '', image: q.image ? '/img/' + q.image : '', answer: q.answer, explain: q.explain };
+  const out = { id: q.id, subject: q.subject, unit: q.unit, concept: q.concept, type: q.type, text: q.text, passage: q.passage || '', image: q.image ? '/img/' + q.image : '', answer: q.answer, explain: q.explain, hint: q.hint || '' };
   if (q.type !== '選擇') return Object.assign(out, { options: [] });
   let opts = ['A', 'B', 'C', 'D'].map(k => ({ k, t: q[k.toLowerCase()] })).filter(o => o.t);
   if (!opts.some(o => FIXED_ORDER.test(o.t))) opts = shuffle(opts);
@@ -938,19 +938,22 @@ API.submitRound = async (ctx, cred, island, responses) => {
   const passageOk = {};   // 每一段情境：答了幾題、對了幾題（題組全對用）
   const fc = await focusConf(ctx), exNow = exam(cls), exUnits = new Set(exNow ? exNow.units : []);
   const boost = island === '段考' && exNow && exNow.days <= EXAM_BOOST_DAYS;
-  let outside = 0;
+  let outside = 0, retryOk = 0;
   let correct = 0, coinW = 0, rescued = 0, passageRight = 0, reviewDone = false, longmem = 0;
   list.forEach(r => {
     const q = qmap[str(r && r.id, 40)];
     if (!q || seen.has(q.id)) return;  // 同一題只算一次
     seen.add(q.id);
-    const ok = grade(q, r.answer);
+    // 答錯會先給提示、再答一次：first 是第一次的答案。精熟、錯題、過關都照第一次算；第二次答對拿一半金幣
+    const firstAns = r.first != null && r.first !== '' ? r.first : r.answer;
+    const ok = grade(q, firstAns), ok2 = !ok && r.first != null && r.first !== '' && grade(q, r.answer);
     gotOk[q.id] = ok;
+    let w = fc.subjects.includes(q.subject) ? (q.passage ? FOCUS_LIT_RATE : FOCUS_RATE) : 1;
+    if (boost) w = Math.max(w, FOCUS_RATE);
+    if ((ok || ok2) && exNow && !exUnits.has(q.unit_key)) { w *= fc.outside; outside++; }  // 考試範圍外：金幣打折
+    if (ok2) { coinW += w * 0.5; retryOk++; }
     if (ok) {
       correct++;
-      let w = fc.subjects.includes(q.subject) ? (q.passage ? FOCUS_LIT_RATE : FOCUS_RATE) : 1;
-      if (boost) w = Math.max(w, FOCUS_RATE);
-      if (exNow && !exUnits.has(q.unit_key)) { w *= fc.outside; outside++; }  // 考試範圍外：金幣打折
       coinW += w;
       if (before[q.id] && !before[q.id].last) rescued++;   // 之前答錯，這次答對
       if (q.passage) passageRight++;
@@ -958,7 +961,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
       if (before[q.id] && before[q.id].rday && before[q.id].rday <= longAgo) longmem++;  // 隔 21 天以上再答仍答對
     } else concepts(q.concept).forEach(c => missed.add(c));
     if (q.passage) { const g = passageOk[q.passage] = passageOk[q.passage] || { n: 0, ok: 0 }; g.n++; if (ok) g.ok++; }
-    stmts.push(ctx.stmt('INSERT INTO logs (ts, day, class_code, seat, qid, subject, unit, answer, ok) VALUES (?,?,?,?,?,?,?,?,?)', ts, day, cls.code, s.seat, q.id, q.subject, q.unit, str(r.answer, 100), ok ? 1 : 0));
+    stmts.push(ctx.stmt('INSERT INTO logs (ts, day, class_code, seat, qid, subject, unit, answer, ok) VALUES (?,?,?,?,?,?,?,?,?)', ts, day, cls.code, s.seat, q.id, q.subject, q.unit, str(firstAns, 100), ok ? 1 : 0));
     // 答對：如果今天還沒答對過這題，答對的日子數 +1
     stmts.push(ctx.stmt(`INSERT INTO progress (class_code, seat, qid, last_ok, right_days, last_right_day, last_day) VALUES (?,?,?,?,?,?,?)
       ON CONFLICT(class_code, seat, qid) DO UPDATE SET last_ok = excluded.last_ok, last_day = excluded.last_day,
@@ -1041,7 +1044,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
     lighthouse: island === '綜合' && total >= 5 && correct === total
   });
   st.badges = st.badges.concat(nb.map(b => b.id));
-  return { correct, total, passed, coins, focusBonus, focusCoins: Math.round(coinW) - correct, outside, outsideRate: fc.outside, examBoost: !!boost, stampNeedFocus, focusSubjects: fc.subjects, star: gotStar, starFull: passed && !gotStar, starMax: STAR_DAILY_MAX, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
+  return { correct, total, passed, coins, retryOk, focusBonus, focusCoins: Math.round(coinW) - correct, outside, outsideRate: fc.outside, examBoost: !!boost, stampNeedFocus, focusSubjects: fc.subjects, star: gotStar, starFull: passed && !gotStar, starMax: STAR_DAILY_MAX, stamp: gotStamp, missed: [...missed].slice(0, 4), mastered: newly.map(u => u.subject + '・' + u.unit),
     badges: nb.map(b => ({ id: b.id, icon: b.icon, name: b.name, desc: b.desc })), state: st };
 };
 
@@ -1839,14 +1842,14 @@ API.about = async ctx => ({ credit: (await ctx.settings()).credit || '' });
 
 const REPORT_REASONS = ['答案好像錯了', '題目看不懂', '選項有問題', '圖片看不清楚', '其他'];
 
-API.reportQuestion = async (ctx, cred, qid, reason, note) => {
+API.reportQuestion = async (ctx, cred, qid, reason, note, answer) => {
   const { cls, s } = await auth(ctx, cred, false);
   qid = str(qid, 40);
   if (!REPORT_REASONS.includes(reason)) fail('請選一個原因。');
   if (!(await ctx.first('SELECT id FROM questions WHERE id = ?', qid))) fail('找不到這一題。');
   const dup = await ctx.first("SELECT id FROM reports WHERE class_code = ? AND seat = ? AND qid = ? AND status = 'open'", cls.code, s.seat, qid);
   if (dup) return { already: true };
-  await ctx.run('INSERT INTO reports (ts, class_code, seat, qid, reason, note) VALUES (?,?,?,?,?,?)', stampNow(), cls.code, s.seat, qid, reason, str(note, 100));
+  await ctx.run('INSERT INTO reports (ts, class_code, seat, qid, reason, note, answer, seen) VALUES (?,?,?,?,?,?,?,0)', stampNow(), cls.code, s.seat, qid, reason, str(note, 100), str(answer, 100));
   return { ok: true };
 };
 
@@ -1856,15 +1859,18 @@ API.reportQuestion = async (ctx, cred, qid, reason, note) => {
  * 回覆可以公開給全班（匿名、不給截圖），全班下次登入會看到；也可以只給提問的同學。
  * Claude 可以用匯入鑰匙讀待處理的提問、寫回覆草稿；草稿要老師在後台按送出，學生才看得到。 */
 const ASK_DAILY = 3, ASK_KINDS = ['answered', 'bug', 'warn', 'junk'];
+/** 亂提問、亂回報預設扣的金幣（會增加老師的工作量，所以扣重一點；老師處理時可以改） */
+const JUNK_PENALTY = 30;
 const askOut = a => ({ id: a.id, ts: a.ts, text: a.text, status: a.status, reply: a.reply, reward: a.reward, public: !!a.public });
 
 /** 登入時要跳出的：全班公開的新回覆、自己提問的新回覆 */
 async function askNews(ctx, cls, s) {
-  const [pub, mine] = await Promise.all([
+  const [pub, mine, reps] = await Promise.all([
     ctx.all("SELECT id, text, reply FROM asks WHERE class_code = ? AND public = 1 AND id > ? AND status <> 'open' ORDER BY id LIMIT 10", cls.code, s.asks_seen || 0),
-    ctx.all("SELECT * FROM asks WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0 ORDER BY id LIMIT 10", cls.code, s.seat)
+    ctx.all("SELECT * FROM asks WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0 ORDER BY id LIMIT 10", cls.code, s.seat),
+    ctx.all("SELECT r.id, r.result, r.reply, r.penalty, q.text FROM reports r LEFT JOIN questions q ON q.id = r.qid WHERE r.class_code = ? AND r.seat = ? AND r.status <> 'open' AND r.seen = 0 ORDER BY r.id LIMIT 10", cls.code, s.seat)
   ]);
-  return { pub: pub.map(a => ({ id: a.id, text: a.text, reply: a.reply })), mine: mine.map(askOut) };  // 旗子的審核結果在 flag.result
+  return { pub: pub.map(a => ({ id: a.id, text: a.text, reply: a.reply })), mine: mine.map(askOut), reps: reps.map(r => ({ text: r.text || '', result: r.result, reply: r.reply, penalty: r.penalty })) };  // 旗子的審核結果在 flag.result
 }
 
 /** 回覆滿 30 天的提問：刪掉截圖（文字和回覆留著）。老師打開提問分頁、學生送出提問時順便清 */
@@ -1898,12 +1904,13 @@ API.askQuestion = async (ctx, cred, text, dataUrl) => {
 /** 學生的提問頁：自己的提問（含截圖）、全班公開的回覆 */
 API.myAsks = async (ctx, cred) => {
   const { cls, s } = await auth(ctx, cred, false);
-  const [mine, pub, n] = await Promise.all([
+  const [mine, pub, n, reps] = await Promise.all([
     ctx.all('SELECT * FROM asks WHERE class_code = ? AND seat = ? ORDER BY id DESC LIMIT 20', cls.code, s.seat),
     ctx.all("SELECT * FROM asks WHERE class_code = ? AND public = 1 AND status <> 'open' ORDER BY id DESC LIMIT 30", cls.code),
-    ctx.first('SELECT COUNT(*) AS n FROM asks WHERE class_code = ? AND seat = ? AND day = ?', cls.code, s.seat, today())
+    ctx.first('SELECT COUNT(*) AS n FROM asks WHERE class_code = ? AND seat = ? AND day = ?', cls.code, s.seat, today()),
+    ctx.all('SELECT r.ts, r.reason, r.answer, r.status, r.result, r.reply, r.penalty, q.text FROM reports r LEFT JOIN questions q ON q.id = r.qid WHERE r.class_code = ? AND r.seat = ? ORDER BY r.id DESC LIMIT 20', cls.code, s.seat)
   ]);
-  return { mine: mine.map(a => Object.assign(askOut(a), { image: a.image ? '/img/' + a.image : '' })), pub: pub.map(askOut), left: Math.max(0, ASK_DAILY - n.n), daily: ASK_DAILY };
+  return { reps: reps.map(r => ({ ts: r.ts, reason: r.reason, answer: r.answer, open: r.status === 'open', result: r.result || (r.status === 'confirmed' ? 'confirmed' : r.status === 'done' ? 'ok' : ''), reply: r.reply, penalty: r.penalty, text: r.text || '' })), mine: mine.map(a => Object.assign(askOut(a), { image: a.image ? '/img/' + a.image : '' })), pub: pub.map(askOut), left: Math.max(0, ASK_DAILY - n.n), daily: ASK_DAILY };
 };
 
 /** 學生看過回覆：公開的記到最大 id，自己的標成看過 */
@@ -1912,7 +1919,8 @@ API.seenAsks = async (ctx, cred, pubMax) => {
   await ctx.db.batch([
     ctx.stmt('UPDATE students SET asks_seen = MAX(asks_seen, ?) WHERE class_code = ? AND seat = ?', Math.floor(num(pubMax)), cls.code, s.seat),
     ctx.stmt("UPDATE asks SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat),
-    ctx.stmt("UPDATE flags SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'pending' AND seen = 0", cls.code, s.seat)
+    ctx.stmt("UPDATE flags SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'pending' AND seen = 0", cls.code, s.seat),
+    ctx.stmt("UPDATE reports SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat)
   ]);
   return true;
 };
@@ -1968,21 +1976,73 @@ API.xDraftAsk = async (ctx, id, kind, reply, note) => {
 
 API.tReports = async (ctx, pw) => {
   await checkPw(ctx, pw);
-  const rows = await ctx.all(`SELECT r.qid, r.reason, r.note, r.ts, r.class_code, r.seat, q.* FROM reports r JOIN questions q ON q.id = r.qid
+  const rows = await ctx.all(`SELECT r.id AS rid, r.qid, r.reason, r.note, r.ts, r.class_code, r.seat, r.answer AS ranswer, r.draft AS rdraft, r.draft_kind AS rkind, r.draft_note AS rnote, q.* FROM reports r JOIN questions q ON q.id = r.qid
     WHERE r.status = 'open' ORDER BY r.id`);
   const by = {};
   rows.forEach(r => {
-    const g = by[r.qid] = by[r.qid] || { q: Object.assign({}, r, { reason: undefined, note: undefined, ts: undefined, class_code: undefined, seat: undefined }), reports: [] };
-    g.reports.push({ reason: r.reason, note: r.note, ts: r.ts, who: r.class_code + ' ' + r.seat + ' 號' });
+    const g = by[r.qid] = by[r.qid] || { q: Object.assign({}, r, { reason: undefined, note: undefined, ts: undefined, class_code: undefined, seat: undefined, rid: undefined, ranswer: undefined, rdraft: undefined, rkind: undefined, rnote: undefined }), reports: [], draft: '', draftKind: '', draftNote: '' };
+    g.reports.push({ id: r.rid, reason: r.reason, note: r.note, ts: r.ts, who: r.class_code + ' ' + r.seat + ' 號', answer: r.ranswer });
+    if (r.rdraft && !g.draft) Object.assign(g, { draft: r.rdraft, draftKind: r.rkind, draftNote: r.rnote });
   });
   return Object.values(by).sort((a, b) => b.reports.length - a.reports.length);
 };
 
 /** 處理回報：confirmed = true 代表老師確認題目真的有問題（學生會得到「題目偵探」徽章） */
-API.tResolveReports = async (ctx, pw, qid, confirmed) => {
+/* 處理回報：result = confirmed（真的有問題，學生得「題目偵探」）或 ok（沒問題）；reply 是給學生的回覆；
+ * junk 是亂回報的回報 id 清單，那些學生扣 coins 枚金幣（不會扣成負數），其他照 result。學生下次登入會看到結果。 */
+API.tResolveReports = async (ctx, pw, qid, result, reply, junk, coins) => {
   await checkPw(ctx, pw);
-  await ctx.run("UPDATE reports SET status = ? WHERE qid = ? AND status = 'open'", confirmed ? 'confirmed' : 'done', str(qid, 40));
+  const confirmed = result === true || result === 'confirmed';
+  const rows = await ctx.all("SELECT id, class_code, seat FROM reports WHERE qid = ? AND status = 'open'", str(qid, 40));
+  const bad = new Set((Array.isArray(junk) ? junk : []).map(x => Math.floor(num(x))));
+  const pen = Math.max(0, Math.min(200, coins === undefined ? JUNK_PENALTY : Math.floor(num(coins))));
+  const msg = str(reply, 300) || (confirmed ? '謝謝你！這題真的有問題，老師已經處理了。' : '老師檢查過了，這題沒有問題。再看一次題目和解析喔！');
+  const stmts = [];
+  rows.forEach(r => {
+    if (bad.has(r.id)) {
+      stmts.push(ctx.stmt("UPDATE reports SET status = 'done', result = 'junk', reply = ?, penalty = ?, seen = 0 WHERE id = ?", str(reply, 300) || '這題沒有問題，請不要亂回報喔。', pen, r.id));
+      if (pen) stmts.push(ctx.stmt('UPDATE students SET coins = MAX(0, coins - ?) WHERE class_code = ? AND seat = ?', pen, r.class_code, r.seat));
+    } else stmts.push(ctx.stmt('UPDATE reports SET status = ?, result = ?, reply = ?, seen = 0 WHERE id = ?', confirmed ? 'confirmed' : 'done', confirmed ? 'confirmed' : 'ok', msg, r.id));
+  });
+  if (stmts.length) await ctx.db.batch(stmts);
   return true;
+};
+/** Claude 用：待檢查的題目（含題目全文、答案、解析、學生選了什麼） */
+API.xReports = async ctx => {
+  checkImport(ctx);
+  const rows = await ctx.all(`SELECT r.id AS rid, r.qid, r.reason, r.note, r.answer AS ranswer, r.class_code, r.seat, r.draft AS rdraft, q.* FROM reports r JOIN questions q ON q.id = r.qid
+    WHERE r.status = 'open' ORDER BY r.id LIMIT 200`);
+  const by = {};
+  rows.forEach(r => {
+    const g = by[r.qid] = by[r.qid] || { qid: r.qid, subject: r.subject, unit: r.unit, version: r.version, type: r.type, passage: r.passage, text: r.text, a: r.a, b: r.b, c: r.c, d: r.d, answer: r.answer, explain: r.explain, image: r.image ? '/img/' + r.image : '', hasDraft: false, reports: [] };
+    g.reports.push({ id: r.rid, class: r.class_code, seat: r.seat, reason: r.reason, note: r.note, answer: r.ranswer });
+    if (r.rdraft) g.hasDraft = true;
+  });
+  return Object.values(by);
+};
+/** Claude 用：寫審核建議（kind：confirmed 真的有問題、ok 沒問題），老師看過按鈕才會處理 */
+API.xDraftReport = async (ctx, qid, kind, reply, note) => {
+  checkImport(ctx);
+  const r = await ctx.run("UPDATE reports SET draft = ?, draft_kind = ?, draft_note = ? WHERE qid = ? AND status = 'open'",
+    str(reply, 300), kind === 'confirmed' ? 'confirmed' : 'ok', str(note, 500), str(qid, 40));
+  if (!r.meta.changes) fail('找不到這一題待檢查的回報。');
+  return true;
+};
+/** Claude 用：還沒有提示的題目（老師班上已教的單元優先），批次寫提示 */
+API.xHintTodo = async (ctx, limit) => {
+  checkImport(ctx);
+  const units = new Set((await ctx.all("SELECT units FROM classes WHERE status = '進行中'")).flatMap(c => jsonp(c.units, [])));
+  const rows = await ctx.all("SELECT id, subject, unit, unit_key, type, text, a, b, c, d, answer, explain, passage, concept FROM questions WHERE enabled = 1 AND hint = '' AND unit_key IN (SELECT value FROM json_each(?)) LIMIT ?",
+    JSON.stringify([...units]), Math.min(200, Math.max(1, Math.floor(num(limit)) || 50)));
+  return rows;
+};
+/** Claude 用：寫入提示（[{id, hint}]，提示不能寫出答案） */
+API.xSetHints = async (ctx, list) => {
+  checkImport(ctx);
+  const stmts = (Array.isArray(list) ? list : []).slice(0, 200).filter(x => x && x.id && x.hint).map(x => ctx.stmt('UPDATE questions SET hint = ? WHERE id = ?', str(x.hint, 200), str(x.id, 40)));
+  if (stmts.length) await ctx.batch(stmts);
+  if (stmts.length) await bumpBank(ctx);  // 題庫有改，記憶體裡的題庫要重讀
+  return stmts.length;
 };
 
 /* ---------- 老師頒發的徽章 ---------- */
