@@ -374,6 +374,8 @@ label{display:block;font-weight:800;margin-bottom:6px}
       <div id="myAsks" class="faq"></div>
       <h3>🚩 題目問題回饋（我回報的題目）</h3>
       <div id="myReps" class="faq"></div>
+      <h3>📢 題目更正紀錄</h3>
+      <div id="corrList" class="faq"></div>
     </div>
   </section>
 
@@ -407,7 +409,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li>選擇題的選項每次順序都不一樣，所以要真的看懂，不能只背「答案是 B」喔。</li>
         <li>答錯沒關係，波波會告訴你正確答案和原因。</li>
         <li><b>答錯有第二次機會</b>：第一次答錯會先給 💡 提示，再答一次；第二次答對拿一半金幣（精熟照第一次算，是非題沒有第二次）。</li>
-        <li>覺得題目怪怪的？先再讀一次題目、看解析，按「🔎 查查看」確認；還是覺得怪，再按「<b>這題怪怪的？</b>」告訴老師。<b>亂回報會扣 30 金幣</b>。結果在「❓ 常見問答・提問」的「題目問題回饋」看得到。</li>
+        <li>覺得題目怪怪的？先再讀一次題目、看解析，按「🔎 查查看」確認；還是覺得怪，再按「<b>這題怪怪的？</b>」告訴老師。<b>亂回報會扣 30 金幣</b>。結果在「❓ 常見問答・提問」的「題目問題回饋」看得到。老師確認有錯的題目，<b>隔天早上 8 點</b>全班登入時會看到「📢 題目更正」，也記在「題目更正紀錄」裡。</li>
         <li>島上標著「<b>老師的任務</b>」的，是老師希望你先去的島喔！</li>
         <li>地圖上的「<b>🧭 延伸冒險</b>」是老師推薦的影片或網站，點「出發」會開新分頁，闖關完再回來按「我完成了」（要先按過出發，「我完成了」才按得下去）。</li>
       </ul>
@@ -1001,7 +1003,7 @@ const FAQ = [
   ['🌳 精熟', '精熟以後答錯，會掉級嗎？', '不會！精熟過就一直是精熟，只會提醒你還有幾題要再答對。', '掉級 降級 答錯 退步'],
   ['🌳 精熟', '錯題礁的題目怎麼才會不見？', '在錯題礁或各科島把那一題重新答對，就會從錯題礁移除。', '錯題 錯題礁 移除'],
   ['🌳 精熟', '答錯為什麼可以再答一次？', '第一次答錯時會先給你提示，再答一次。第二次答對拿一半金幣；精熟和錯題礁照第一次的對錯算（是非題沒有第二次）。', '再答 提示 第二次 一半 重答'],
-  ['🌳 精熟', '題目的答案好像錯了怎麼辦？', '先再讀一次題目、看解析和提示，再按「查一查」確認。還是覺得怪，才按「這題怪怪的？」回報。老師確認真的有錯，你會拿到「題目偵探」徽章；亂回報會扣 30 金幣。回報結果在「常見問答・提問」的「題目問題回饋」看得到。', '答案錯 題目錯 怪怪 看不懂 回報 錯字'],
+  ['🌳 精熟', '題目的答案好像錯了怎麼辦？', '先再讀一次題目、看解析和提示，再按「查一查」確認。還是覺得怪，才按「這題怪怪的？」回報。老師確認真的有錯，你會拿到「題目偵探」徽章；亂回報會扣 30 金幣。回報結果在「常見問答・提問」的「題目問題回饋」看得到；確認有錯的題目，隔天早上 8 點會公告給全班，也記在「題目更正紀錄」。', '答案錯 題目錯 怪怪 看不懂 回報 錯字'],
   ['🏅 徽章', '我做到了，為什麼還沒拿到徽章？', '徽章在交卷或登入時檢查，重新登入看看。也可以在徽章牆點一下那個徽章，看條件有沒有真的達到（例如要「連續」或「同一週」）。', '徽章 沒拿到 沒有徽章 條件'],
   ['🏅 徽章', '「指定徽章」是什麼？', '高級款、套裝的關鍵物品和徽章限定款，要先拿到某一個徽章才能買。點那樣東西，會寫要哪一個徽章。', '指定 限定款 高級款 指定徽章'],
   ['🔐 帳號', '忘記密碼怎麼辦？', '請老師幫你重設密碼，下次登入時再自己設定新的 4 位數字密碼。', '密碼 忘記'],
@@ -1039,7 +1041,8 @@ async function openFaq(){
     $('faqPub').innerHTML = r.pub.length ? r.pub.map(a => `<details><summary>有同學問：${esc(a.text)}</summary><p>👩‍🏫 ${esc(a.reply)}</p></details>`).join('') : '<p class="small">還沒有公開的回覆。</p>';
     $('myAsks').innerHTML = r.mine.length ? r.mine.map(a => `<div class="fa"><span class="st">${a.ts.slice(5, 16)}　${ASK_ST[a.status] || ''}</span><p>${esc(a.text)}</p>${a.image ? `<img src="${a.image}" alt="我的截圖" loading="lazy">` : ''}${a.reply ? `<p>👩‍🏫 ${esc(a.reply)}${a.reward ? `（${esc(a.reward)}）` : ''}</p>` : ''}</div>`).join('') : '<p class="small">你還沒有提問過。</p>';
     const RS = { confirmed: '✅ 真的有問題，謝謝你！', ok: '👌 老師檢查過，題目沒問題', junk: '🚫 亂回報' };
-    $('myReps').innerHTML = (r.reps || []).length ? r.reps.map(x => `<div class="fa"><span class="st">${x.ts.slice(5, 16)}　${x.open ? '⏳ 老師還在檢查' : RS[x.result] || ''}</span><p>${esc(x.text)}</p><p class="small">你回報：${esc(x.reason)}${x.answer ? '・你選了：' + esc(x.answer) : ''}</p>${x.reply ? `<p>👩‍🏫 ${esc(x.reply)}${x.penalty ? '（-' + x.penalty + ' 金幣）' : ''}</p>` : ''}</div>`).join('') : '<p class="small">你還沒有回報過題目。答題時按「這題怪怪的？」就能回報。</p>';
+    $('myReps').innerHTML = (r.reps || []).length ? r.reps.map(x => `<div class="fa"><span class="st">${x.ts.slice(5, 16)}　${x.open ? '⏳ 老師還在檢查' : RS[x.result] || ''}</span><p>${esc(x.text)}</p><p class="small">你回報：${esc(x.reason)}${x.answer ? '・你的作答：' + esc(x.answer) : ''}</p>${x.reply ? `<p>👩‍🏫 ${esc(x.reply)}${x.penalty ? '（-' + x.penalty + ' 金幣）' : ''}</p>` : ''}</div>`).join('') : '<p class="small">你還沒有回報過題目。答題時按「這題怪怪的？」就能回報。</p>';
+    $('corrList').innerHTML = (r.corr || []).length ? r.corr.map(c => `<div class="fa"><span class="st">${c.day.slice(5).replace('-', '/')}　${c.kind === 'off' ? '🚫 已停用' : '✏️ 已修正'}</span><p>${esc(c.subject)}・${esc(c.unit)}「${esc(c.text)}」</p>${c.kind === 'off' ? '' : `<p class="small">正確答案：${esc(c.answer)}${c.explain ? '。' + esc(c.explain) : ''}</p>`}</div>`).join('') : '<p class="small">目前沒有更正過的題目。</p>';
     $('bAsk').dataset.left = r.left; askCheck();
   }catch(e){ $('askMsg').textContent = e.message; }
 }
@@ -1114,14 +1117,15 @@ function pendingNews(){
 function askPopup(){
   const an = state && state.askNews;
   const fr = state && state.flag && state.flag.result;
-  const reps = (an && an.reps) || [];
-  if (!an || (!an.pub.length && !an.mine.length && !fr && !reps.length)) return null;
+  const reps = (an && an.reps) || [], corr = (an && an.corr) || [];
+  if (!an || (!an.pub.length && !an.mine.length && !fr && !reps.length && !corr.length)) return null;
   const secs = [];
+  if (corr.length) secs.push({ title: '📢 題目更正', items: corr.map(c => [c.kind === 'off' ? '🚫' : '✏️', c.subject + '・' + c.unit + '「' + c.text.slice(0, 60) + '」', c.kind === 'off' ? '這題有錯，已經停用了。' : '已修正：正確答案是 ' + c.answer + (c.explain ? '。' + c.explain : '')]).concat([['🙏', '謝謝同學幫忙找到問題！', '答題時覺得怪怪的，可以先查一查，還是覺得有問題再按「這題怪怪的？」']]) });
   if (fr) secs.push({ title: '🚩 旗子審核', items: [[fr.status === 'approved' ? '✅' : '❌', fr.status === 'approved' ? '你的旗子通過了！' : '你的旗子這次沒有通過', fr.status === 'approved' ? '已經扣 50 金幣，旗子插在波波旁邊了。' + (fr.note ? '老師說：' + fr.note : '') : (fr.note ? '老師說：' + fr.note + '。' : '') + '可以重畫再送審，沒通過不扣錢。']] });
   if (an.mine.length) secs.push({ title: '📮 老師回覆你的提問', items: an.mine.map(a => [a.status === 'bug' ? '🛠️' : a.status === 'junk' ? '🚫' : '💬', '你問：' + a.text, a.reply + (a.reward ? '（' + a.reward + '）' : '')]) });
   if (reps.length) secs.push({ title: '🚩 題目問題回饋', items: reps.map(x => [x.result === 'confirmed' ? '✅' : x.result === 'junk' ? '🚫' : '👌', '你回報的題目：' + x.text.slice(0, 40), (x.reply || '') + (x.penalty ? '（-' + x.penalty + ' 金幣）' : '')]) });
   if (an.pub.length) secs.push({ title: '💬 同學問、老師答', items: an.pub.map(a => ['❓', '有同學問：' + a.text, '老師：' + a.reply]) });
-  return { ver: 'asks', sections: secs, onSeen: () => { const mx = Math.max(0, ...an.pub.map(a => a.id)); state.askNews = { pub: [], mine: [], reps: [] }; if (state.flag) state.flag.result = null; api('seenAsks', cred, mx).catch(() => {}); } };
+  return { ver: 'asks', sections: secs, onSeen: () => { const mx = Math.max(0, ...an.pub.map(a => a.id)), cx = Math.max(0, ...corr.map(c => c.id)); state.askNews = { pub: [], mine: [], reps: [], corr: [] }; if (state.flag) state.flag.result = null; api('seenAsks', cred, mx, cx).catch(() => {}); } };
 }
 function showNews(force){
   if ($('news')) return;
@@ -1357,7 +1361,8 @@ function answer(a, el){
   $('qFb').innerHTML = `<div class="fb ${ok?'ok':'no'}"><div class="talk"><span class="bob">${mascot(ok ? 'cheer' : 'oops')}</span><div class="say">
     <h3>${ok && prev && prev.retry ? '第二次答對了！拿一半金幣' : ok ? pick(YAY) : pick(OOPS)}</h3>
     ${ok ? '' : '<p>正確答案：<b>' + esc(answerLabel(q)) + '</b></p>'}${q.explain ? '<p>' + esc(q.explain) + '</p>' : ''}<p class="small"><a href="${searchUrl(q)}" target="_blank" rel="noopener">${q.subject === '國語' ? '🔎 查國語辭典簡編本' : '🔎 Google 查查看'}</a></p></div></div></div>`;
-  const mine = q.type === '選擇' ? (q.options['ABCD'.indexOf(a)] || a) : a;
+  const lab = x => q.type === '選擇' ? (q.options['ABCD'.indexOf(x)] || x) : x;
+  const mine = prev && prev.retry ? '第一次 ' + lab(prev.first) + '・第二次 ' + lab(a) : lab(a);  // 回報時讓老師看到學生的作答
   $('qFb').insertAdjacentHTML('beforeend', `<div class="report"><button class="rlink" id="bReport" type="button">這題怪怪的？</button><div class="rbox hidden" id="rBox">
     <div class="rpre"><b>回報前先做這 3 件事：</b><br>① 再讀一次題目，注意「不是」「錯誤」這類字<br>② 看上面的解析${q.hint ? '和提示：' + esc(q.hint) : ''}<br>③ <a href="${searchUrl(q)}" target="_blank" rel="noopener">查一查</a>，確認答案
       <br><b>⚠️ 其實沒錯卻回報（亂回報），會被扣 30 金幣，因為老師要花時間檢查。</b><br><button type="button" class="rchip" id="rGo">我查過了，還是覺得怪怪的</button></div>

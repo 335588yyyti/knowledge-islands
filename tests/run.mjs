@@ -488,6 +488,13 @@ try {
     await t.reload(); await t.waitForSelector('#vApp:not(.hidden)');
     await t.click('[data-tab="tBank"]'); await t.waitForSelector(`[data-rep-ok="${q.id}"]`);
     assert.match(await t.textContent('#repList'), /Claude 建議/);
+    // 列表每頁 5 則，可以翻頁；處理完（列表變短）還留在同一頁
+    await t.evaluate(() => { const d = document.createElement('div'); d.id = 'pgT'; document.body.append(d); showPaged('t', 'pgT', [...Array(12).keys()], i => `<p class="it">${i}</p>`, '空'); });
+    assert.match(await t.textContent('#pgT'), /第 1 \/ 3 頁/); assert.equal(await t.$$eval('#pgT .it', x => x.length), 5);
+    await t.click('#pgT [data-d="1"] >> nth=0'); assert.match(await t.textContent('#pgT'), /第 2 \/ 3 頁/);
+    await t.evaluate(() => showPaged('t', 'pgT', [...Array(9).keys()], i => `<p class="it">${i}</p>`, '空'));
+    assert.match(await t.textContent('#pgT'), /第 2 \/ 2 頁/); assert.equal(await t.$$eval('#pgT .it', x => x.length), 4);
+    await t.evaluate(() => document.getElementById('pgT').remove());
     // 勾「亂回報」→ 沒問題：扣 30 金幣，學生看得到回饋
     await t.check(`#repList [data-junk="${g.reports[0].id}"]`);
     await t.click(`[data-rep-ok="${q.id}"]`); await toastHas(t, '亂回報的已扣金幣');
@@ -527,13 +534,32 @@ try {
   });
   await step('題目偵探：回報被老師確認（停用）後，學生拿到徽章', async () => {
     const c3 = { code: 'DEMO', seat: 3, pin: '3333' };
-    const q = (await call('getRound', c3, '自然')).ok[0];
+    const qs = (await call('getRound', c3, '自然')).ok, q = qs[0];
+    const right = x => x.type === '選擇' ? x.options['ABCD'.indexOf(x.answer)] : x.answer.split('|')[0];
+    // 第一題先答錯、再答對（兩次作答都記下來）
+    await call('submitRound', c3, '自然', qs.map((x, i) => i ? { id: x.id, answer: right(x) } : { id: x.id, first: '亂猜的答案', answer: right(x) }));
     assert.ok((await call('reportQuestion', c3, q.id, '答案好像錯了', '')).ok.ok);
+    // 舊的回報沒帶答案：老師端從作答紀錄找出第一次、第二次作答
+    const rg = (await call('tReports', PW)).ok.find(g => g.q.id === q.id);
+    assert.match(rg.reports[0].answer, /第一次 亂猜的答案・第二次 .+從作答紀錄找到/);
     await t.reload(); await t.waitForSelector('#vApp:not(.hidden)');
     await t.click('[data-tab="tBank"]'); await t.waitForSelector(`[data-rep-off="${q.id}"]`);
     await t.click(`[data-rep-off="${q.id}"]`); await toastHas(t, '題目偵探');
     const st = (await call('studentLogin', c3)).ok;
     assert.ok(st.badges.includes('detective1'));
+    // 確認有錯的題目：隔天早上 8 點起公告給全班（同一天的合成一則）
+    assert.ok(!(st.askNews.corr || []).some(c => c.qid === q.id), '當天還不公告');
+    execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE corrections SET day = '2026-11-27'"`, { stdio: 'ignore' });
+    const c5 = { code: 'DEMO', seat: 2, pin: '2222' };
+    const n5 = (await call('studentLogin', c5)).ok;
+    const cr = n5.askNews.corr.find(c => c.qid === q.id);
+    assert.ok(cr && cr.kind === 'off' && cr.text === q.text, '別的同學也看得到更正');
+    const p5 = await page('/?c=DEMO');
+    await p5.fill('#iSeat', '2'); await p5.fill('#iPin', '2222'); await p5.click('#bLogin'); await p5.waitForSelector('#vMap:not(.hidden)'); await closeNews(p5);
+    await p5.waitForFunction(() => document.body.textContent.includes('題目更正'));
+    assert.ok((await call('myAsks', c5)).ok.corr.some(c => c.qid === q.id), '常見問答頁有更正紀錄');
+    await call('seenAsks', c5, 0, cr.id);
+    assert.ok(!(await call('studentLogin', c5)).ok.askNews.corr.some(c => c.qid === q.id), '看過就不再跳出');
     await call('tSetEnabled', PW, [q.id], true);
   });
   await step('老師頒發的徽章：建立、頒發、學生看到原因、收回', async () => {

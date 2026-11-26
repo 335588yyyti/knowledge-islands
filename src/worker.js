@@ -799,6 +799,7 @@ API.studentLogin = async (ctx, cred) => {
   const st = await state(ctx, cls, s);
   // 登入時才讀：老師的新回覆、旗子
   [st.askNews, st.flag] = await Promise.all([askNews(ctx, cls, s), flagState(ctx, cls, s)]);
+  st.askNews.corr = (await ctx.all('SELECT * FROM corrections WHERE day <= ? AND id > ? ORDER BY id LIMIT 30', shopDay(ctx), s.corr_seen || 0)).map(corrOut);
   const nb = await awardBadges(ctx, cls, s, st, {});
   if (nb.length) st.badges = st.badges.concat(nb.map(b => b.id));
   return st;
@@ -961,7 +962,7 @@ API.submitRound = async (ctx, cred, island, responses) => {
       if (before[q.id] && before[q.id].rday && before[q.id].rday <= longAgo) longmem++;  // 隔 21 天以上再答仍答對
     } else concepts(q.concept).forEach(c => missed.add(c));
     if (q.passage) { const g = passageOk[q.passage] = passageOk[q.passage] || { n: 0, ok: 0 }; g.n++; if (ok) g.ok++; }
-    stmts.push(ctx.stmt('INSERT INTO logs (ts, day, class_code, seat, qid, subject, unit, answer, ok) VALUES (?,?,?,?,?,?,?,?,?)', ts, day, cls.code, s.seat, q.id, q.subject, q.unit, str(firstAns, 100), ok ? 1 : 0));
+    stmts.push(ctx.stmt('INSERT INTO logs (ts, day, class_code, seat, qid, subject, unit, answer, ok, answer2) VALUES (?,?,?,?,?,?,?,?,?,?)', ts, day, cls.code, s.seat, q.id, q.subject, q.unit, str(firstAns, 100), ok ? 1 : 0, r.first != null && r.first !== '' ? str(r.answer, 100) : ''));
     // 答對：如果今天還沒答對過這題，答對的日子數 +1
     stmts.push(ctx.stmt(`INSERT INTO progress (class_code, seat, qid, last_ok, right_days, last_right_day, last_day) VALUES (?,?,?,?,?,?,?)
       ON CONFLICT(class_code, seat, qid) DO UPDATE SET last_ok = excluded.last_ok, last_day = excluded.last_day,
@@ -1918,23 +1919,25 @@ API.askQuestion = async (ctx, cred, text, dataUrl) => {
 /** 學生的提問頁：自己的提問（含截圖）、全班公開的回覆 */
 API.myAsks = async (ctx, cred) => {
   const { cls, s } = await auth(ctx, cred, false);
-  const [mine, pub, n, reps] = await Promise.all([
+  const [mine, pub, n, reps, corr] = await Promise.all([
     ctx.all('SELECT * FROM asks WHERE class_code = ? AND seat = ? ORDER BY id DESC LIMIT 20', cls.code, s.seat),
     ctx.all("SELECT * FROM asks WHERE class_code = ? AND public = 1 AND status <> 'open' ORDER BY id DESC LIMIT 30", cls.code),
     ctx.first('SELECT COUNT(*) AS n FROM asks WHERE class_code = ? AND seat = ? AND day = ?', cls.code, s.seat, today()),
-    ctx.all('SELECT r.ts, r.reason, r.answer, r.status, r.result, r.reply, r.penalty, q.text FROM reports r LEFT JOIN questions q ON q.id = r.qid WHERE r.class_code = ? AND r.seat = ? ORDER BY r.id DESC LIMIT 20', cls.code, s.seat)
+    ctx.all('SELECT r.ts, r.reason, r.answer, r.status, r.result, r.reply, r.penalty, q.text FROM reports r LEFT JOIN questions q ON q.id = r.qid WHERE r.class_code = ? AND r.seat = ? ORDER BY r.id DESC LIMIT 20', cls.code, s.seat),
+    ctx.all('SELECT * FROM corrections WHERE day <= ? ORDER BY id DESC LIMIT 20', shopDay(ctx))
   ]);
-  return { reps: reps.map(r => ({ ts: r.ts, reason: r.reason, answer: r.answer, open: r.status === 'open', result: r.result || (r.status === 'confirmed' ? 'confirmed' : r.status === 'done' ? 'ok' : ''), reply: r.reply, penalty: r.penalty, text: r.text || '' })), mine: mine.map(a => Object.assign(askOut(a), { image: a.image ? '/img/' + a.image : '' })), pub: pub.map(askOut), left: Math.max(0, ASK_DAILY - n.n), daily: ASK_DAILY };
+  return { corr: corr.map(corrOut), reps: reps.map(r => ({ ts: r.ts, reason: r.reason, answer: r.answer, open: r.status === 'open', result: r.result || (r.status === 'confirmed' ? 'confirmed' : r.status === 'done' ? 'ok' : ''), reply: r.reply, penalty: r.penalty, text: r.text || '' })), mine: mine.map(a => Object.assign(askOut(a), { image: a.image ? '/img/' + a.image : '' })), pub: pub.map(askOut), left: Math.max(0, ASK_DAILY - n.n), daily: ASK_DAILY };
 };
 
 /** 學生看過回覆：公開的記到最大 id，自己的標成看過 */
-API.seenAsks = async (ctx, cred, pubMax) => {
+API.seenAsks = async (ctx, cred, pubMax, corrMax) => {
   const { cls, s } = await auth(ctx, cred, false);
   await ctx.db.batch([
     ctx.stmt('UPDATE students SET asks_seen = MAX(asks_seen, ?) WHERE class_code = ? AND seat = ?', Math.floor(num(pubMax)), cls.code, s.seat),
     ctx.stmt("UPDATE asks SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat),
     ctx.stmt("UPDATE flags SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'pending' AND seen = 0", cls.code, s.seat),
-    ctx.stmt("UPDATE reports SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat)
+    ctx.stmt("UPDATE reports SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat),
+    ctx.stmt('UPDATE students SET corr_seen = MAX(corr_seen, ?) WHERE class_code = ? AND seat = ?', Math.floor(num(corrMax)), cls.code, s.seat)
   ]);
   return true;
 };
@@ -1998,6 +2001,15 @@ API.tReports = async (ctx, pw) => {
     g.reports.push({ id: r.rid, reason: r.reason, note: r.note, ts: r.ts, who: r.class_code + ' ' + r.seat + ' 號', answer: r.ranswer });
     if (r.rdraft && !g.draft) Object.assign(g, { draft: r.rdraft, draftKind: r.rkind, draftNote: r.rnote });
   });
+  // 舊的回報沒有記學生選了什麼：從作答紀錄找他回報前最後一次答這題的答案
+  const miss = rows.filter(r => !r.ranswer);
+  if (miss.length) {
+    const found = await Promise.all(miss.map(r => ctx.first('SELECT answer, answer2 FROM logs WHERE class_code = ? AND qid = ? AND seat = ? AND ts <= ? ORDER BY id DESC LIMIT 1', r.class_code, r.qid, r.seat, r.ts)));
+    miss.forEach((r, i) => {
+      const f = found[i], rep2 = by[r.qid].reports.find(x => x.id === r.rid);
+      if (f && rep2) rep2.answer = (f.answer2 ? '第一次 ' + f.answer + '・第二次 ' + f.answer2 : f.answer) + '（從作答紀錄找到）';
+    });
+  }
   return Object.values(by).sort((a, b) => b.reports.length - a.reports.length);
 };
 
@@ -2018,9 +2030,25 @@ API.tResolveReports = async (ctx, pw, qid, result, reply, junk, coins) => {
       if (pen) stmts.push(ctx.stmt('UPDATE students SET coins = MAX(0, coins - ?) WHERE class_code = ? AND seat = ?', pen, r.class_code, r.seat));
     } else stmts.push(ctx.stmt('UPDATE reports SET status = ?, result = ?, reply = ?, seen = 0 WHERE id = ?', confirmed ? 'confirmed' : 'done', confirmed ? 'confirmed' : 'ok', msg, r.id));
   });
+  if (confirmed && rows.length) {
+    const q = await ctx.first('SELECT * FROM questions WHERE id = ?', str(qid, 40));
+    if (q) {
+      const tomorrow = addDays(shopDay(ctx), 1);  // 隔天早上 8 點起公告（跟衣櫃一樣，一天從早上 8 點開始）
+      stmts.push(ctx.stmt('INSERT INTO corrections (ts, day, qid, kind, subject, unit, text, answer, explain) VALUES (?,?,?,?,?,?,?,?,?)',
+        stampNow(), tomorrow, q.id, q.enabled ? 'edit' : 'off', q.subject, q.unit, q.text, q.enabled ? answerText(q) : '', q.enabled ? q.explain : ''));
+    }
+  }
   if (stmts.length) await ctx.db.batch(stmts);
   return true;
 };
+/** 正確答案給學生看的文字：選擇題「A. 選項」、是非題 ○／✕、填空題第一個答案 */
+function answerText(q) {
+  if (q.type === '選擇') { const k = String(q.answer).trim().toUpperCase(); return k + '. ' + (q[k.toLowerCase()] || ''); }
+  if (q.type === '是非') { const t = String(q.answer).trim().toUpperCase(); return t === 'O' ? '○（對）' : '✕（錯）'; }
+  return String(q.answer).split('|')[0];
+}
+/** 已經公告的題目更正（隔天早上 8 點起；衣櫃的一天也是早上 8 點開始） */
+const corrOut = c => ({ id: c.id, qid: c.qid, day: c.day, kind: c.kind, subject: c.subject, unit: c.unit, text: c.text, answer: c.answer, explain: c.explain });
 /** Claude 用：待檢查的題目（含題目全文、答案、解析、學生選了什麼） */
 API.xReports = async ctx => {
   checkImport(ctx);

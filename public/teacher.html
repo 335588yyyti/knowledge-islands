@@ -437,7 +437,7 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
           <li><b>用 AI 出一般題</b>：左邊選版本、年級、科目、單元，可以貼上課本重點，按「複製提示詞」，貼到 Claude 等 AI 工具，再把它產生的表格貼回右邊，來源選「AI」。</li>
           <li><b>用 AI 出素養題</b>：在科目旁邊的選單選「素養題」，AI 會先寫一段生活情境，再出 2～4 題題組。學生作答時，同一段情境的題目會排在一起，上方顯示「閱讀情境」。素養題組不會出現在各科島和燈塔挑戰，而是集中在<b>素養島</b>，學生進去再選科目。</li>
           <li><b>圖片題</b>：在「題庫管理」編輯題目時按「上傳圖片」，手機拍照或截圖都可以，系統會自動縮小。圖片會顯示在題目上方。</li>
-          <li><b>學生回報</b>：學生答題後可以按「這題怪怪的？」回報。「題庫管理」上方的「待檢查題目」會列出來，分頁名稱旁的紅色數字是待檢查的題數。回報前學生會先被提醒看解析、查一查，亂回報扣 30 金幣。每個上課日下午 Claude 會先審核、寫建議。<b>答錯有第二次機會</b>：學生第一次答錯會看到提示（題目的「提示」欄位，沒有的話提醒注意「不是」這類字和觀念），第二次答對拿一半金幣；精熟、錯題、過關都照第一次算。答完後有「🔎 查查看」（國語查《國語辭典簡編本》，其他科 Google 安全搜尋）。</li>
+          <li><b>學生回報</b>：學生答題後可以按「這題怪怪的？」回報。「題庫管理」上方的「待檢查題目」會列出來，分頁名稱旁的紅色數字是待檢查的題數。回報前學生會先被提醒看解析、查一查，亂回報扣 30 金幣。每個上課日下午 Claude 會先審核、寫建議。老師看得到學生的作答（答兩次的會寫「第一次・第二次」；以前的回報從作答紀錄找）。按「修改」或「停用」的題目，<b>隔天早上 8 點</b>起全班登入時會看到「📢 題目更正」（同一天更正好幾題合成一則），學生的常見問答頁也有「題目更正紀錄」。待檢查題目、學生提問、旗子、許願池都是每頁 5 則，處理完會留在同一頁。<b>答錯有第二次機會</b>：學生第一次答錯會看到提示（題目的「提示」欄位，沒有的話提醒注意「不是」這類字和觀念），第二次答對拿一半金幣；精熟、錯題、過關都照第一次算。答完後有「🔎 查查看」（國語查《國語辭典簡編本》，其他科 Google 安全搜尋）。</li>
           <li><b>上傳檔案</b>：「用 AI 出題」可以上傳課文、講義（Word、PDF、文字檔），內容會自動放進「課本重點」；「貼上題目匯入」和「匯入單元表」可以直接選 Excel、CSV 檔。檔案只在你的瀏覽器裡讀取，不會上傳到伺服器。照片沒辦法讀成文字，請直接附加到 AI 工具。</li>
           <li><b>AI 出的題目一定要先看過</b>，特別是答案和數字。錯的題目可以在「題庫管理」修改或停用。</li>
           <li><b>觀念</b>欄很重要：同一個觀念用一樣的寫法（例如都寫「通分」），後台才能統計出學生的弱點觀念。</li>
@@ -1165,6 +1165,20 @@ function renderReportCount(){
   const a = DASH.openAsks || 0;
   $('askTab').textContent = a; $('askTab').classList.toggle('hidden', !a);
 }
+/* ---------- 分頁（每頁 5 則，處理完留在同一頁） ---------- */
+const PG = {}, PER = 5;
+function showPaged(key, el, list, render, empty){
+  const n = Math.max(1, Math.ceil(list.length / PER)), old = PG[key];
+  const p = Math.min(old ? old.p : 0, n - 1);
+  PG[key] = { p, el, list, render, empty };
+  const nav = n > 1 ? `<div class="row small" style="justify-content:center;gap:10px;margin:8px 0"><button class="btn2 sm" data-pg="${key}" data-d="-1"${p ? '' : ' disabled'}>◀ 上一頁</button><span>第 ${p + 1} / ${n} 頁（共 ${list.length} 則）</span><button class="btn2 sm" data-pg="${key}" data-d="1"${p < n - 1 ? '' : ' disabled'}>下一頁 ▶</button></div>` : '';
+  $(el).innerHTML = list.length ? nav + list.slice(p * PER, p * PER + PER).map(render).join('') + nav : empty;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pg]'); if (!b) return;
+  const g = PG[b.dataset.pg]; g.p += Number(b.dataset.d);
+  showPaged(b.dataset.pg, g.el, g.list, g.render, g.empty); $(g.el).scrollIntoView({ block: 'start' });
+});
 /* ---------- 許願池・旗子 ---------- */
 const FLAG_PAL = ['#ffffff', '#2e2a40', '#e84a5f', '#ff8fa3', '#ffb37a', '#ffd66b', '#9be0b8', '#3fae7a', '#7fc6ff', '#4f7fb8', '#b79cf0', '#7a5c50', '#c9c6d6', '#ff6b00', '#00a6a6', '#8e44ad'];
 const flagView = g => `<div style="display:grid;grid-template-columns:repeat(8,16px);gap:1px;background:#8a5a3c;padding:2px;width:max-content;border-radius:4px">${g.split('').map(v => `<i style="display:block;width:16px;height:16px;background:${FLAG_PAL[parseInt(v, 16)]}"></i>`).join('')}</div>`;
@@ -1174,12 +1188,12 @@ async function loadWishes(){
     const [flags, wishes] = await Promise.all([api('tFlags', PW, CUR.code), api('tWishes', PW, CUR.code)]);
     const fp = flags.filter(f => f.status === 'pending').length, wp = wishes.filter(w => w.status === 'pending').length;
     $('flagCount').textContent = fp; $('wishCount').textContent = wp; $('wishTab').textContent = fp + wp; $('wishTab').classList.toggle('hidden', !(fp + wp));
-    $('flagList').innerHTML = flags.length ? flags.map(f => `<div class="rep" data-flag="${f.id}"><div class="small muted">${esc(f.ts)}　${f.seat} 號 ${esc(f.nick || '')}　金幣 ${f.coins}</div>${flagView(f.grid)}
+    showPaged('flag', 'flagList', flags, f => `<div class="rep" data-flag="${f.id}"><div class="small muted">${esc(f.ts)}　${f.seat} 號 ${esc(f.nick || '')}　金幣 ${f.coins}</div>${flagView(f.grid)}
       ${f.status === 'pending' ? `<div class="row" style="margin-top:6px"><input data-fnote placeholder="原因或鼓勵的話（可以不寫）" style="flex:1"><button class="btn2 sm" data-fok>通過（扣 50 金幣）</button><button class="btn2 sm" data-fno>不通過</button></div>`
-        : `<div class="small"><span class="pill p-mute">${f.status === 'approved' ? '已通過' : '沒通過'}</span> ${esc(f.note || '')}</div>`}</div>`).join('') : '<p class="muted">還沒有學生送旗子。</p>';
-    $('wishList').innerHTML = wishes.length ? wishes.map(w => `<div class="rep" data-wish="${w.id}"><div class="small muted">${esc(w.ts)}　${w.seat} 號 ${esc(w.nick || '')}　⭐ ${w.votes}　<span class="pill p-mute">${WISH_ST[w.status] || w.status}</span></div>
+        : `<div class="small"><span class="pill p-mute">${f.status === 'approved' ? '已通過' : '沒通過'}</span> ${esc(f.note || '')}</div>`}</div>`, '<p class="muted">還沒有學生送旗子。</p>');
+    showPaged('wish', 'wishList', wishes, w => `<div class="rep" data-wish="${w.id}"><div class="small muted">${esc(w.ts)}　${w.seat} 號 ${esc(w.nick || '')}　⭐ ${w.votes}　<span class="pill p-mute">${WISH_ST[w.status] || w.status}</span></div>
       <div><b>${esc(w.text)}</b></div>${w.image ? `<a href="${w.image}" target="_blank" rel="noopener"><img src="${w.image}" alt="學生畫的圖" loading="lazy" style="max-width:200px;border-radius:10px;margin:6px 0"></a>` : ''}
-      <div class="row" style="margin-top:6px"><input data-wnote placeholder="給許願同學的話（沒採用時建議寫原因）" style="flex:1" value="${esc(w.note || '')}">${w.status !== 'public' ? '<button class="btn2 sm" data-wset="public">公開集氣</button>' : ''}${w.status !== 'done' ? '<button class="btn2 sm" data-wset="done">實現了</button>' : ''}${w.status !== 'declined' ? '<button class="btn2 sm" data-wset="declined">不採用</button>' : ''}</div></div>`).join('') : '<p class="muted">還沒有學生許願。</p>';
+      <div class="row" style="margin-top:6px"><input data-wnote placeholder="給許願同學的話（沒採用時建議寫原因）" style="flex:1" value="${esc(w.note || '')}">${w.status !== 'public' ? '<button class="btn2 sm" data-wset="public">公開集氣</button>' : ''}${w.status !== 'done' ? '<button class="btn2 sm" data-wset="done">實現了</button>' : ''}${w.status !== 'declined' ? '<button class="btn2 sm" data-wset="declined">不採用</button>' : ''}</div></div>`, '<p class="muted">還沒有學生許願。</p>');
   }catch(e){ toast(e.message); }
 }
 $('flagList').addEventListener('click', async e => {
@@ -1201,7 +1215,7 @@ async function loadAsks(){
     const list = await api('tAsks', PW, CUR.code, $('askAll').checked);
     const open = list.filter(a => a.status === 'open').length;
     $('askCount').textContent = open; $('askTab').textContent = open; $('askTab').classList.toggle('hidden', !open);
-    $('askList').innerHTML = list.length ? list.map(a => {
+    showPaged('ask', 'askList', list, a => {
       const head = `<div class="small muted">${esc(a.ts)}　${a.seat} 號 ${esc(a.nick)}</div><div><b>${esc(a.text)}</b></div>${a.image ? `<a href="${a.image}" target="_blank" rel="noopener"><img src="${a.image}" alt="學生截圖" loading="lazy" style="max-width:100%;max-height:260px;border-radius:10px;margin:6px 0"></a>` : ''}`;
       if (a.status !== 'open') return `<div class="rep">${head}<div class="small"><span class="pill p-mute">${ASK_DONE[a.status] || a.status}</span>${a.public ? ' <span class="pill p-ok">公開給全班</span>' : ''} ${a.reward ? esc(a.reward) : ''}</div><div class="small">回覆：${esc(a.reply)}</div></div>`;
       const k = a.draftKind || 'answered';
@@ -1211,7 +1225,7 @@ async function loadAsks(){
         <textarea rows="2" maxlength="300" style="width:100%" placeholder="回覆給學生">${esc(a.draft || '')}</textarea>
         <div class="row small"><label><input type="checkbox" data-pub> 公開給全班（匿名）</label>　<label>金幣 <input type="number" data-coins min="0" max="200" style="width:64px" value="${k === 'junk' ? 30 : 20}"></label>　<label>星星 <input type="number" data-stars min="0" max="10" style="width:56px" value="1"></label>
           <button class="btn2 sm" data-ask-send>送出</button></div></div>`;
-    }).join('') : '<p class="muted">目前沒有學生提問。</p>';
+    }, '<p class="muted">目前沒有學生提問。</p>');
   }catch(e){ toast(e.message); }
 }
 $('askAll').addEventListener('change', loadAsks);
@@ -1235,7 +1249,7 @@ async function loadReports(){
     REPORTS = await api('tReports', PW);
     $('repCount').textContent = REPORTS.length;
     $('repTab').textContent = REPORTS.length; $('repTab').classList.toggle('hidden', !REPORTS.length);
-    $('repList').innerHTML = REPORTS.length ? REPORTS.map(g => {
+    showPaged('rep', 'repList', REPORTS, g => {
       const q = g.q, why = {};
       g.reports.forEach(r => why[r.reason] = (why[r.reason] || 0) + 1);
       return `<div class="rep"><div class="small muted">${esc(q.version)}・${q.grade}${esc(q.sem)}・${esc(q.subject)}・${esc(q.unit)}　${q.enabled ? '' : '<span class="pill p-mute">已停用</span>'}</div>
@@ -1243,12 +1257,12 @@ async function loadReports(){
         <div><b>${esc(q.text)}</b>${q.image ? ' <span class="pill p-warn">有圖</span>' : ''}</div>
         <div class="small">${q.type === '選擇' ? ['A','B','C','D'].map(k => q[k.toLowerCase()] ? k + '. ' + esc(q[k.toLowerCase()]) : '').filter(Boolean).join('　') + '<br>' : ''}答案：<b>${esc(q.answer)}</b>${q.explain ? '　解析：' + esc(q.explain) : ''}</div>
         <div class="small" style="margin-top:4px">${Object.keys(why).map(k => `<span class="pill p-warn">${esc(k)} × ${why[k]}</span>`).join(' ')}</div>
-        <div class="small" style="margin-top:4px">${g.reports.map(r => `<label style="display:block"><input type="checkbox" data-junk="${r.id}"> ${esc(r.who)}：${esc(r.reason)}${r.answer ? '・選了 <b>' + esc(r.answer) + '</b>' : ''}${r.note ? '・' + esc(r.note) : ''} <span class="muted">（勾＝亂回報，扣金幣）</span></label>`).join('')}</div>
+        <div class="small" style="margin-top:4px">${g.reports.map(r => `<label style="display:block"><input type="checkbox" data-junk="${r.id}"> ${esc(r.who)}：${esc(r.reason)}${r.answer ? '・學生作答 <b>' + esc(r.answer) + '</b>' : '・<span class="muted">（沒有作答紀錄）</span>'}${r.note ? '・' + esc(r.note) : ''} <span class="muted">（勾＝亂回報，扣金幣）</span></label>`).join('')}</div>
         ${g.draft ? `<div class="small" style="background:#f4f2fb;border-radius:10px;padding:6px 10px;margin:6px 0">🤖 Claude 建議：<b>${g.draftKind === 'confirmed' ? '真的有問題' : '題目沒問題'}</b>${g.draftNote ? '<br>' + esc(g.draftNote) : ''}</div>` : ''}
         <textarea data-rep-reply rows="2" maxlength="300" style="width:100%;margin-top:6px" placeholder="給回報同學的回覆（可以不寫，會用預設的話）">${esc(g.draft || '')}</textarea>
         <div class="row small">亂回報扣 <input type="number" data-rep-pen min="0" max="200" value="30" style="width:64px"> 金幣</div>
         <div class="row" style="margin-top:6px"><button class="btn2 sm" data-rep-edit="${esc(q.id)}">修改</button><button class="btn2 sm" data-rep-off="${esc(q.id)}">停用這題</button><button class="btn2 sm" data-rep-ok="${esc(q.id)}">沒問題</button></div></div>`;
-    }).join('') : '<p class="muted">目前沒有待檢查的題目。</p>';
+    }, '<p class="muted">目前沒有待檢查的題目。</p>');
   }catch(e){ toast(e.message); }
 }
 $('repList').addEventListener('click', async e => {
