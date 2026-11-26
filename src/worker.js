@@ -43,7 +43,7 @@ const SHOP = {
   hat_chef: { slot: 'hat', name: '廚師帽', price: 50 },
   hat_grad: { slot: 'hat', name: '學士帽', price: 90 },
   hat_fedora: { slot: 'hat', name: '白色紳士帽', price: 70 },
-  hat_fedora_black: { slot: 'hat', name: '黑色紳士帽', price: 70 },
+  hat_fedora_black: { slot: 'hat', name: '黑色紳士帽', price: 70, set: 'set_stage' },
   hat_tophat: { slot: 'hat', name: '高禮帽', price: 90 },
   acc_lei: { slot: 'acc', name: '花圈', price: 45 },
   acc_headphones: { slot: 'acc', name: '耳機', price: 60 },
@@ -156,7 +156,7 @@ const SHOP = {
   coat_rainbow: { slot: 'coat', name: '彩虹披風', price: 250 },  // 高價長期目標：只要金幣
   // 手套
   glove_none: { slot: 'glove', name: '不戴手套', price: 0 },
-  glove_white: { slot: 'glove', name: '白手套', price: 20 },
+  glove_white: { slot: 'glove', name: '白手套', price: 20, set: 'set_stage' },
   glove_red: { slot: 'glove', name: '毛線手套', price: 25 },
   glove_boxing: { slot: 'glove', name: '拳擊手套', price: 50 },
   glove_star: { slot: 'glove', name: '星星手套', price: 60, stars: 40 },
@@ -218,6 +218,17 @@ const SHOP = {
   sticker_anchor: { slot: 'sticker', name: '船錨貼紙', price: 20 },
   sticker_clover: { slot: 'sticker', name: '幸運草貼紙', price: 20 },
   sticker_smile: { slot: 'sticker', name: '笑臉貼紙', price: 20 },
+  /* 髮型：畫在頭的後面和兩側，帽子和耳朵蓋在上面（娃娃裝、完整角色不顯示） */
+  hair_none: { slot: 'hair', name: '不戴髮型', price: 0 },
+  hair_redcurl: { slot: 'hair', name: '紅色長捲髮', price: 60, wish: true },
+  hair_goldcurl: { slot: 'hair', name: '金色長捲髮', price: 60, later: true },
+  hair_twin: { slot: 'hair', name: '黑色雙馬尾', price: 60, later: true },
+  hair_bob: { slot: 'hair', name: '咖啡色短鮑伯頭', price: 60, later: true },
+  hair_bun: { slot: 'hair', name: '粉紅丸子頭', price: 60, later: true },
+  hair_mint: { slot: 'hair', name: '薄荷綠短直髮', price: 60, later: true },
+  hair_purple: { slot: 'hair', name: '紫色長直髮', price: 60, later: true },
+  /* 許願池：舞台巨星（原創，不照真實明星做） */
+  coat_sequin: { slot: 'coat', name: '亮片舞台外套', price: 100, stars: 30, set: 'set_stage', key: true, wish: true },
   /* 自己畫的旗子：flag_mine 要有通過審核的旗子才能用 */
   flag_none: { slot: 'flag', name: '不插旗子', price: 0 },
   flag_mine: { slot: 'flag', name: '我的旗子', price: 0, mine: true }
@@ -227,7 +238,8 @@ const SETS = {
   set_sport: { name: '運動明星套裝', key: 'acc_trophy', items: ['hat_cap', 'coat_jersey', 'bottom_sport', 'acc_trophy'] },
   set_pirate: { name: '海上船長套裝', key: 'hat_captain', items: ['hat_captain', 'coat_pirate', 'bottom_pirate', 'pet_parrot'] },
   set_space: { name: '太空人套裝', key: 'hat_astro', items: ['hat_astro', 'coat_space', 'glove_space', 'pet_robot'] },
-  set_magic: { name: '魔法學院套裝', key: 'coat_robe', items: ['hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat'] }
+  set_magic: { name: '魔法學院套裝', key: 'coat_robe', items: ['hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat'] },
+  set_stage: { name: '舞台巨星套裝', key: 'coat_sequin', items: ['hat_fedora_black', 'coat_sequin', 'glove_white'] }
 };
 /* ---- 限定特價與每週新品 ----
  * 特價 3 天（LAUNCH_DAY 起）：衣櫃全部開放，價格是特價。
@@ -237,15 +249,15 @@ const SETS = {
  *   免費款與徽章限定款不漲。 */
 const LAUNCH_DAY = '2026-11-26', SALE_DAYS = 3;
 const DROPS = {
-  '2026-11-30': { name: '動物朋友', items: ['sp_cat', 'sp_bunny', 'sp_bear', 'sp_fox', 'sp_sheep', 'sp_dog', 'sp_pig', 'sp_mouse', 'ear_red', 'ear_yellow', 'ear_mint', 'ear_sky', 'ear_lav', 'ear_rainbow', 'pet_plushbunny', 'pet_chick', 'pet_hamster', 'pet_bunny'] },
-  '2026-12-07': { name: '海洋冒險', items: ['bg_beach', 'bg_reef', 'bg_stars', 'bg_lighthouse', 'pet_gull', 'pet_crab', 'pet_octo', 'pet_lantern', 'pet_turtle', 'pet_fish', 'acc_scope', 'acc_backpack', 'coat_rain', 'hat_captain', 'coat_pirate', 'bottom_pirate', 'pet_parrot', 'acc_ring', 'acc_wheel'] },
-  '2026-12-14': { name: '甜點娃娃', items: ['doll_popcorn', 'doll_cupcake', 'doll_strawberry', 'pet_popcorn', 'sp_full_cat', 'cheek_rose', 'cheek_peach', 'cheek_lilac', 'cheek_sky', 'cheek_shy', 'cheek_heart', 'cheek_star', 'cheek_rainbow', 'bottom_jeans', 'bottom_pleat', 'bottom_flower', 'bottom_tutu'] },
-  '2026-12-21': { name: '冬天與運動', items: ['coat_down', 'coat_team', 'coat_denim', 'glove_white', 'glove_red', 'glove_boxing', 'hat_party', 'hat_chef', 'hat_cap', 'coat_jersey', 'bottom_sport', 'acc_trophy', 'pet_kitten', 'pet_puppy', 'eye_brown', 'eye_blue', 'eye_green', 'eye_gray'] },
-  '2026-12-28': { name: '狗狗品種', items: ['sp_shiba', 'sp_husky', 'sp_dalmatian', 'sp_corgi', 'sp_poodle', 'sp_chihuahua', 'sp_schnauzer', 'sp_frog', 'sp_tiger', 'sp_panda', 'acc_headphones', 'acc_lei', 'eye_purple', 'eye_pink', 'eye_gold', 'eye_sparkle', 'eye_odd', 'hat_detective', 'sp_full_dog'] },
-  '2027-01-04': { name: '貓咪與星星魔法', items: ['sp_calico', 'sp_tabby', 'sp_siamese', 'sp_scottish', 'sp_persian', 'hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat', 'acc_wand', 'coat_cape', 'glove_star', 'eye_star', 'hat_stars', 'color_night', 'pet_owl', 'pet_sprite'] },
-  '2027-01-11': { name: '蔬果與太空', items: ['doll_carrot', 'doll_milk', 'doll_melon', 'hat_astro', 'coat_space', 'glove_space', 'pet_robot', 'sp_dino', 'hat_dino', 'sp_unicorn', 'pet_dragon', 'color_coral', 'color_cloud', 'bottom_plaid', 'bottom_suspender', 'bottom_grass', 'bottom_rainbow', 'acc_flag', 'sp_full_bunny'] },
-  '2027-01-18': { name: '畢業典禮與皇家', items: ['doll_bachelor', 'doll_master', 'doll_doctor', 'hat_grad', 'hat_fedora', 'hat_fedora_black', 'hat_tophat', 'hat_starcrown', 'hat_royal', 'coat_royal', 'bottom_gown', 'glove_gold', 'eye_galaxy', 'sp_dragon', 'pet_whale', 'pet_phoenix', 'coat_rainbow', 'sp_full_bear'] },
-  '2027-01-25': { name: '貼紙與調色盤', items: ['color_custom', 'sticker_heart', 'sticker_star', 'sticker_bolt', 'sticker_rainbow', 'sticker_moon', 'sticker_sun', 'sticker_flower', 'sticker_note', 'sticker_crown', 'sticker_anchor', 'sticker_clover', 'sticker_smile'] }
+  '2026-11-30': { name: '第 1 週新品', items: ['hair_goldcurl', 'sp_cat', 'sp_bunny', 'sp_bear', 'pet_plushbunny', 'pet_chick', 'sticker_heart', 'sticker_star', 'eye_brown', 'eye_blue', 'hat_party', 'hat_chef', 'doll_popcorn', 'bottom_jeans', 'acc_scope', 'cheek_rose', 'coat_rain', 'ear_red'] },
+  '2026-12-07': { name: '第 2 週新品', items: ['hat_captain', 'coat_pirate', 'bottom_pirate', 'pet_parrot', 'hair_twin', 'sp_fox', 'sp_sheep', 'sp_dog', 'pet_hamster', 'pet_bunny', 'sticker_bolt', 'eye_green', 'hat_detective', 'doll_cupcake', 'bottom_pleat', 'acc_backpack', 'cheek_peach', 'coat_down'] },
+  '2026-12-14': { name: '第 3 週新品', items: ['sp_full_cat', 'hair_bob', 'sp_pig', 'sp_mouse', 'sp_shiba', 'pet_gull', 'pet_crab', 'sticker_rainbow', 'eye_gray', 'hat_stars', 'doll_strawberry', 'bottom_flower', 'acc_ring', 'cheek_lilac', 'coat_team', 'bg_reef', 'glove_boxing', 'color_coral'] },
+  '2026-12-21': { name: '第 4 週新品', items: ['hat_cap', 'coat_jersey', 'bottom_sport', 'acc_trophy', 'hair_bun', 'sp_husky', 'sp_dalmatian', 'sp_corgi', 'pet_octo', 'pet_lantern', 'sticker_moon', 'sticker_sun', 'eye_purple', 'hat_dino', 'doll_carrot', 'bottom_tutu', 'acc_wheel', 'cheek_sky'] },
+  '2026-12-28': { name: '第 5 週新品', items: ['sp_full_dog', 'hair_mint', 'sp_poodle', 'sp_chihuahua', 'sp_schnauzer', 'pet_turtle', 'pet_fish', 'sticker_flower', 'eye_pink', 'eye_gold', 'hat_grad', 'doll_milk', 'bottom_plaid', 'acc_headphones', 'cheek_shy', 'ear_sky', 'bg_stars', 'glove_star'] },
+  '2027-01-04': { name: '第 6 週新品', items: ['hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat', 'hair_purple', 'sp_frog', 'sp_tiger', 'sp_panda', 'pet_popcorn', 'pet_kitten', 'sticker_note', 'eye_sparkle', 'hat_fedora', 'doll_melon', 'bottom_suspender', 'acc_lei', 'cheek_heart', 'coat_cape'] },
+  '2027-01-11': { name: '第 7 週新品', items: ['hat_astro', 'coat_space', 'glove_space', 'pet_robot', 'sp_full_bunny', 'sp_calico', 'sp_tabby', 'sp_siamese', 'pet_puppy', 'pet_owl', 'sticker_crown', 'sticker_anchor', 'eye_odd', 'hat_tophat', 'doll_bachelor', 'bottom_grass', 'acc_wand', 'cheek_star'] },
+  '2027-01-18': { name: '第 8 週新品', items: ['sp_full_bear', 'sp_scottish', 'sp_persian', 'sp_dino', 'pet_sprite', 'pet_dragon', 'sticker_clover', 'eye_star', 'hat_starcrown', 'doll_master', 'bottom_rainbow', 'acc_flag', 'cheek_rainbow', 'coat_rainbow', 'ear_rainbow', 'glove_red', 'color_cloud', 'ear_yellow'] },
+  '2027-01-25': { name: '第 9 週新品', items: ['sp_unicorn', 'sp_dragon', 'pet_whale', 'pet_phoenix', 'sticker_smile', 'eye_galaxy', 'hat_royal', 'doll_doctor', 'bottom_gown', 'color_custom', 'glove_gold', 'bg_lighthouse', 'color_night', 'ear_lav', 'ear_mint', 'coat_royal', 'coat_denim', 'bg_beach'] }
 };
 const DROP_OF = {};
 Object.keys(DROPS).forEach(d => DROPS[d].items.forEach(id => { DROP_OF[id] = d; }));
@@ -264,7 +276,8 @@ const launchDay = ctx => (ctx.env && ctx.env.SALE_LAUNCH) || LAUNCH_DAY;
 /** 特價結束後的第一天 */
 const saleOver = ctx => addDays(launchDay(ctx), SALE_DAYS);
 /** 這一天買得到嗎：原本的東西一直都在；新東西特價開始前只能試穿，特價期間全部開放，之後要等上架日 */
-const onShelf = (ctx, id, day) => !DROP_OF[id] || (!SHOP[id].hidden && day >= launchDay(ctx) && day < saleOver(ctx)) || day >= DROP_OF[id];
+// later：特價開始後才加的新品，特價期間不開放，等自己的上架日
+const onShelf = (ctx, id, day) => !DROP_OF[id] || (!SHOP[id].hidden && !SHOP[id].later && day >= launchDay(ctx) && day < saleOver(ctx)) || day >= DROP_OF[id];
 /** 下一批（特價結束後才有） */
 function nextDrop(ctx, day) {
   const d = Object.keys(DROPS).sort().find(x => x > day && x >= saleOver(ctx));
@@ -355,7 +368,7 @@ const focusToday = s => s.focus_day === today() ? jsonp(s.focus_done, []) : [];
 
 /** 星星：每天最多算幾顆（過關照樣算，超過只是不加星星） */
 const STAR_DAILY_MAX = 5;
-const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue', bg: 'bg_none', ear: 'ear_same', doll: 'doll_none', sticker: 'sticker_none', flag: 'flag_none' };
+const DEFAULT_OUTFIT = { species: 'sp_seal', hat: 'hat_sailor', acc: 'acc_none', coat: 'coat_none', glove: 'glove_none', cheek: 'cheek_pink', eye: 'eye_dark', bottom: 'bottom_none', pet: 'pet_none', color: 'color_blue', bg: 'bg_none', ear: 'ear_same', doll: 'doll_none', sticker: 'sticker_none', flag: 'flag_none', hair: 'hair_none' };
 
 /**
  * 徽章：每一個都要做到一件有意義的事，而且只拿一次。
@@ -799,7 +812,11 @@ API.studentLogin = async (ctx, cred) => {
   const st = await state(ctx, cls, s);
   // 登入時才讀：老師的新回覆、旗子
   [st.askNews, st.flag] = await Promise.all([askNews(ctx, cls, s), flagState(ctx, cls, s)]);
-  st.askNews.corr = (await ctx.all('SELECT * FROM corrections WHERE day <= ? AND id > ? ORDER BY id LIMIT 30', shopDay(ctx), s.corr_seen || 0)).map(corrOut);
+  const [corr, wish] = await Promise.all([
+    ctx.all('SELECT * FROM corrections WHERE day <= ? AND id > ? ORDER BY id LIMIT 30', shopDay(ctx), s.corr_seen || 0),
+    ctx.all('SELECT id, text, status, note FROM wishes WHERE class_code = ? AND seat = ? AND seen = 0 ORDER BY id LIMIT 10', cls.code, s.seat)
+  ]);
+  st.askNews.corr = corr.map(corrOut); st.askNews.wish = wish;
   const nb = await awardBadges(ctx, cls, s, st, {});
   if (nb.length) st.badges = st.badges.concat(nb.map(b => b.id));
   return st;
@@ -1279,10 +1296,19 @@ API.tWishes = async (ctx, pw, code) => {
 API.tWish = async (ctx, pw, id, status, note) => {
   await checkPw(ctx, pw);
   if (!['public', 'done', 'declined'].includes(status)) fail('請選處理方式。');
-  const r = await ctx.run('UPDATE wishes SET status = ?, note = ? WHERE id = ?', status, str(note, 100), Math.floor(num(id)));
+  return setWish(ctx, id, status, note);
+};
+/** Claude 用：許願商品上架後，把願望標成「實現了」（許願的同學下次登入會收到通知） */
+API.xSetWish = async (ctx, id, status, note) => {
+  checkImport(ctx);
+  if (!['public', 'done', 'declined'].includes(status)) fail('請選處理方式。');
+  return setWish(ctx, id, status, note);
+};
+async function setWish(ctx, id, status, note) {
+  const r = await ctx.run('UPDATE wishes SET status = ?, note = ?, seen = 0 WHERE id = ?', status, str(note, 100), Math.floor(num(id)));
   if (!r.meta.changes) fail('找不到這個願望。');
   return true;
-};
+}
 /** Claude 用：公開和實現的願望（依集氣數），幫老師設計新造型 */
 API.xWishes = async ctx => {
   checkImport(ctx);
@@ -1937,6 +1963,7 @@ API.seenAsks = async (ctx, cred, pubMax, corrMax) => {
     ctx.stmt("UPDATE asks SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat),
     ctx.stmt("UPDATE flags SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'pending' AND seen = 0", cls.code, s.seat),
     ctx.stmt("UPDATE reports SET seen = 1 WHERE class_code = ? AND seat = ? AND status <> 'open' AND seen = 0", cls.code, s.seat),
+    ctx.stmt('UPDATE wishes SET seen = 1 WHERE class_code = ? AND seat = ? AND seen = 0', cls.code, s.seat),
     ctx.stmt('UPDATE students SET corr_seen = MAX(corr_seen, ?) WHERE class_code = ? AND seat = ?', Math.floor(num(corrMax)), cls.code, s.seat)
   ]);
   return true;

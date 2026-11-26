@@ -158,7 +158,7 @@ try {
   await step('商店：金幣不夠買不了，夠了可以買和穿', async () => {
     await s.click('#bShop'); await s.waitForSelector('#vShop:not(.hidden)');
     // 上架行事曆：只有文字，列出之後每週的新品
-    assert.match(await s.textContent('#vShop .sched'), /上架行事曆[\s\S]*動物朋友[\s\S]*畢業典禮與皇家/);
+    assert.match(await s.textContent('#vShop .sched'), /上架行事曆[\s\S]*第 1 週新品[\s\S]*第 8 週新品/);
     assert.equal(await s.locator('#vShop .sched svg').count(), 0);
     const coins = Number(await s.textContent('#shopCoins'));
     assert.ok(coins >= 20 && coins < 150, 'coins=' + coins);
@@ -970,9 +970,40 @@ try {
     assert.equal((await call('wishes', c3w)).ok.pub[0].votes, 1);
     const xw = (await (await fetch(BASE + '/api/xWishes', { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args: [] }) })).json()).ok;
     assert.ok(xw.some(w => w.text === '想要太空貓的頭盔'));
+    // 願望的結果：許願的同學下次登入收到通知，看過就不再跳
+    const wn = (await call('studentLogin', c1w)).ok.askNews.wish;
+    assert.ok(wn.length === 1 && wn[0].status === 'public', '公開集氣也通知許願的同學');
+    await call('seenAsks', c1w, 0, 0);
+    assert.equal((await call('studentLogin', c1w)).ok.askNews.wish.length, 0);
+    const xs = async (...args) => (await (await fetch(BASE + '/api/xSetWish', { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
+    assert.ok((await xs(wl[0].id, 'done', '太空貓頭盔上架了')).ok);
+    assert.match((await xs(wl[0].id, 'nope', '')).err, /處理方式/);
+    const pw1 = await page('/?c=DEMO');
+    await pw1.fill('#iSeat', '1'); await pw1.fill('#iPin', '1234'); await pw1.click('#bLogin'); await pw1.waitForSelector('#vMap:not(.hidden)'); await closeNews(pw1);
+    await pw1.waitForFunction(() => document.body.textContent.includes('你許的願望實現了'));
     await call('tSetTest', pw, 'DEMO', 2, false);
     assert.ok(!(await call('tDashboard', pw, 'DEMO')).ok.students.find(x => x.seat === 2).isTest);
     await t.click('[data-tab="tClass"]');
+  });
+  await step('髮型與舞台巨星（許願池商品立刻上架）', async () => {
+    const c = { code: 'DEMO', seat: 3, pin: '3333' };
+    execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE students SET stars = 200, coins = 5000, total = total + 1 WHERE class_code = 'DEMO' AND seat = 3"`, { stdio: 'ignore' });
+    const shop = (await call('studentLogin', c)).ok.shop;
+    assert.ok(shop.hair_redcurl && !shop.hair_redcurl.soon, '紅色長捲髮已經上架');
+    assert.ok(shop.hair_goldcurl && shop.hair_goldcurl.soon === '2026-11-30', '其他髮型之後每週上架（下週的先預告）');
+    assert.ok(!shop.hair_twin, '再之後的還看不到');
+    assert.match((await call('buyItem', c, 'hair_goldcurl')).err || '', /上架|沒有/);
+    let r = (await call('buyItem', c, 'hair_redcurl')).ok;
+    assert.equal(r.outfit.hair, 'hair_redcurl');
+    r = (await call('setOutfit', c, Object.assign({}, r.outfit, { hat: 'hat_sailor' }))).ok;
+    assert.equal(r.outfit.hair, 'hair_redcurl'); assert.equal(r.outfit.hat, 'hat_sailor');  // 髮型和帽子可以一起戴
+    r = (await call('buySet', c, 'set_stage')).ok;
+    assert.ok(['hat_fedora_black', 'coat_sequin', 'glove_white'].every(x => r.owned.includes(x)));
+    // 衣櫃有髮型分頁，畫面上看得到頭髮
+    const p = await page('/?c=DEMO');
+    await p.fill('#iSeat', '3'); await p.fill('#iPin', '3333'); await p.click('#bLogin'); await p.waitForSelector('#vMap:not(.hidden)'); await closeNews(p);
+    await p.click('#bShop'); await p.waitForSelector('#vShop:not(.hidden)');
+    assert.match(await p.textContent('#vShop'), /髮型/);
   });
   await step('套裝與高級款：星星、徽章、指定徽章都夠了，整套買得到、打 8 折，關鍵物品也買得到', async () => {
     const c = { code: 'DEMO', seat: 3, pin: '3333' };

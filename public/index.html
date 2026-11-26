@@ -497,7 +497,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
         <li><b>🎽 套裝</b>：運動明星（⭐50＋🏅5＋百發百中）、海上船長（⭐60＋🏅6＋一週不間斷）、太空人（⭐80＋🏅8＋五島通航）、魔法學院（⭐100＋🏅10＋觀念突破）。星星和徽章夠了就能<b>整套買，還沒有的單品打 8 折</b>。也可以先一件一件<b>單買</b>，不用徽章；只有每套的<b>關鍵物品 🔑</b>（冠軍獎盃、船長帽、太空頭盔、星空魔法袍）要星星＋徽章＋指定徽章才能買。</li>
         <li><b>🔥 限定特價與每週新品</b>：11/26（四）早上 8 點～11/29（日）早上 8 點衣櫃全部特價，每人限買 5 樣（套裝算 1 樣）！之後恢復原價，新品改成<b>每週一早上 8 點上架</b>，上架後特價 3 天。衣櫃裡標 🔜 的是下週新品，可以先試穿。買到的東西永遠是你的。</li>
         <li><b>🐰 耳朵顏色</b>：小兔、小狗、大麥町、吉娃娃、柯基、小狐狸可以換耳朵顏色。<b>🍿 娃娃裝</b>：穿上會蓋住外套和裙子・褲子。</li>
-        <li><b>💾 造型存檔</b>：把搭配存起來一鍵換上（第 1 格 50、第 2 格 150、第 3 格 300 金幣，照順序解鎖）。<b>🚩 我的旗子</b>：8×8 格子自己畫，老師審核通過才扣 50 金幣、才會出現。<b>🌠 許願池</b>：寫下或畫出想要的新造型，每週 1 個，老師公開後大家可以集氣。<b>🎨 自訂顏色</b>：用調色盤選波波的顏色。<b>👕 脫下</b>：再點一次身上的衣服就能脫掉，或按「全部脫下」。</li>
+        <li><b>💾 造型存檔</b>：把搭配存起來一鍵換上（第 1 格 50、第 2 格 150、第 3 格 300 金幣，照順序解鎖）。<b>🚩 我的旗子</b>：8×8 格子自己畫，老師審核通過才扣 50 金幣、才會出現。<b>🌠 許願池</b>：寫下或畫出想要的新造型，每週 1 個，老師公開後大家可以集氣；老師處理後你下次登入會收到通知，實現的願望會馬上上架。<b>💇 髮型</b>：可以和帽子一起戴。<b>🎨 自訂顏色</b>：用調色盤選波波的顏色。<b>👕 脫下</b>：再點一次身上的衣服就能脫掉，或按「全部脫下」。</li>
         <li><b>🎁 神秘角色</b>：黑影的「？？？」是隱藏新品，上架那天才揭曉，很貴、條件也很嚴格。</li>
         <li><b>🎖️ 徽章限定款</b>：拿到指定的徽章就能用金幣買——偵探帽（題目偵探，80 金幣）、救生圈（救援英雄，100 金幣）、金色船舵（航海王，120 金幣）、五島旗（五島通航，120 金幣）。另有星星皇冠（⭐60，100 金幣）、恐龍帽（70 金幣）。</li>
       </ul>
@@ -768,6 +768,7 @@ const GLOVES = {
 const coatShape = (fill, line) => `<path d="M18 92 C18 84 22 80 30 79 L49 81 L52 118 C34 117 18 111 18 92 Z" fill="${fill}" stroke="${line}" stroke-width="2" stroke-linejoin="round"/><path d="M102 92 C102 84 98 80 90 79 L71 81 L68 118 C86 117 102 111 102 92 Z" fill="${fill}" stroke="${line}" stroke-width="2" stroke-linejoin="round"/>`;
 const COATS = {
   coat_none: () => '',
+  coat_sequin: () => coatShape('#2e2a40', '#15131f') + [[30,92],[38,104],[28,112],[44,88],[90,92],[82,104],[92,112],[76,88],[34,98],[86,98]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8" fill="#e3e6f0"/>`).join('') + '<path d="M20 84 L32 80 L30 88 Z M100 84 L88 80 L90 88 Z" fill="#ffd66b" stroke="#d99a1c" stroke-width="1"/>',
   coat_rain: () => coatShape('#ffd66b', '#e6b33c') + '<circle cx="47" cy="92" r="2" fill="#e6b33c"/><circle cx="47" cy="104" r="2" fill="#e6b33c"/>',
   coat_denim: () => coatShape('#7aa6d6', '#5a86b6') + '<path d="M30 96 L44 96 M76 96 L90 96" stroke="#ffd66b" stroke-width="1.5" stroke-dasharray="2 2"/>',
   coat_down: () => coatShape('#fff', '#d9d9e3') + '<path d="M20 98 Q35 101 50 98 M20 108 Q35 111 51 108 M100 98 Q85 101 70 98 M100 108 Q85 111 69 108" stroke="#d9d9e3" stroke-width="2" fill="none"/>',
@@ -861,6 +862,28 @@ const EARS = { ear_same: null, ear_red: '#ff5a6a', ear_yellow: '#ffe08a', ear_mi
 const DOLL = 'M19 80 Q60 92 101 80 L106 119 Q60 128 14 119 Z', GOWN = 'M18 92 C18 82 24 78 34 78 L86 78 C96 78 102 82 102 92 L106 120 Q60 128 14 120 Z';
 const dollClip = inner => { const id = 'dlc' + (++bgSeq); return `<defs><clipPath id="${id}"><path d="${DOLL}"/></clipPath></defs><g clip-path="url(#${id})">${inner}</g>`; };
 const gown = extra => `<path d="${GOWN}" fill="#2e2a40" stroke="#1d1a2e" stroke-width="2" stroke-linejoin="round"/><path d="M60 92 L60 124" stroke="#1d1a2e" stroke-width="1.5"/>` + extra + '<path d="M48 78 L60 92 L72 78 Z" fill="#fff"/>';
+/* 髮型：back 畫在身體後面（從頭頂垂到兩側），front 是瀏海和臉旁的髮束（畫在帽子下面） */
+const bangsWave = (c, d) => `<path d="M23 60 C20 37 39 25 60 25 C81 25 100 37 97 60 C93 50 86 45 78 47 C72 41 65 42 60 47 C55 42 48 41 42 47 C34 45 27 50 23 60 Z" fill="${c}" stroke="${d}" stroke-width="1.5"/>`;
+const bangsCut = (c, d) => `<path d="M23 58 C21 36 39 25 60 25 C81 25 99 36 97 58 L89 51 L81 55 L72 49 L64 54 L56 49 L47 55 L39 50 L31 55 Z" fill="${c}" stroke="${d}" stroke-width="1.5" stroke-linejoin="round"/>`;
+const lockWave = (c, d) => `<path d="M25 52 C15 64 23 74 17 86 C13 95 18 102 25 104 C24 95 31 88 28 76 C26 66 30 59 25 52 Z" fill="${c}" stroke="${d}" stroke-width="1.5"/><path d="M95 52 C105 64 97 74 103 86 C107 95 102 102 95 104 C96 95 89 88 92 76 C94 66 90 59 95 52 Z" fill="${c}" stroke="${d}" stroke-width="1.5"/>`;
+const lockStraight = (c, d, y) => `<path d="M24 52 C18 62 18 ${y - 20} 19 ${y} L28 ${y} C27 ${y - 20} 28 62 30 54 Z" fill="${c}" stroke="${d}" stroke-width="1.5"/><path d="M96 52 C102 62 102 ${y - 20} 101 ${y} L92 ${y} C93 ${y - 20} 92 62 90 54 Z" fill="${c}" stroke="${d}" stroke-width="1.5"/>`;
+const curlBack = (c, d) => `<path d="M60 20 C29 20 12 39 13 63 C13 77 6 85 10 96 C13 105 6 111 14 119 C22 113 21 106 27 102 L93 102 C99 106 98 113 106 119 C114 111 107 105 110 96 C114 85 107 77 107 63 C108 39 91 20 60 20 Z" fill="${c}" stroke="${d}" stroke-width="1.5"/>`
+  + `<path d="M14 72 Q20 78 14 84 M10 96 Q17 101 12 107 M106 72 Q100 78 106 84 M110 96 Q103 101 108 107" stroke="${d}" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+const HAIRS = {
+  hair_none: null,
+  hair_redcurl: [curlBack('#e8434f', '#b82a37'), bangsWave('#e8434f', '#b82a37') + lockWave('#e8434f', '#b82a37')],
+  hair_goldcurl: [curlBack('#ffd25e', '#d9a52a'), bangsWave('#ffd25e', '#d9a52a') + lockWave('#ffd25e', '#d9a52a')],
+  hair_twin: ['<path d="M22 40 C8 50 2 74 6 100 C8 110 16 112 18 104 C14 84 18 64 28 48 Z M98 40 C112 50 118 74 114 100 C112 110 104 112 102 104 C106 84 102 64 92 48 Z" fill="#3b3752" stroke="#24213a" stroke-width="1.5"/>',
+    bangsCut('#3b3752', '#24213a') + '<circle cx="24" cy="44" r="4.5" fill="#ff7fa3"/><circle cx="96" cy="44" r="4.5" fill="#ff7fa3"/>'],
+  hair_bob: ['<path d="M60 21 C30 21 13 40 13 64 C13 77 15 84 22 88 L98 88 C105 84 107 77 107 64 C107 40 90 21 60 21 Z" fill="#8a5a3c" stroke="#6a432c" stroke-width="1.5"/>',
+    bangsCut('#8a5a3c', '#6a432c') + lockStraight('#8a5a3c', '#6a432c', 88)],
+  hair_bun: ['<circle cx="60" cy="19" r="12" fill="#ff9ec0" stroke="#e57aa2" stroke-width="1.5"/><path d="M53 14 Q60 10 67 14" stroke="#e57aa2" stroke-width="1.5" fill="none"/>',
+    '<path d="M23 57 C21 36 39 25 60 25 C81 25 99 36 97 57 C86 45 72 41 62 43 C54 40 36 44 23 57 Z" fill="#ff9ec0" stroke="#e57aa2" stroke-width="1.5"/><path d="M62 43 Q66 34 74 30" stroke="#e57aa2" stroke-width="1.5" fill="none"/>'],
+  hair_mint: ['<path d="M60 21 C30 21 14 40 14 62 L15 74 L105 74 L106 62 C106 40 90 21 60 21 Z" fill="#9be0b8" stroke="#6fbf93" stroke-width="1.5"/>',
+    bangsCut('#9be0b8', '#6fbf93') + lockStraight('#9be0b8', '#6fbf93', 74)],
+  hair_purple: ['<path d="M60 20 C30 20 13 39 13 62 L11 114 L109 114 L107 62 C107 39 90 20 60 20 Z" fill="#b79cf0" stroke="#8f74cc" stroke-width="1.5"/>',
+    bangsWave('#b79cf0', '#8f74cc') + lockStraight('#b79cf0', '#8f74cc', 108)]
+};
 const DOLLS = {
   doll_none: null,
   doll_popcorn: () => dollClip('<rect x="0" y="70" width="120" height="60" fill="#fff"/>' + [22, 36, 50, 64, 78, 92].map(x => `<rect x="${x}" y="70" width="7" height="60" fill="#e84a5f"/>`).join('')) + `<path d="${DOLL}" fill="none" stroke="#c9c6d6" stroke-width="1.5"/>` + [[24,80],[34,84],[44,87],[56,88],[68,88],[80,86],[92,82],[30,77],[50,82],[72,82],[88,77]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="#fff3c4" stroke="#e8c96a" stroke-width="1.2"/>`).join('') + '<path d="M40 110 Q35 104 36.5 101 Q38.5 99 40 101.5 Q41.5 99 43.5 101 Q45 104 40 110 Z" fill="#ffb3c8"/>' + [[80,102,1],[52,116,.6],[90,114,.7]].map(([x, y, k]) => `<path transform="translate(${x} ${y}) scale(${k})" d="M0 -6 l1.8 3.7 4 .6 -2.9 2.8 .7 4 -3.6 -1.9 -3.6 1.9 .7 -4 -2.9 -2.8 4 -.6 Z" fill="#ffd66b"/>`).join(''),
@@ -882,6 +905,7 @@ function mascot(mood, outfit){
   const acc = ACCS[o.acc] || '';
   const front = o.acc === 'acc_glasses' ? acc : '', neck = o.acc === 'acc_glasses' ? '' : acc;
   const doll = DOLLS[o.doll] ? DOLLS[o.doll]() : '';
+  const hair = !doll && !sp0.full && HAIRS[o.hair] ? HAIRS[o.hair] : ['', ''];
   let ear = EARS[o.ear] || null, earDefs = '';
   if (ear === 'rainbow'){ const id = 'erb' + (++bgSeq); earDefs = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">` + ['#ff8fa3', '#ffd66b', '#9be0b8', '#7fc6ff', '#b79cf0'].map((c, i) => `<stop offset="${i / 4}" stop-color="${c}"/>`).join('') + '</linearGradient></defs>'; ear = `url(#${id})`; }
   const coat = (COATS[o.coat] || COATS.coat_none)(), sp = SPECIES[o.species] || SPECIES.sp_seal, bottom = (BOTTOMS[o.bottom] || BOTTOMS.bottom_none)(), pet = PETS[o.pet] || '', glove = GLOVES[o.glove] || GLOVES.glove_none, cheek = (CHEEKS[o.cheek] || CHEEKS.cheek_pink)();
@@ -903,7 +927,7 @@ function mascot(mood, outfit){
   return `<svg class="mascot${pet ? ' withpet' : ''}" viewBox="0 -4 ${pet ? 160 : 120} 128" aria-hidden="true">
     ${BGS[o.bg] ? BGS[o.bg](pet ? 160 : 120) : ''}
     <ellipse cx="60" cy="118" rx="38" ry="5" fill="rgba(74,69,102,.12)"/>
-    ${flag}${earDefs}${sp.back(body, arm, ear)}${arms}
+    ${flag}${earDefs}${hair[0]}${sp.back(body, arm, ear)}${arms}
     ${sp.full ? sp.full.body(body, belly, arm) : `<path d="M18 92 C18 50 36 34 60 34 C84 34 102 50 102 92 C102 112 84 118 60 118 C36 118 18 112 18 92 Z" fill="${body}"/><ellipse cx="60" cy="98" rx="26" ry="18" fill="${belly}"/>`}
     ${sp.skin ? sp.skin(body, arm) : ''}
     ${doll || bottom + coat}${sticker}
@@ -911,7 +935,7 @@ function mascot(mood, outfit){
     ${cheek}
     ${sp.face ? sp.face(body, arm) : ''}${eyes}
     <ellipse cx="60" cy="69" rx="5" ry="3.5" fill="#4a4566"/>${mouth}
-    ${sp.front(body, arm, ear)}${neck}${front}${hat}
+    ${sp.front(body, arm, ear)}${hair[1]}${neck}${front}${hat}
     ${pet ? `<ellipse cx="134" cy="118.5" rx="17" ry="3.5" fill="rgba(74,69,102,.12)"/><g class="pet"><g transform="translate(134 118) scale(1.2) translate(-132 -118)">${pet}</g></g>` : ''}
     ${mood === 'sleep' ? '<text x="92" y="30" font-size="16" font-weight="800" fill="#8a85a3">z</text><text x="102" y="18" font-size="12" font-weight="800" fill="#8a85a3">z</text>' : ''}
   </svg>`;
@@ -990,7 +1014,7 @@ const FAQ = [
   ['🛍️ 衣櫃', '套裝怎麼買？', '要先達到關鍵物品 🔑 的條件，才能整套買，還沒有的單品一起買打 8 折。不想整套的話，其他單品可以一件一件買。', '套裝 整套 8折 八折 關鍵'],
   ['🛍️ 衣櫃', '「造型存檔」怎麼用？', '在衣櫃的「💾 造型存檔」先解鎖存檔格（第 1 格 50、第 2 格 150、第 3 格 300 金幣，要照順序），把現在的搭配存起來，之後按「換上」一鍵換裝。', '存檔 造型存檔 一鍵 換裝 存起來'],
   ['🛍️ 衣櫃', '「我的旗子」要怎麼畫？', '在衣櫃的「🚩 我的旗子」用 8×8 的格子塗色，按「送審」。老師審核通過才會扣 50 金幣、旗子才會出現；沒通過不扣錢，可以重畫。', '旗子 畫 審核 送審'],
-  ['🛍️ 衣櫃', '「許願池」是什麼？', '想要什麼新造型，可以在衣櫃的「🌠 許願池」寫下來，或畫圖加說明，每人每週 1 個願望。老師看過會公開給全班，大家可以按「☆ 我也想要」集氣。', '許願 願望 想要 新造型 設計'],
+  ['🛍️ 衣櫃', '「許願池」是什麼？', '想要什麼新造型，可以在衣櫃的「🌠 許願池」寫下來，或畫圖加說明，每人每週 1 個願望。老師看過會公開給全班，大家可以按「☆ 我也想要」集氣。願望實現了會馬上上架，你下次登入會收到通知。', '許願 願望 想要 新造型 設計'],
   ['🛍️ 衣櫃', '「自訂顏色」怎麼用？', '買了「自訂顏色」以後，在衣櫃的「顏色」點它，用旁邊的調色盤選顏色，再按「套用這個顏色」，想換幾次都可以。', '自訂 顏色 調色盤'],
   ['🛍️ 衣櫃', '黑影的「？？？神秘角色」是什麼？', '那是隱藏新品，上架那天早上 8 點才會揭曉長什麼樣子。它們很貴、條件也很嚴格，要努力存喔！', '神秘 黑影 陰影 隱藏 ？？？'],
   ['⭐ 星星金幣', '為什麼過關了卻沒加星星？', '星星一天最多 5 顆。同一天過關超過 5 回合，照樣過關、照樣拿金幣，只是不再加星星。每天練一點最好！', '星星 沒加星 沒有星 過關'],
@@ -1069,9 +1093,15 @@ function shrinkShot(file){
 
 /* ---------- 這次更新了什麼（每個學生看完一次就不再跳出） ---------- */
 const NEWS = {
-  ver: 'launch-2026-11-26',
+  ver: 'wish-hair-2026-11-26',
+  // 已經看過這些版本的同學，只看標 fresh 的新段落
+  seenOld: ['launch-2026-11-26'],
   // 每一段：標題、項目（圖示、標題、說明）；brief 的段落每項只顯示一行
-  sections: [{ title: '⭐ 最重要：{F}是主力島', items: [
+  sections: [{ fresh: true, title: '🌠 許願池實現了！衣櫃開了新的一欄：髮型', items: [
+    ['💇', '紅色長捲髮', '同學在許願池許的願望！衣櫃新的「髮型」欄今天上架，可以和帽子一起戴。其他髮型（金色長捲髮、黑色雙馬尾、短鮑伯頭、丸子頭……）之後每週上架。'],
+    ['🎩', '舞台巨星套裝', '亮片舞台外套＋黑色紳士帽＋白手套，今天一起上架，買整套打 8 折。'],
+    ['🌠', '許願會有回音', '老師處理你的願望以後（實現了、公開集氣、沒有採用），你下次登入就會收到通知。想要什麼新造型，到衣櫃的「🌠 許願池」許願吧！']
+  ] }, { title: '⭐ 最重要：{F}是主力島', items: [
     ['📌', '今日印章只在主力島拿得到！', '從現在起，每天的印章要在{F}島過關才拿得到（{F}的素養島和單課練習也算）。在其他島過關，照樣有金幣和星星，但不會蓋印章，連續天數也不會增加喔！', 'stamp'],
     ['🪙', '主力島金幣加成', '{F}的題目答對 1 題得 1.5 枚金幣；{F}的素養島題目更多，答對 1 題得 2 枚！（一回合加起來四捨五入，在燈塔挑戰、錯題礁答對也算）'],
     ['📚', '考試範圍為主', '老師設定考試範圍以後，範圍裡的題目照常拿金幣，範圍外（例如上次考過的單元）金幣打折，印章和每日任務照算。段考衝刺島在考前兩週金幣×1.5！'],
@@ -1108,6 +1138,7 @@ function dropNews(){
 function pendingNews(){
   const seen = (state && state.newsSeen) || '';
   if (state && state.shopInfo && state.shopInfo.beforeLaunch) return null;  // 特價開始（早上 8 點）前先不跳公告
+  if (NEWS.seenOld.includes(seen)) return { ver: NEWS.ver, sections: NEWS.sections.filter(x => x.fresh) };
   if (seen !== NEWS.ver && !seen.startsWith('drop:')) return NEWS;
   const dn = dropNews();
   if (dn && seen !== dn.ver) return dn;
@@ -1117,15 +1148,18 @@ function pendingNews(){
 function askPopup(){
   const an = state && state.askNews;
   const fr = state && state.flag && state.flag.result;
-  const reps = (an && an.reps) || [], corr = (an && an.corr) || [];
-  if (!an || (!an.pub.length && !an.mine.length && !fr && !reps.length && !corr.length)) return null;
+  const reps = (an && an.reps) || [], corr = (an && an.corr) || [], wish = (an && an.wish) || [];
+  if (!an || (!an.pub.length && !an.mine.length && !fr && !reps.length && !corr.length && !wish.length)) return null;
   const secs = [];
+  if (wish.length) secs.push({ title: '🌠 你的願望', items: wish.map(w => w.status === 'done' ? ['🎉', '你許的願望實現了！「' + w.text.slice(0, 30) + '」', (w.note ? w.note + '。' : '') + '快去衣櫃看看！']
+    : w.status === 'public' ? ['⭐', '你的願望公開了！「' + w.text.slice(0, 30) + '」', '全班都看得到，大家可以幫你集氣。' + (w.note ? '老師說：' + w.note : '')]
+    : ['💭', '你的願望這次沒有採用「' + w.text.slice(0, 30) + '」', w.note ? '老師說：' + w.note : '下週還可以再許一個願望喔！']) });
   if (corr.length) secs.push({ title: '📢 題目更正', items: corr.map(c => [c.kind === 'off' ? '🚫' : '✏️', c.subject + '・' + c.unit + '「' + c.text.slice(0, 60) + '」', c.kind === 'off' ? '這題有錯，已經停用了。' : '已修正：正確答案是 ' + c.answer + (c.explain ? '。' + c.explain : '')]).concat([['🙏', '謝謝同學幫忙找到問題！', '答題時覺得怪怪的，可以先查一查，還是覺得有問題再按「這題怪怪的？」']]) });
   if (fr) secs.push({ title: '🚩 旗子審核', items: [[fr.status === 'approved' ? '✅' : '❌', fr.status === 'approved' ? '你的旗子通過了！' : '你的旗子這次沒有通過', fr.status === 'approved' ? '已經扣 50 金幣，旗子插在波波旁邊了。' + (fr.note ? '老師說：' + fr.note : '') : (fr.note ? '老師說：' + fr.note + '。' : '') + '可以重畫再送審，沒通過不扣錢。']] });
   if (an.mine.length) secs.push({ title: '📮 老師回覆你的提問', items: an.mine.map(a => [a.status === 'bug' ? '🛠️' : a.status === 'junk' ? '🚫' : '💬', '你問：' + a.text, a.reply + (a.reward ? '（' + a.reward + '）' : '')]) });
   if (reps.length) secs.push({ title: '🚩 題目問題回饋', items: reps.map(x => [x.result === 'confirmed' ? '✅' : x.result === 'junk' ? '🚫' : '👌', '你回報的題目：' + x.text.slice(0, 40), (x.reply || '') + (x.penalty ? '（-' + x.penalty + ' 金幣）' : '')]) });
   if (an.pub.length) secs.push({ title: '💬 同學問、老師答', items: an.pub.map(a => ['❓', '有同學問：' + a.text, '老師：' + a.reply]) });
-  return { ver: 'asks', sections: secs, onSeen: () => { const mx = Math.max(0, ...an.pub.map(a => a.id)), cx = Math.max(0, ...corr.map(c => c.id)); state.askNews = { pub: [], mine: [], reps: [], corr: [] }; if (state.flag) state.flag.result = null; api('seenAsks', cred, mx, cx).catch(() => {}); } };
+  return { ver: 'asks', sections: secs, onSeen: () => { const mx = Math.max(0, ...an.pub.map(a => a.id)), cx = Math.max(0, ...corr.map(c => c.id)); state.askNews = { pub: [], mine: [], reps: [], corr: [], wish: [] }; if (state.flag) state.flag.result = null; api('seenAsks', cred, mx, cx).catch(() => {}); } };
 }
 function showNews(force){
   if ($('news')) return;
@@ -1424,10 +1458,10 @@ function renderResult(r){
 $('bQuit').addEventListener('click', () => { renderMap(); show('vMap'); });
 
 /* ---------- 波波的衣櫃 ---------- */
-const SLOTS = [['species','角色'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['eye','眼睛'],['bottom','裙子・褲子'],['pet','寵物'],['color','顏色'],['bg','背景'],['ear','耳朵・鬃毛顏色'],['doll','娃娃裝'],['sticker','衣服貼圖'],['flag','旗子']];
+const SLOTS = [['species','角色'],['hair','髮型'],['hat','帽子'],['acc','配件'],['coat','外套'],['glove','手套'],['cheek','腮紅'],['eye','眼睛'],['bottom','裙子・褲子'],['pet','寵物'],['color','顏色'],['bg','背景'],['ear','耳朵・鬃毛顏色'],['doll','娃娃裝'],['sticker','衣服貼圖'],['flag','旗子']];
 let trying = null, selId = null;
 /** 每一格的「沒穿」：脫下就換成這個 */
-const NONE = {species:'sp_seal', hat:'hat_none', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue', bg:'bg_none', ear:'ear_same', doll:'doll_none', sticker:'sticker_none', flag:'flag_none'};
+const NONE = {species:'sp_seal', hat:'hat_none', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue', bg:'bg_none', ear:'ear_same', doll:'doll_none', sticker:'sticker_none', flag:'flag_none', hair:'hair_none'};
 const CLOTHES = ['hat', 'acc', 'coat', 'glove', 'bottom', 'pet', 'bg', 'doll', 'sticker', 'flag'];
 async function takeOff(slots, msg){
   const want = {}; slots.forEach(x => want[x] = NONE[x]);
@@ -1574,7 +1608,7 @@ function renderShop(){
   $('shopList').innerHTML = shopBoard() + setHtml + SLOTS.map(([slot, label]) => `<h3>${label}${slot === 'ear' ? ' <small class="gsub">小兔、小狗、大麥町、吉娃娃、柯基、小狐狸的耳朵，獨角獸的鬃毛；試穿時會先借小兔給你看</small>' : slot === 'doll' ? ' <small class="gsub">穿上會蓋住外套和裙子・褲子</small>' : ''}</h3><div class="items">` +
     Object.keys(shop).filter(id => shop[id].slot === slot && !(shop[id].mine && !(state.flag && state.flag.grid))).map(id => {
       const it = shop[id], wear = state.outfit[slot] === id;
-      const pv = Object.assign({}, DEFAULT_LOOK, {[slot]: id}, slot === 'ear' ? {species: LONG_EARS.includes(state.outfit.species) ? state.outfit.species : 'sp_bunny'} : {});
+      const pv = Object.assign({}, DEFAULT_LOOK, {[slot]: id}, slot === 'ear' ? {species: LONG_EARS.includes(state.outfit.species) ? state.outfit.species : 'sp_bunny'} : slot === 'hair' ? {hat: 'hat_none'} : {});
       return `<button class="item${wear ? ' on wear' : ''}${selId === id ? ' sel' : ''}" data-id="${id}">${it.mystery ? `<span class="myst">${mascot('happy', pv)}</span>` : mascot('happy', pv)}${it.key ? '🔑 ' : ''}${esc(it.name)}${it.set && sets[it.set] ? `<span class="settag">${esc(sets[it.set].name.replace('套裝', ''))}</span>` : ''}
         <small>${wear ? '穿著中' : has(id) ? '已擁有' : it.soon ? '🔜 ' + md(it.soon) + '8 點上架' : (locked(it) ? '🔒 ' + req(it) + ' 解鎖' : (it.stars || it.badges || it.need ? req(it) + '・' : '') + priceTag(it))}</small></button>`;
     }).join('') + '</div>').join('');
@@ -1616,7 +1650,7 @@ function renderShop(){
   // 測試帳號：看到的跟同學一樣，但點了就能穿（不扣金幣、不受條件限制）
   if (state.isTest && !has(selId) && b.disabled){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; }
 }
-const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue', bg:'bg_none', ear:'ear_same', doll:'doll_none', sticker:'sticker_none', flag:'flag_none'};
+const DEFAULT_LOOK = {species:'sp_seal', hat:'hat_sailor', acc:'acc_none', coat:'coat_none', glove:'glove_none', cheek:'cheek_pink', eye:'eye_dark', bottom:'bottom_none', pet:'pet_none', color:'color_blue', bg:'bg_none', ear:'ear_same', doll:'doll_none', sticker:'sticker_none', flag:'flag_none', hair:'hair_none'};
 $('shopList').addEventListener('click', e => {
   const b = e.target.closest('.item'); if (!b) return;
   if (b.dataset.set){ selId = 'set:' + b.dataset.set; trying = Object.assign({}, state.outfit, setLook(state.sets[b.dataset.set])); renderShop(); return; }
