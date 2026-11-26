@@ -567,9 +567,17 @@ try {
     assert.ok(!(await call('studentLogin', c5)).ok.askNews.corr.some(c => c.qid === q.id), '看過就不再跳出');
     // Claude 用匯入鑰匙改題目文字（答案不能改）
     const xe = async (...args) => (await (await fetch(BASE + '/api/xEditQuestion', { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
-    const ed = (await xe(q.id, { explain: '新的解析', answer: 'Z' })).ok;
-    assert.equal(ed.explain, '新的解析'); assert.notEqual(ed.answer, 'Z', '答案不會被改');
-    assert.match((await xe(q.id, { answer: 'Z' })).err, /沒有可以改/);
+    assert.equal((await xe(q.id, { explain: '新的解析' })).ok.explain, '新的解析');
+    assert.match((await xe(q.id, { answer: 'Z' })).err, /答案/);
+    assert.match((await xe(q.id, { type: '填空' })).err, /沒有可以改/);
+    // Claude 處理回報：不能扣金幣
+    const x2 = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
+    assert.ok((await call('reportQuestion', c3, q.id, '其他', '')).ok.ok);
+    const k0 = (await call('studentLogin', c3)).ok.coins;
+    assert.ok((await x2('xResolveReport', q.id, 'ok', '老師檢查過了，答案沒有錯。')).ok);
+    assert.ok(!(await call('tReports', PW)).ok.some(g => g.q.id === q.id));
+    assert.equal((await call('studentLogin', c3)).ok.coins, k0);
+    assert.match((await x2('xResolveReport', q.id, 'junk', '')).err, /ok 或 confirmed/);
     assert.match((await (await fetch(BASE + '/api/xEditQuestion', { method: 'POST', body: JSON.stringify({ args: [q.id, { explain: 'x' }] }) })).json()).err, /鑰匙/);
     await call('tSetEnabled', PW, [q.id], true);
   });

@@ -2018,6 +2018,15 @@ API.tReports = async (ctx, pw) => {
  * junk 是亂回報的回報 id 清單，那些學生扣 coins 枚金幣（不會扣成負數），其他照 result。學生下次登入會看到結果。 */
 API.tResolveReports = async (ctx, pw, qid, result, reply, junk, coins) => {
   await checkPw(ctx, pw);
+  return resolveReports(ctx, qid, result, reply, junk, coins);
+};
+/** Claude 用：處理回報（沒問題／真的有錯）。扣不扣金幣由老師決定，所以這裡不能扣 */
+API.xResolveReport = async (ctx, qid, result, reply) => {
+  checkImport(ctx);
+  if (!['ok', 'confirmed'].includes(result)) fail('結果要是 ok 或 confirmed。');
+  return resolveReports(ctx, qid, result, reply, [], 0);
+};
+async function resolveReports(ctx, qid, result, reply, junk, coins) {
   const confirmed = result === true || result === 'confirmed';
   const rows = await ctx.all("SELECT id, class_code, seat FROM reports WHERE qid = ? AND status = 'open'", str(qid, 40));
   const bad = new Set((Array.isArray(junk) ? junk : []).map(x => Math.floor(num(x))));
@@ -2040,7 +2049,7 @@ API.tResolveReports = async (ctx, pw, qid, result, reply, junk, coins) => {
   }
   if (stmts.length) await ctx.db.batch(stmts);
   return true;
-};
+}
 /** 正確答案給學生看的文字：選擇題「A. 選項」、是非題 ○／✕、填空題第一個答案 */
 function answerText(q) {
   if (q.type === '選擇') { const k = String(q.answer).trim().toUpperCase(); return k + '. ' + (q[k.toLowerCase()] || ''); }
@@ -2050,12 +2059,21 @@ function answerText(q) {
 /** 已經公告的題目更正（隔天早上 8 點起；衣櫃的一天也是早上 8 點開始） */
 const corrOut = c => ({ id: c.id, qid: c.qid, day: c.day, kind: c.kind, subject: c.subject, unit: c.unit, text: c.text, answer: c.answer, explain: c.explain });
 /** Claude 用：待檢查的題目（含題目全文、答案、解析、學生選了什麼） */
-/** Claude 用：修改題目文字（只能改題目、選項、解析、提示、情境；答案和題型要老師在後台改） */
-const X_EDIT = { text: 300, a: 200, b: 200, c: 200, d: 200, explain: 300, hint: 120, passage: 1000 };
+/** Claude 用：修改題目（題目、選項、答案、解析、提示、情境；題型和單元要老師在後台改） */
+const X_EDIT = { text: 300, a: 200, b: 200, c: 200, d: 200, answer: 300, explain: 300, hint: 120, passage: 1000 };
 API.xEditQuestion = async (ctx, id, fields) => {
   checkImport(ctx);
-  const keys = Object.keys(fields || {}).filter(k => X_EDIT[k]);
+  fields = Object.assign({}, fields);
+  const keys = Object.keys(fields).filter(k => X_EDIT[k]);
   if (!keys.length) fail('沒有可以改的欄位。');
+  if ('answer' in fields) {
+    const q = await ctx.first('SELECT type FROM questions WHERE id = ?', str(id, 40));
+    if (!q) fail('找不到這一題。');
+    const a = String(fields.answer).trim();
+    if (q.type === '選擇') { if (!/^[ABCD]$/i.test(a)) fail('選擇題答案要是 A、B、C 或 D。'); fields.answer = a.toUpperCase(); }
+    else if (q.type === '是非') { if (!tf(a)) fail('是非題答案要是 O 或 X。'); fields.answer = tf(a); }
+    else if (!a) fail('答案不能空白。');
+  }
   const r = await ctx.run(`UPDATE questions SET ${keys.map(k => k + ' = ?').join(', ')} WHERE id = ?`, ...keys.map(k => str(fields[k], X_EDIT[k])), str(id, 40));
   if (!r.meta.changes) fail('找不到這一題。');
   return ctx.first('SELECT * FROM questions WHERE id = ?', str(id, 40));
