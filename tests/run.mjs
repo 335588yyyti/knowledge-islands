@@ -433,6 +433,11 @@ try {
     await p.click('#bBadges'); await p.waitForSelector('#vBadges:not(.hidden)');
     assert.ok(await p.locator('.bcard.got').count() >= 2);
     assert.equal(await p.locator('.bcard').count(), 31);  // 60 個徽章，系列合成一張卡片後是 31 張
+    // 系列卡片直接列出每一階的名字（例如連續天數系列的「航海王」），點開看得到可以解鎖的衣服
+    assert.match(await p.textContent('[data-series="streak"]'), /小火苗 → 一週不間斷 → 穩定航行 → 航海王 → 乘風破浪/);
+    await p.click('[data-series="streak"]'); await p.waitForSelector('.bpop');
+    assert.match(await p.textContent('.bpop'), /解鎖衣櫃的：.*小龍/);
+    await p.click('.bpop [data-close]');
     assert.ok(await p.locator('.bcard.series .pips i.on').count() >= 1);
     // 點徽章跳出說明，系列徽章列出每一階
     await p.click('.bcard.series.got'); await p.waitForSelector('.bpop');

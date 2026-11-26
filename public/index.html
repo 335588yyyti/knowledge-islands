@@ -225,6 +225,7 @@ label{display:block;font-weight:800;margin-bottom:6px}
 #news .nw>span{font-size:26px;line-height:1.2}#news .nw b{display:block}#news .nw p{margin:2px 0 0;line-height:1.55;font-weight:600}
 #news .nsec{margin:6px 0 0;font-size:17px}#news .nw.brief{padding:6px 12px;font-weight:600;line-height:1.5}#news .nw.brief>span{font-size:20px}#news .nw.brief b{display:inline}
 #vShop .shopboard{display:grid;gap:6px;margin:4px 0 10px}#vShop .sched summary{cursor:pointer}#vShop .sched ul{margin:6px 0 0;padding-left:20px;display:grid;gap:4px;font-weight:600;line-height:1.55}#vShop s.was{opacity:.6;font-weight:600}
+.bcard .tiers{display:block;font-size:11px;color:var(--muted);line-height:1.4;margin:2px 0}
 .rpre,.rreason{line-height:1.7;font-weight:600}.rpre a{font-weight:800}
 .faq{display:grid;gap:8px;margin:6px 0 14px}.faq details,.faq .fa{border:3px solid #f1e3c8;background:#fffaf0;border-radius:16px;padding:8px 12px}
 .faq summary{cursor:pointer;font-weight:800}.faq details p,.faq .fa p{margin:6px 0 0;line-height:1.6;font-weight:600}.faq .fcat{font-size:13px;color:var(--muted);font-weight:800;margin:4px 0 -2px}
@@ -1522,9 +1523,10 @@ $('shopWish').addEventListener('click', async e => {
 });
 $('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-st]'); if (b) shopTab(b.dataset.st); });
 const bName = id => ((state.badgeList || []).find(b => b.id === id) || {}).name || id;
+const bIcon = id => ((state.badgeList || []).find(b => b.id === id) || {}).icon || '🎖️';
 const hasBadge = id => (state.badges || []).includes(id);
 const locked = it => ((it.stars && state.stars < it.stars) || (it.badges && (state.badges || []).length < it.badges) || (it.need && !hasBadge(it.need)));
-const req = it => [it.stars ? '⭐' + it.stars : '', it.badges ? '🏅' + it.badges : '', it.need ? '🎖️' + bName(it.need) : ''].filter(Boolean).join('＋');
+const req = it => [it.stars ? '⭐' + it.stars : '', it.badges ? '🏅' + it.badges : '', it.need ? bIcon(it.need) + bName(it.need) : ''].filter(Boolean).join('＋');
 /** 還差什麼：星星、徽章數、指定徽章 */
 const lack = it => {
   const ns = Math.max(0, (it.stars || 0) - state.stars), nb = Math.max(0, (it.badges || 0) - (state.badges || []).length);
@@ -1600,7 +1602,8 @@ function renderShop(){
       ? '「' + it.name + '」是高級款：要' + reqText(it) + '才能買（星星和徽章都不會被花掉）。'
       : it.need && !it.stars
       ? '「' + it.name + '」是徽章限定款：' + reqText(it) + '就能用金幣買。'
-      : '「' + it.name + '」是星星特別款：' + reqText(it) + '就能買（星星不會被花掉）。每次過關得 1 顆星星，一天最多 ' + (state.starMax || 5) + ' 顆喔！'; }
+      : '「' + it.name + '」是星星特別款：' + reqText(it) + '就能買（星星不會被花掉）。每次過關得 1 顆星星，一天最多 ' + (state.starMax || 5) + ' 顆喔！';
+    if (it.need) $('shopMsg').insertAdjacentHTML('beforeend', ` <a href="#" data-badge="${esc(it.need)}">${bIcon(it.need)} 看「${esc(bName(it.need))}」怎麼拿</a>`); }
   else if (state.saleLeft === 0 && it.price > 0){ b.disabled = true; b.textContent = '特價已買滿 ' + state.saleLimit + ' 樣'; $('shopMsg').textContent = '特價期間每人限買 ' + state.saleLimit + ' 樣，你已經買滿了！「' + it.name + '」可以先試穿，特價結束後再用原價買。'; }
   else if (state.coins >= it.price){ b.disabled = false; b.textContent = '用 ' + it.price + ' 金幣買下'; $('shopMsg').textContent = it.was ? '「' + it.name + '」限定特價 ' + it.price + ' 金幣（原價 ' + it.was + '），特價到 ' + md(it.saleEnd) + '早上 8 點！' : '「' + it.name + '」很適合波波喔！'; }
   else { b.disabled = true; b.textContent = '還差 ' + (it.price - state.coins) + ' 金幣'; $('shopMsg').textContent = '再去島上答對幾題，就能買「' + it.name + '」了。'; }
@@ -1641,6 +1644,9 @@ $('bShopAct').addEventListener('click', async () => {
   }catch(err){ $('shopMsg').textContent = err.message; renderShop(); }
 });
 $('bShop').addEventListener('click', openShop);
+$('shopMsg').addEventListener('click', e => { const a = e.target.closest('[data-badge]'); if (!a) return; e.preventDefault(); openBadgeById(a.dataset.badge); });
+/** 用徽章 id 打開說明（系列徽章打開整個系列） */
+function openBadgeById(id){ const b = (state.badgeList || []).find(x => x.id === id); if (b) openBadge({ dataset: b.series ? { series: b.series } : { bid: id } }); }
 $('ccPick').addEventListener('input', () => { trying = Object.assign({}, trying, {color: 'color_custom', customHex: $('ccPick').value}); $('shopStage').innerHTML = mascot('cheer', trying); });
 $('bShopBare').addEventListener('click', () => takeOff(CLOTHES, '帽子、配件、外套、手套、裙子・褲子、寵物、背景、娃娃裝、貼紙、旗子都脫下了。'));
 $('bShopBack').addEventListener('click', () => { renderMap(); show('vMap'); });
@@ -1688,17 +1694,20 @@ function renderBadges(){
       const show = top || ser[0];
       const pips = '<span class="pips">' + ser.map(x => `<i class="${have.has(x.id) ? 'on' : ''}" title="${esc(x.name)}">${TIERS[x.tier - 1]}</i>`).join('') + '</span>';
       const nextTxt = next ? `<small class="bnext">${top ? '下一階' : '目標'}：${esc(next.desc)}</small>` : '<small class="bnext">全部完成了！</small>';
-      cards.push(`<div class="bcard series${top ? ' got' : ''}" data-series="${esc(b.series)}" role="button" tabindex="0"><span class="bi" aria-hidden="true">${show.icon}</span><b>${esc(show.name)}</b>${pips}${nextTxt}${top ? '' : '<em>還沒拿到</em>'}</div>`);
+      cards.push(`<div class="bcard series${top ? ' got' : ''}" data-series="${esc(b.series)}" role="button" tabindex="0"><span class="bi" aria-hidden="true">${show.icon}</span><b>${esc(show.name)}</b>${pips}<small class="tiers">${ser.map(x => esc(x.name)).join(' → ')}</small>${nextTxt}${top ? '' : '<em>還沒拿到</em>'}</div>`);
     });
     return `<h3>${g} <small class="gsub">${sub}</small></h3><div class="bwall">` + cards.join('') + '</div>';
   }).join('');
 }
 /* 點徽章：跳出說明（怎麼拿、哪天拿到、老師的話；系列徽章列出每一階） */
+/** 這個徽章可以解鎖衣櫃的哪些東西（神秘角色不透露） */
+const unlocks = id => Object.values((state && state.shop) || {}).filter(it => it.need === id && !it.mystery).map(it => it.name);
 function openBadge(card){
   const list = state.badgeList || [], have = new Set(state.badges || []), notes = state.badgeNotes || {}, days = state.badgeDays || {};
   const line = x => `<div class="bp${have.has(x.id) ? ' got' : ''}"><b>${x.tier ? TIERS[x.tier - 1] + '　' : ''}${esc(x.name)}</b><span>${esc(x.desc)}</span>`
     + `<small>${have.has(x.id) ? '✅ 已經拿到' + (days[x.id] ? '（' + esc(days[x.id]) + '）' : '') : '還沒拿到'}</small>`
-    + (notes[x.id] ? `<small class="bnote">老師說：${esc(notes[x.id])}</small>` : '') + '</div>';
+    + (notes[x.id] ? `<small class="bnote">老師說：${esc(notes[x.id])}</small>` : '')
+    + (unlocks(x.id).length ? `<small>🔓 拿到後可以解鎖衣櫃的：${esc(unlocks(x.id).join('、'))}</small>` : '') + '</div>';
   let head, body;
   if (card.dataset.series){
     const ser = list.filter(x => x.series === card.dataset.series).sort((x, y) => x.tier - y.tier);
