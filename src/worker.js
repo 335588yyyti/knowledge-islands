@@ -417,7 +417,7 @@ const BADGES = [
   { id: 'groupall', group: '挑戰', icon: '🧩', name: '題組全對', desc: '一組素養題組（3 題以上）每一題都答對' },
   { id: 'litfive', group: '挑戰', icon: '🌺', name: '素養五島', desc: '五科的素養島，都至少有一組題組每一題最近一次都答對' },
   { id: 'explorer5', series: 'explorer', tier: 1, group: '挑戰', icon: '🔭', name: '小小探險家', desc: '完成 5 個延伸冒險' },
-  { id: 'explorer15', series: 'explorer', tier: 2, group: '挑戰', icon: '🏕️', name: '探險隊長', desc: '完成 15 個延伸冒險' },
+  { id: 'explorer15', series: 'explorer', tier: 2, group: '挑戰', icon: '🏕️', name: '探險隊長', desc: '完成 10 個延伸冒險' },
   { id: 'perfect', group: '挑戰', icon: '🎯', name: '百發百中', desc: '一整回合每一題都答對（那一回合要有 8 題以上）' },
   { id: 'lighthouse', group: '挑戰', icon: '🗼', name: '燈塔全對', desc: '燈塔挑戰一整回合每一題都答對，一題都沒錯（那一回合要有 5 題以上）' },
   { id: 'exam', group: '挑戰', icon: '🚩', name: '備戰完成', desc: '在段考衝刺島過關' },
@@ -839,7 +839,7 @@ async function awardBadges(ctx, cls, s, st, ev) {
     reader10: s.passage_right >= 10, reader30: s.passage_right >= 30, reader60: s.passage_right >= 60,
     prepared: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.7, prepared90: !!ex && ex.total >= 5 && ex.mastered / ex.total >= 0.9,
     litfive: SUBJECTS.every(sj => st.literacy && st.literacy[sj] && st.literacy[sj].allRight >= 1),
-    explorer5: explored >= 5, explorer15: explored >= 15,
+    explorer5: explored >= 5, explorer15: explored >= 10,
     detective1: detective >= 1, detective3: detective >= 3, bughunt1: (s.bugs || 0) >= 1, bughunt3: (s.bugs || 0) >= 3,
     comeback: !!ev.comeback, review: !!ev.review, perfect: !!ev.perfect, exam: !!ev.exam,
     climb: !!ev.climb, clearwrong: !!ev.clearwrong, concept: !!ev.concept, groupall: !!ev.groupall, lighthouse: !!ev.lighthouse

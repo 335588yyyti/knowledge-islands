@@ -929,7 +929,31 @@ try {
     assert.ok(!(await call('tDashboard', pw, 'DEMO')).ok.students.find(x => x.seat === 2).isTest);
     await t.click('[data-tab="tClass"]');
   });
-  await step('QR code 可以放大全螢幕，關閉後回到班級管理', async () => {
+  await step('套裝與高級款：星星、徽章、指定徽章都夠了，整套買得到、打 8 折，關鍵物品也買得到', async () => {
+    const c = { code: 'DEMO', seat: 3, pin: '3333' };
+    const ids = ['perfect', 'rescue50', 'streak3', 'first', 'stamp7', 'master1', 'isle_英文', 'concept', 'climb', 'lighthouse', 'explorer5', 'star10'];
+    const sql = "UPDATE students SET stars = 200, coins = 5000, total = total + 1 WHERE class_code = 'DEMO' AND seat = 3; "
+      + ids.map(id => `INSERT OR IGNORE INTO badges (class_code, seat, badge, day) VALUES ('DEMO', 3, '${id}', '2026-01-01')`).join('; ');
+    execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "${sql}"`, { stdio: 'ignore' });
+    const st = (await call('studentLogin', c)).ok;
+    assert.ok(st.stars >= 200 && st.badges.length >= 10, 'stars=' + st.stars + ' badges=' + st.badges.length);
+    // 整套：運動明星（⭐50＋🏅5＋指定「完美一回合」），還沒有的單品打 8 折，買完整套穿上
+    const have = new Set(st.owned), set = st.sets.set_sport;
+    const price = Math.round(set.items.filter(x => !have.has(x)).reduce((a, x) => a + st.shop[x].price, 0) * 0.8);
+    const r = (await call('buySet', c, 'set_sport')).ok;
+    assert.ok(r, '整套買得到');
+    assert.equal(r.coins, st.coins - price);
+    set.items.forEach(x => { assert.ok(r.owned.includes(x), x); assert.equal(r.outfit[st.shop[x].slot], x); });
+    assert.match((await call('buySet', c, 'set_sport')).err, /全部都有/);
+    // 高級款：黃金手套（⭐100＋🏅10＋指定徽章）
+    const g = (await call('buyItem', c, 'glove_gold')).ok;
+    assert.ok(g && g.owned.includes('glove_gold') && g.outfit.glove === 'glove_gold');
+    // 星星、徽章數夠，但少了指定徽章：船長帽買不了
+    assert.match((await call('buyItem', c, 'hat_captain')).err, /徽章/);
+    // 徽章數不夠（寶石皇冠要 15 個）：買不了
+    assert.match((await call('buyItem', c, 'hat_royal')).err, /徽章/);
+  });
+    await step('QR code 可以放大全螢幕，關閉後回到班級管理', async () => {
     await t.click('[data-tab="tClass"]'); await t.waitForSelector('#qr img, #qr canvas', { state: 'attached' });
     await t.click('#bQrBig'); await t.waitForSelector('#qrBig .big img, #qrBig .big canvas', { state: 'attached' });
     assert.match(await t.textContent('#qrBig'), /\?c=DEMO/);
