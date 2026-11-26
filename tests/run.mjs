@@ -568,7 +568,7 @@ try {
     // Claude 用匯入鑰匙改題目文字（答案不能改）
     const xe = async (...args) => (await (await fetch(BASE + '/api/xEditQuestion', { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
     assert.equal((await xe(q.id, { explain: '新的解析' })).ok.explain, '新的解析');
-    assert.match((await xe(q.id, { answer: 'Z' })).err, /答案/);
+    assert.match((await xe(q.id, { answer: '' })).err, /答案/);
     assert.match((await xe(q.id, { type: '填空' })).err, /沒有可以改/);
     // Claude 處理回報：不能扣金幣
     const x2 = async (fn, ...args) => (await (await fetch(BASE + '/api/' + fn, { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
