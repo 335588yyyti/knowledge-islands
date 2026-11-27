@@ -239,7 +239,7 @@ const SETS = {
   set_pirate: { name: '海上船長套裝', key: 'hat_captain', items: ['hat_captain', 'coat_pirate', 'bottom_pirate', 'pet_parrot'] },
   set_space: { name: '太空人套裝', key: 'hat_astro', items: ['hat_astro', 'coat_space', 'glove_space', 'pet_robot'] },
   set_magic: { name: '魔法學院套裝', key: 'coat_robe', items: ['hat_witch', 'coat_robe', 'glove_magic', 'pet_blackcat'] },
-  set_stage: { name: '舞台巨星套裝', key: 'coat_sequin', items: ['hat_fedora_black', 'coat_sequin', 'glove_white'] }
+  set_stage: { name: '舞台巨星套裝', wish: true, key: 'coat_sequin', items: ['hat_fedora_black', 'coat_sequin', 'glove_white'] }
 };
 /* ---- 限定特價與每週新品 ----
  * 特價 3 天（LAUNCH_DAY 起）：衣櫃全部開放，價格是特價。
@@ -304,6 +304,7 @@ function shopView(ctx, have, isTest) {
   Object.keys(SHOP).forEach(id => {
     if (!isTest && !onShelf(ctx, id, day) && !mine.has(id) && !(nx && DROP_OF[id] === nx.day) && !(day < launchDay(ctx))) return;
     out[id] = Object.assign({}, SHOP[id], priceInfo(ctx, id, day));
+    if (SHOP[id].wish) out[id].name = WISH_TAG + SHOP[id].name;  // 衣櫃裡標出許願池實現的商品
     if (mine.has(id)) out[id].soon = '';  // 測試帳號看到的標示跟同學一樣，只是點了就能穿
     // 隱藏商品上架前：只給陰影，不給名字（測試帳號也一樣）
     if (SHOP[id].hidden && !onShelf(ctx, id, day) && !mine.has(id)) Object.assign(out[id], { name: '？？？神秘角色', mystery: true, stars: 0, badges: 0, need: '' });
@@ -311,7 +312,9 @@ function shopView(ctx, have, isTest) {
   return out;
 }
 /** 套裝：每一件都已經上架才顯示 */
-const setsView = (ctx, isTest) => Object.fromEntries(Object.entries(SETS).filter(([, st]) => isTest || st.items.every(x => onShelf(ctx, x, shopDay(ctx)))));
+const WISH_TAG = '許願商品：';
+const setsView = (ctx, isTest) => Object.fromEntries(Object.entries(SETS).filter(([, st]) => isTest || st.items.every(x => onShelf(ctx, x, shopDay(ctx))))
+  .map(([id, st]) => [id, st.wish ? Object.assign({}, st, { name: WISH_TAG + st.name }) : st]));
 /** 預告用的名字：隱藏商品寫成神秘角色 */
 const dropName = x => SHOP[x].hidden ? '🎁 ？？？神秘角色' : SHOP[x].name;
 /** 衣櫃狀態：特價倒數、下一週預告、這週新品 */
@@ -1304,9 +1307,10 @@ API.xSetWish = async (ctx, id, status, note) => {
   if (!['public', 'done', 'declined'].includes(status)) fail('請選處理方式。');
   return setWish(ctx, id, status, note);
 };
+/** 「實現了」「不採用」就結案，之後不能再改 */
 async function setWish(ctx, id, status, note) {
-  const r = await ctx.run('UPDATE wishes SET status = ?, note = ?, seen = 0 WHERE id = ?', status, str(note, 100), Math.floor(num(id)));
-  if (!r.meta.changes) fail('找不到這個願望。');
+  const r = await ctx.run("UPDATE wishes SET status = ?, note = ?, seen = 0 WHERE id = ? AND status NOT IN ('done', 'declined')", status, str(note, 100), Math.floor(num(id)));
+  if (!r.meta.changes) fail((await ctx.first('SELECT id FROM wishes WHERE id = ?', Math.floor(num(id)))) ? '這個願望已經結案，不能再改。' : '找不到這個願望。');
   return true;
 }
 /** Claude 用：公開和實現的願望（依集氣數），幫老師設計新造型 */

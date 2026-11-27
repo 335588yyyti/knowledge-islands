@@ -978,6 +978,13 @@ try {
     const xs = async (...args) => (await (await fetch(BASE + '/api/xSetWish', { method: 'POST', headers: { 'x-import-token': IMPORT_TOKEN }, body: JSON.stringify({ args }) })).json());
     assert.ok((await xs(wl[0].id, 'done', '太空貓頭盔上架了')).ok);
     assert.match((await xs(wl[0].id, 'nope', '')).err, /處理方式/);
+    // 實現了／不採用就結案：不能再改，後台收到「已結案」小列表
+    assert.match((await call('tWish', pw, wl[0].id, 'public', '')).err, /結案/);
+    assert.match((await xs(wl[0].id, 'declined', '')).err, /結案/);
+    await t.click('[data-tab="tWishes"]');
+    await t.waitForFunction(() => document.querySelector('#wishDone').textContent.includes('已結案'));
+    assert.match(await t.textContent('#wishDone'), /想要太空貓的頭盔[\s\S]*實現了：太空貓頭盔上架了/);
+    assert.ok(!(await t.$('#wishList [data-wish="' + wl[0].id + '"]')), '結案的不在上面的卡片裡');
     const pw1 = await page('/?c=DEMO');
     await pw1.fill('#iSeat', '1'); await pw1.fill('#iPin', '1234'); await pw1.click('#bLogin'); await pw1.waitForSelector('#vMap:not(.hidden)'); await closeNews(pw1);
     await pw1.waitForFunction(() => document.body.textContent.includes('你許的願望實現了'));
@@ -990,6 +997,8 @@ try {
     execSync(`npx wrangler d1 execute DB --local --persist-to ${dir} --command "UPDATE students SET stars = 200, coins = 5000, total = total + 1 WHERE class_code = 'DEMO' AND seat = 3"`, { stdio: 'ignore' });
     const shop = (await call('studentLogin', c)).ok.shop;
     assert.ok(shop.hair_redcurl && !shop.hair_redcurl.soon, '紅色長捲髮已經上架');
+    assert.equal(shop.hair_redcurl.name, '許願商品：紅色長捲髮'); assert.equal(shop.hair_bob, undefined);
+    assert.equal((await call('studentLogin', c)).ok.sets.set_stage.name, '許願商品：舞台巨星套裝');
     assert.ok(shop.hair_goldcurl && shop.hair_goldcurl.soon === '2026-11-30', '其他髮型之後每週上架（下週的先預告）');
     assert.ok(!shop.hair_twin, '再之後的還看不到');
     assert.match((await call('buyItem', c, 'hair_goldcurl')).err || '', /上架|沒有/);

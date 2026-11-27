@@ -399,8 +399,9 @@ ol.hard{padding-left:20px;margin:0} ol.hard li{margin-bottom:8px;white-space:nor
       </div>
       <div class="panel">
         <h2>🌠 衣櫃許願池 <span class="pill p-bad" id="wishCount">0</span></h2>
-        <p class="muted small">學生每週可以許 1 個願望（寫字或畫圖＋說明）。「公開」後全班匿名看得到、可以集氣；做好了按「實現了」；不採用可以寫原因，只有許願的同學看得到。按下任何處理方式，許願的同學下次登入都會收到通知。想請 Claude 依願望設計新造型，就在對話裡說「看許願池」；許願商品做好會立刻上架、全班跳更新通知，Claude 也會幫你標成「實現了」。</p>
+        <p class="muted small">學生每週可以許 1 個願望（寫字或畫圖＋說明）。「公開」後全班匿名看得到、可以集氣；做好了按「實現了」；不採用可以寫原因，只有許願的同學看得到。按「實現了」或「不採用」就結案，移到最下面的「已結案」列表，之後不能再改。按下任何處理方式，許願的同學下次登入都會收到通知。想請 Claude 依願望設計新造型，就在對話裡說「看許願池」；許願商品做好會立刻上架、全班跳更新通知，Claude 也會幫你標成「實現了」。</p>
         <div id="wishList"></div>
+        <div id="wishDone"></div>
       </div>
     </section>
     <section id="tGuide" class="hidden">
@@ -1191,9 +1192,12 @@ async function loadWishes(){
     showPaged('flag', 'flagList', flags, f => `<div class="rep" data-flag="${f.id}"><div class="small muted">${esc(f.ts)}　${f.seat} 號 ${esc(f.nick || '')}　金幣 ${f.coins}</div>${flagView(f.grid)}
       ${f.status === 'pending' ? `<div class="row" style="margin-top:6px"><input data-fnote placeholder="原因或鼓勵的話（可以不寫）" style="flex:1"><button class="btn2 sm" data-fok>通過（扣 50 金幣）</button><button class="btn2 sm" data-fno>不通過</button></div>`
         : `<div class="small"><span class="pill p-mute">${f.status === 'approved' ? '已通過' : '沒通過'}</span> ${esc(f.note || '')}</div>`}</div>`, '<p class="muted">還沒有學生送旗子。</p>');
-    showPaged('wish', 'wishList', wishes, w => `<div class="rep" data-wish="${w.id}"><div class="small muted">${esc(w.ts)}　${w.seat} 號 ${esc(w.nick || '')}　⭐ ${w.votes}　<span class="pill p-mute">${WISH_ST[w.status] || w.status}</span></div>
+    const open = wishes.filter(w => !['done', 'declined'].includes(w.status)), closed = wishes.filter(w => ['done', 'declined'].includes(w.status));
+    showPaged('wish', 'wishList', open, w => `<div class="rep" data-wish="${w.id}"><div class="small muted">${esc(w.ts)}　${w.seat} 號 ${esc(w.nick || '')}　⭐ ${w.votes}　<span class="pill p-mute">${WISH_ST[w.status] || w.status}</span></div>
       <div><b>${esc(w.text)}</b></div>${w.image ? `<a href="${w.image}" target="_blank" rel="noopener"><img src="${w.image}" alt="學生畫的圖" loading="lazy" style="max-width:200px;border-radius:10px;margin:6px 0"></a>` : ''}
-      <div class="row" style="margin-top:6px"><input data-wnote placeholder="給許願同學的話（沒採用時建議寫原因）" style="flex:1" value="${esc(w.note || '')}">${w.status !== 'public' ? '<button class="btn2 sm" data-wset="public">公開集氣</button>' : ''}${w.status !== 'done' ? '<button class="btn2 sm" data-wset="done">實現了</button>' : ''}${w.status !== 'declined' ? '<button class="btn2 sm" data-wset="declined">不採用</button>' : ''}</div></div>`, '<p class="muted">還沒有學生許願。</p>');
+      <div class="row" style="margin-top:6px"><input data-wnote placeholder="給許願同學的話（沒採用時建議寫原因）" style="flex:1" value="${esc(w.note || '')}">${w.status !== 'public' ? '<button class="btn2 sm" data-wset="public">公開集氣</button>' : ''}<button class="btn2 sm" data-wset="done">實現了</button><button class="btn2 sm" data-wset="declined">不採用</button></div></div>`, '<p class="muted">' + (closed.length ? '沒有待處理的願望。' : '還沒有學生許願。') + '</p>');
+    // 實現了／不採用：結案，收成一行一個的小列表，不能再改
+    $('wishDone').innerHTML = closed.length ? `<details><summary class="small">已結案（${closed.length} 個）</summary><ul class="small" style="margin:6px 0;padding-left:18px">${closed.map(w => `<li>${esc(w.ts.slice(5, 10))}　${w.seat} 號　${esc(w.text)}${w.image ? '（有畫圖）' : ''}　⭐ ${w.votes}　<b>${w.status === 'done' ? '🎉 實現了' : '💭 沒有採用'}</b>${w.note ? '：' + esc(w.note) : ''}</li>`).join('')}</ul></details>` : '';
   }catch(e){ toast(e.message); }
 }
 $('flagList').addEventListener('click', async e => {
